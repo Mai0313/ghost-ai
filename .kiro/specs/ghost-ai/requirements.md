@@ -2,97 +2,102 @@
 
 ## Introduction
 
-這個專案是一個前後端分離的應用程式，讓使用者能夠透過全域熱鍵快速截圖，並將截圖傳送給 OpenAI 的 LLM 進行分析。使用者可以在截圖時提供額外的提示詞或輸入，讓 AI 根據圖片內容和使用者的需求提供相應的回答。前端應用程式需要在截圖和畫面分享時保持隱形狀態，確保不會干擾使用者的工作流程。
+Ghost AI是一個智能桌面助手系統，提供三個核心功能：文字輸入與螢幕截圖分析、語音錄音與實時對話、以及隱藏式操作界面。系統通過全域熱鍵操作，為用戶提供無縫的AI輔助體驗，支援自定義提示詞和多模態輸入處理。所有功能都設計為隱蔽運行，確保不會在螢幕分享或截圖中被發現。
 
 ## Requirements
 
-### Requirement 1
+### Requirement 1：文字輸入與螢幕截圖分析
 
-**User Story:** 作為使用者，我希望能夠透過全域熱鍵快速截圖，這樣我就可以在任何應用程式中都能使用這個功能，且不會被其他軟體監測到。
-
-#### Acceptance Criteria
-
-1. WHEN 使用者按下預設的全域熱鍵 THEN 系統 SHALL 立即開始截圖流程
-2. WHEN 截圖流程啟動 THEN 前端應用程式 SHALL 從螢幕上完全隱藏
-3. WHEN 截圖完成 THEN 系統 SHALL 顯示輸入介面讓使用者輸入提示詞
-4. IF 使用者在其他應用程式中 THEN 熱鍵 SHALL 仍然能夠正常觸發截圖功能
-5. WHEN 熱鍵被按下 THEN 系統 SHALL 使用低層級的鍵盤鉤子來避免被其他軟體監測
-6. WHEN 處理熱鍵事件 THEN 系統 SHALL 不在系統日誌中留下可追蹤的記錄
-
-### Requirement 2
-
-**User Story:** 作為使用者，我希望應用程式在截圖和畫面分享時完全隱形，這樣就不會在截圖中出現應用程式的介面。
+**User Story:** 作為用戶，我希望通過熱鍵快速呼叫輸入框，輸入問題並自動截圖，讓AI助手分析當前螢幕內容並回答我的問題。
 
 #### Acceptance Criteria
 
-1. WHEN 截圖流程開始 THEN 前端應用程式 SHALL 立即隱藏所有視窗
-2. WHEN 系統進行畫面分享 THEN 應用程式 SHALL 不會出現在分享畫面中
-3. WHEN 截圖完成後 THEN 應用程式 SHALL 重新顯示必要的輸入介面
-4. IF 使用者正在進行視訊會議 THEN 應用程式 SHALL 不會干擾畫面分享
+1. WHEN 用戶按下設定的熱鍵組合 THEN 系統 SHALL 立即顯示文字輸入框
+2. WHEN 用戶在輸入框中輸入文字並送出 THEN 系統 SHALL 自動進行螢幕截圖
+3. WHEN 截圖完成 THEN 系統 SHALL 將用戶問題、螢幕截圖和自定義提示詞一起送至Chat Completion API
+4. IF 截圖失敗 THEN 系統 SHALL 顯示錯誤訊息並允許用戶重試
+5. WHEN API回應 THEN 系統 SHALL 在適當的界面顯示AI的回答
 
-### Requirement 3
+### Requirement 2：語音錄音與實時對話
 
-**User Story:** 作為使用者，我希望能夠在截圖時提供額外的提示詞或輸入，這樣 AI 就能根據我的具體需求來分析圖片。
-
-#### Acceptance Criteria
-
-1. WHEN 截圖完成 THEN 系統 SHALL 顯示輸入框讓使用者輸入提示詞
-2. WHEN 使用者輸入提示詞 THEN 系統 SHALL 將提示詞與截圖一起傳送給後端
-3. IF 使用者沒有輸入提示詞 THEN 系統 SHALL 使用預設的分析提示詞
-4. WHEN 使用者確認輸入 THEN 系統 SHALL 立即開始處理請求
-
-### Requirement 4
-
-**User Story:** 作為使用者，我希望 AI 能夠分析我的截圖並提供相關回答，這樣我就能快速獲得圖片內容的解釋或協助。
+**User Story:** 作為用戶，我希望通過按鈕或熱鍵開始語音錄音，並支援未來的WebRTC實時對話功能。
 
 #### Acceptance Criteria
 
-1. WHEN 後端收到截圖和提示詞 THEN 系統 SHALL 透過 OpenAI API 處理圖片分析請求
-2. WHEN OpenAI 回傳分析結果 THEN 系統 SHALL 將結果傳送回前端顯示
-3. IF API 請求失敗 THEN 系統 SHALL 顯示適當的錯誤訊息
-4. WHEN 分析完成 THEN 使用者 SHALL 能夠複製結果或進行後續操作
+1. WHEN 用戶按下錄音按鈕或熱鍵 THEN 系統 SHALL 立即開始錄音
+2. WHEN 正在錄音 THEN 系統 SHALL 顯示明確的錄音狀態指示器
+3. WHEN 用戶再次按下按鈕或熱鍵 THEN 系統 SHALL 停止錄音並保存音頻文件
+4. IF 麥克風權限被拒絕 THEN 系統 SHALL 顯示權限請求指導
+5. WHEN 錄音完成 THEN 系統 SHALL 為未來的WebRTC實時對話功能預留介面
 
-### Requirement 5
+### Requirement 3：隱藏式操作界面
 
-**User Story:** 作為使用者，我希望有一個簡潔的前端介面來查看 AI 的分析結果，這樣我就能快速理解和使用這些資訊。
-
-#### Acceptance Criteria
-
-1. WHEN AI 分析完成 THEN 前端 SHALL 顯示結果在清晰易讀的介面中
-2. WHEN 顯示結果 THEN 使用者 SHALL 能夠複製文字內容
-3. WHEN 顯示結果 THEN 使用者 SHALL 能夠查看原始截圖
-4. IF 結果很長 THEN 介面 SHALL 提供適當的滾動或分頁功能
-
-### Requirement 6
-
-**User Story:** 作為使用者，我希望後端 API 能夠安全且高效地處理截圖上傳和 LLM 請求，這樣我就能獲得穩定可靠的服務。
+**User Story:** 作為用戶，我希望能夠隱藏操作界面，確保在螢幕分享或截圖時不會被他人看到。
 
 #### Acceptance Criteria
 
-1. WHEN 前端上傳截圖 THEN 後端 SHALL 驗證圖片格式和大小
-2. WHEN 處理 OpenAI 請求 THEN 後端 SHALL 實作適當的錯誤處理和重試機制
-3. WHEN 處理完成 THEN 後端 SHALL 清理暫存的圖片檔案
-4. IF 請求量過大 THEN 後端 SHALL 實作適當的限流機制
+1. WHEN 用戶按下隱藏熱鍵 THEN 系統 SHALL 立即隱藏所有可見的操作界面
+2. WHEN 界面隱藏 THEN 系統 SHALL 確保不會出現在螢幕截圖或螢幕分享中
+3. WHEN 用戶再次按下熱鍵 THEN 系統 SHALL 恢復顯示操作界面
+4. IF 系統重啟 THEN 系統 SHALL 記住上次的隱藏狀態
+5. WHEN 界面隱藏 THEN 所有熱鍵功能 SHALL 仍然正常運作
 
-### Requirement 7
+### Requirement 4：全域熱鍵系統
 
-**User Story:** 作為使用者，我希望能夠自訂熱鍵和其他設定，這樣我就能根據個人喜好調整應用程式的行為。
+**User Story:** 作為用戶，我希望能夠自定義所有功能的熱鍵組合，並在任何應用程式中都能使用這些熱鍵。
 
 #### Acceptance Criteria
 
-1. WHEN 使用者開啟設定 THEN 系統 SHALL 提供熱鍵自訂選項
-2. WHEN 使用者變更熱鍵 THEN 系統 SHALL 立即套用新的熱鍵設定
-3. WHEN 使用者設定預設提示詞 THEN 系統 SHALL 儲存並在後續使用
-4. IF 熱鍵衝突 THEN 系統 SHALL 警告使用者並要求選擇其他組合
+1. WHEN 用戶設定熱鍵 THEN 系統 SHALL 檢查熱鍵衝突並提供警告
+2. WHEN 用戶在任何應用程式中按下熱鍵 THEN 系統 SHALL 正確響應對應功能
+3. WHEN 系統啟動 THEN 系統 SHALL 自動註冊所有設定的全域熱鍵
+4. IF 熱鍵註冊失敗 THEN 系統 SHALL 通知用戶並提供替代方案
+5. WHEN 用戶修改熱鍵設定 THEN 系統 SHALL 立即更新全域熱鍵註冊
 
-### Requirement 8
+### Requirement 5：自定義提示詞管理
 
-**User Story:** 作為使用者，我希望應用程式能夠保護我的隱私，確保使用行為不會被其他軟體或系統監測到。
+**User Story:** 作為用戶，我希望能夠設定和管理自定義的AI提示詞，以便獲得更符合需求的回答。
+
+#### Acceptance Criteria
+
+1. WHEN 用戶設定提示詞 THEN 系統 SHALL 提供簡潔的編輯界面
+2. WHEN 用戶保存提示詞 THEN 系統 SHALL 驗證提示詞格式並保存到本地
+3. WHEN 發送請求到AI THEN 系統 SHALL 自動將自定義提示詞包含在請求中
+4. IF 提示詞過長 THEN 系統 SHALL 提供警告並建議優化
+5. WHEN 用戶重置提示詞 THEN 系統 SHALL 恢復到預設的提示詞模板
+
+### Requirement 6：AI分析與回應處理
+
+**User Story:** 作為用戶，我希望AI能夠準確分析我的輸入和螢幕內容，並提供有用的回答和建議。
+
+#### Acceptance Criteria
+
+1. WHEN 後端收到截圖和提示詞 THEN 系統 SHALL 透過OpenAI API處理圖片分析請求
+2. WHEN OpenAI回傳分析結果 THEN 系統 SHALL 將結果傳送回前端顯示
+3. IF API請求失敗 THEN 系統 SHALL 顯示適當的錯誤訊息並提供重試選項
+4. WHEN 分析完成 THEN 用戶 SHALL 能夠複製結果或進行後續操作
+5. WHEN 處理音頻輸入 THEN 系統 SHALL 支援語音轉文字並整合到分析流程
+
+### Requirement 7：系統整合與穩定性
+
+**User Story:** 作為用戶，我希望系統能夠穩定運行，並與作業系統良好整合，提供可靠的服務。
+
+#### Acceptance Criteria
+
+1. WHEN 系統啟動 THEN 系統 SHALL 在系統托盤中顯示圖示並提供基本控制
+2. WHEN 系統遇到錯誤 THEN 系統 SHALL 記錄錯誤日誌並嘗試自動恢復
+3. WHEN 用戶登出或關機 THEN 系統 SHALL 正確清理資源並保存設定
+4. IF 系統崩潰 THEN 重啟後 SHALL 能恢復到上次的工作狀態
+5. WHEN 系統更新 THEN 系統 SHALL 保留用戶的所有自定義設定
+
+### Requirement 8：隱私保護與安全性
+
+**User Story:** 作為用戶，我希望我的數據得到安全保護，並且系統運行不會被其他軟體或系統監測到。
 
 #### Acceptance Criteria
 
 1. WHEN 應用程式運行 THEN 系統 SHALL 使用隱蔽的程序名稱和視窗標題
-2. WHEN 處理截圖 THEN 系統 SHALL 在記憶體中處理圖片而不儲存到磁碟
-3. WHEN 與 API 通訊 THEN 系統 SHALL 使用加密連線並清理網路日誌
-4. IF 系統偵測到鍵盤記錄軟體 THEN 應用程式 SHALL 警告使用者潛在的隱私風險
+2. WHEN 處理截圖和音頻 THEN 系統 SHALL 在記憶體中處理而不儲存到磁碟
+3. WHEN 與API通訊 THEN 系統 SHALL 使用加密連線並清理網路日誌
+4. IF 系統偵測到監控軟體 THEN 應用程式 SHALL 警告用戶潛在的隱私風險
 5. WHEN 應用程式關閉 THEN 系統 SHALL 清理所有暫存資料和記憶體痕跡

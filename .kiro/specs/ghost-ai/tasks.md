@@ -1,191 +1,181 @@
 # Implementation Plan
 
 - [ ] 1. 建立專案結構和核心介面
+  - 創建 `./src/ghost_ai/` 目錄作為後端 Python API 專案
+  - 在 `ghost_ai/` 中建立 FastAPI 結構：`app/`, `services/`, `models/`, `utils/`
+  - 創建 `./src/ghost_ui/` 目錄作為前端 Electron 專案
+  - 在 `ghost_ui/` 中建立 Electron 結構：`src/main/`, `src/renderer/`, `src/shared/`
+  - 定義支援三個核心功能的 TypeScript 介面檔案和 Python 資料模型檔案
+  - 設定各自的 `package.json`, `requirements.txt`, `tsconfig.json`, `pyproject.toml`
+  - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
-    - 創建 `./src/ghost_ai/` 目錄作為後端 Python API 專案
-    - 在 `ghost_ai/` 中建立 FastAPI 結構：`app/`, `services/`, `models/`, `utils/`
-    - 創建 `./src/ghost_ui/` 目錄作為前端 Electron 專案
-    - 在 `ghost_ui/` 中建立 Electron 結構：`src/main/`, `src/renderer/`, `src/shared/`
-    - 定義 TypeScript 介面檔案和 Python 資料模型檔案
-    - 設定各自的 `package.json`, `requirements.txt`, `tsconfig.json`, `pyproject.toml`
-    - _Requirements: 1.1, 1.2, 1.3, 1.4_
+- [ ] 2. 實作全域熱鍵系統
+- [ ] 2.1 建立全域熱鍵管理器
+  - 在 `src/ghost_ui/src/main/hotkey-manager.ts` 建立 GlobalHotkeyManager 類別
+  - 實作三個核心功能的熱鍵註冊：文字輸入、語音錄音、界面隱藏
+  - 在 `src/ghost_ui/src/shared/types.ts` 定義熱鍵相關的 TypeScript 介面
+  - 加入熱鍵衝突檢測和替代方案邏輯
+  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 2. 實作後端 API 基礎架構
+- [ ] 2.2 實作熱鍵設定管理
+  - 創建熱鍵設定的本地儲存機制
+  - 實作熱鍵自訂界面和驗證邏輯
+  - 加入熱鍵設定的動態更新功能
+  - 建立預設熱鍵配置和重置功能
+  - _Requirements: 4.1, 4.2, 4.4, 4.5_
 
-- [ ] 2.1 建立 FastAPI 應用程式和路由
+- [ ] 3. 實作文字輸入與螢幕截圖分析功能
+- [ ] 3.1 建立文字輸入界面
+  - 在 `src/ghost_ui/src/renderer/components/` 創建 TextInputComponent
+  - 實作熱鍵觸發的輸入框顯示邏輯
+  - 加入文字輸入驗證和送出機制
+  - 創建輸入框的樣式和動畫效果
+  - _Requirements: 1.1, 1.2, 1.3_
 
-    - 在 `src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
-    - 在 `src/ghost_ai/app/routers/` 建立 `analysis.py` 和 `upload.py` 路由檔案
-    - 在 `src/ghost_ai/app/middleware/` 實作 CORS 和安全性中介軟體
-    - 創建 `src/ghost_ai/app/config.py` 用於環境變數和設定管理
-    - _Requirements: 6.1, 6.2, 8.3_
+- [ ] 3.2 實作螢幕截圖管理器
+  - 在 `src/ghost_ui/src/main/screenshot-manager.ts` 建立 ScreenshotManager 類別
+  - 實作自動螢幕截圖功能，當用戶送出文字時觸發
+  - 加入記憶體中的圖片處理和緩衝區管理
+  - 創建截圖失敗的錯誤處理和重試機制
+  - _Requirements: 1.2, 1.4_
 
-- [ ] 2.2 實作圖片處理服務
+- [ ] 3.3 整合文字和圖片分析
+  - 實作將用戶問題、螢幕截圖和自定義提示詞組合的邏輯
+  - 創建 Chat Completion API 的請求格式化
+  - 加入分析結果的接收和顯示機制
+  - 實作錯誤處理和重試邏輯
+  - _Requirements: 1.3, 1.5_
 
-    - 在 `src/ghost_ai/services/image_processing.py` 建立 ImageProcessingService 類別
-    - 實作圖片驗證、最佳化和元資料清理功能
-    - 在 `src/ghost_ai/utils/image_utils.py` 加入圖片格式轉換和大小調整功能
-    - 創建 `src/ghost_ai/models/image.py` 定義圖片相關的資料模型
-    - _Requirements: 6.1, 8.2_
+- [ ] 4. 實作語音錄音功能
+- [ ] 4.1 建立音頻錄音管理器
+  - 在 `src/ghost_ui/src/main/audio-manager.ts` 建立 AudioRecordingManager 類別
+  - 實作麥克風權限請求和音頻設備檢測
+  - 加入錄音開始/停止的控制邏輯
+  - 創建音頻數據的記憶體處理和格式轉換
+  - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 2.3 整合 OpenAI Vision API
+- [ ] 4.2 實作錄音狀態指示器
+  - 創建錄音狀態的視覺指示器組件
+  - 實作錄音時長顯示和音量指示
+  - 加入錄音過程中的用戶反饋機制
+  - 建立錄音完成的通知和確認界面
+  - _Requirements: 2.2, 2.3_
 
-    - 在 `src/ghost_ai/services/openai_service.py` 建立 OpenAIService 類別
-    - 實作圖片分析功能和錯誤處理
-    - 在 `src/ghost_ai/utils/retry_utils.py` 加入重試機制和 API 配額管理
-    - 創建 `src/ghost_ai/models/analysis.py` 定義分析請求和回應的資料模型
-    - _Requirements: 4.1, 4.2, 4.3, 6.2_
+- [ ] 4.3 預留 WebRTC 實時對話介面
+  - 設計 WebRTC 功能的架構和介面
+  - 創建實時對話的數據模型和 API 端點預留
+  - 實作音頻流處理的基礎架構
+  - 加入未來擴展的配置和設定選項
+  - _Requirements: 2.5_
 
-- [ ] 3. 實作前端 Electron 基礎架構
+- [ ] 5. 實作隱藏式操作界面
+- [ ] 5.1 建立界面隱藏管理器
+  - 在 `src/ghost_ui/src/main/hide-manager.ts` 建立 HideManager 類別
+  - 實作界面完全隱藏和恢復顯示的邏輯
+  - 加入螢幕截圖和螢幕分享時的隱藏機制
+  - 創建隱藏狀態的持久化儲存
+  - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 3.1 建立 Electron 主程序
+- [ ] 5.2 實作隱藏狀態管理
+  - 創建隱藏狀態的記憶和恢復機制
+  - 實作系統重啟後的狀態恢復
+  - 加入隱藏模式下的熱鍵功能保持
+  - 建立隱藏狀態的用戶通知機制
+  - _Requirements: 3.3, 3.4, 3.5_
 
-    - 在 `src/ghost_ui/src/main/main.ts` 創建 Electron 主程序檔案
-    - 在 `src/ghost_ui/src/main/window-manager.ts` 實作視窗管理功能
-    - 在 `src/ghost_ui/src/main/ipc-handlers.ts` 實作程序間通訊 (IPC) 機制
-    - 在 `src/ghost_ui/src/main/security.ts` 設定應用程式隱蔽模式和安全性設定
-    - _Requirements: 2.1, 2.2, 8.1_
+- [ ] 6. 實作自定義提示詞管理
+- [ ] 6.1 建立提示詞管理系統
+  - 創建提示詞的本地儲存和管理機制
+  - 實作提示詞編輯界面和驗證邏輯
+  - 加入提示詞模板和預設值功能
+  - 建立提示詞的匯入匯出功能
+  - _Requirements: 5.1, 5.2, 5.5_
 
-- [ ] 3.2 實作全域熱鍵管理器
+- [ ] 6.2 整合提示詞到分析流程
+  - 實作自定義提示詞與用戶輸入的組合邏輯
+  - 加入提示詞長度驗證和優化建議
+  - 創建提示詞效果的預覽功能
+  - 實作提示詞的動態替換和變數支援
+  - _Requirements: 5.3, 5.4_
 
-    - 在 `src/ghost_ui/src/main/hotkey-manager.ts` 建立 GlobalHotkeyManager 類別
-    - 實作低層級鍵盤鉤子和熱鍵註冊功能
-    - 在 `src/ghost_ui/src/shared/types.ts` 定義熱鍵相關的 TypeScript 介面
-    - 加入熱鍵衝突檢測和替代方案邏輯
-    - _Requirements: 1.1, 1.5, 1.6, 7.1, 7.2, 7.4_
+- [ ] 7. 實作後端 API 服務
+- [ ] 7.1 建立 FastAPI 應用程式架構
+  - 在 `src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
+  - 建立支援文字圖片分析和音頻處理的路由
+  - 實作 CORS 和安全性中介軟體
+  - 創建環境變數和設定管理系統
+  - _Requirements: 6.1, 6.2, 8.3_
 
-- [ ] 3.3 實作截圖管理器
+- [ ] 7.2 實作圖片和文字分析服務
+  - 在 `src/ghost_ai/services/` 建立 ImageAnalysisHandler 和相關服務
+  - 整合 OpenAI Vision API 進行圖片分析
+  - 實作文字和圖片的綜合分析邏輯
+  - 加入分析結果的格式化和後處理
+  - _Requirements: 6.1, 6.2, 6.4_
 
-    - 在 `src/ghost_ui/src/main/screenshot-manager.ts` 建立 ScreenshotManager 類別
-    - 實作全螢幕和視窗截圖功能
-    - 在 `src/ghost_ui/src/shared/utils.ts` 加入記憶體中的圖片處理和緩衝區管理
-    - 創建 `src/ghost_ui/src/shared/interfaces.ts` 定義截圖相關的介面
-    - _Requirements: 1.2, 2.1, 8.2_
+- [ ] 7.3 實作音頻處理服務
+  - 建立 AudioAnalysisHandler 和音頻處理服務
+  - 整合 OpenAI Whisper API 進行語音轉文字
+  - 實作音頻格式驗證和轉換功能
+  - 加入音頻品質檢測和優化處理
+  - _Requirements: 6.5_
 
-- [ ] 4. 實作視窗管理和 UI 組件
+- [ ] 8. 實作系統整合與穩定性
+- [ ] 8.1 建立系統托盤和狀態管理
+  - 實作系統托盤圖示和基本控制功能
+  - 創建應用程式狀態的監控和管理
+  - 加入系統啟動時的自動初始化
+  - 建立應用程式的優雅關閉和資源清理
+  - _Requirements: 7.1, 7.3, 7.5_
 
-- [ ] 4.1 建立視窗管理器
+- [ ] 8.2 實作錯誤處理和恢復機制
+  - 建立全域錯誤處理和日誌記錄系統
+  - 實作系統崩潰後的自動恢復機制
+  - 加入用戶設定的備份和恢復功能
+  - 創建錯誤報告和診斷工具
+  - _Requirements: 7.2, 7.4_
 
-    - 實作 WindowManager 類別
-    - 加入視窗隱藏、顯示和隱形模式功能
-    - 實作畫面分享時的視窗隱蔽機制
-    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+- [ ] 9. 實作隱私保護與安全性
+- [ ] 9.1 建立記憶體安全處理
+  - 實作安全的記憶體清理函數
+  - 加入圖片和音頻緩衝區的自動清理機制
+  - 創建敏感數據的加密處理
+  - 建立虛擬記憶體交換防護
+  - _Requirements: 8.2, 8.5_
 
-- [ ] 4.2 建立 React UI 組件
+- [ ] 9.2 實作程序隱蔽和隱私保護
+  - 加入隨機程序名稱和隱藏視窗標題功能
+  - 實作監控軟體偵測和警告機制
+  - 加入網路流量加密和標頭混淆
+  - 創建隱私模式的完整實作
+  - _Requirements: 8.1, 8.3, 8.4, 8.5_
 
-    - 在 `src/ghost_ui/src/renderer/components/` 創建輸入組件 (InputComponent) 用於提示詞輸入
-    - 建立結果顯示組件 (ResultComponent) 和設定組件 (SettingsComponent)
-    - 在 `src/ghost_ui/src/renderer/components/` 實作通知組件 (NotificationComponent)
-    - 創建 `src/ghost_ui/src/renderer/App.tsx` 主應用程式組件
-    - _Requirements: 3.1, 3.2, 5.1, 5.2, 5.3, 7.1, 7.3_
+- [ ] 10. 實作測試套件和品質保證
+- [ ] 10.1 建立單元測試框架
+  - 使用 Jest 和 React Testing Library 建立前端測試
+  - 使用 pytest 建立後端 API 測試
+  - 實作各個組件和服務的單元測試
+  - 加入 Mock 測試和依賴注入
+  - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
 
-- [ ] 4.3 實作 API 客戶端
+- [ ] 10.2 實作整合測試和端到端測試
+  - 建立三個核心功能的完整流程測試
+  - 實作前後端整合測試
+  - 加入隱私保護和安全性功能的驗證測試
+  - 創建跨平台相容性測試
+  - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
 
-    - 在 `src/ghost_ui/src/shared/api-client.ts` 建立 APIClient 類別
-    - 實作圖片上傳和分析請求功能
-    - 在 `src/ghost_ui/src/shared/http-utils.ts` 加入錯誤處理和重試機制
-    - 創建 `src/ghost_ui/src/shared/constants.ts` 定義 API 端點和設定
-    - _Requirements: 3.2, 4.4, 6.3_
+- [ ] 11. 效能最佳化和部署準備
+- [ ] 11.1 實作效能最佳化
+  - 加入前端啟動時間和記憶體使用最佳化
+  - 實作後端 API 回應時間和資源使用最佳化
+  - 建立效能監控和分析工具
+  - 創建資源使用的動態調整機制
+  - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 5. 整合前後端通訊
-
-- [ ] 5.1 實作圖片上傳和分析流程
-
-    - 整合截圖捕獲和 API 上傳功能
-    - 實作提示詞處理和預設值機制
-    - 加入請求狀態追蹤和進度顯示
-    - _Requirements: 3.1, 3.2, 3.3, 3.4, 4.1, 4.2_
-
-- [ ] 5.2 實作結果顯示和互動功能
-
-    - 整合 AI 分析結果的顯示功能
-    - 實作文字複製和原始截圖查看功能
-    - 加入長結果的滾動和分頁處理
-    - _Requirements: 4.4, 5.1, 5.2, 5.3, 5.4_
-
-- [ ] 6. 實作安全性和隱私保護功能
-
-- [ ] 6.1 加入記憶體安全處理
-
-    - 實作安全的記憶體清理函數
-    - 加入圖片緩衝區的自動清理機制
-    - 實作虛擬記憶體交換防護
-    - _Requirements: 8.2, 8.5_
-
-- [ ] 6.2 實作程序隱蔽和隱私保護
-
-    - 加入隨機程序名稱和隱藏視窗標題功能
-    - 實作鍵盤記錄軟體偵測和警告機制
-    - 加入網路流量加密和標頭混淆
-    - _Requirements: 8.1, 8.3, 8.4_
-
-- [ ] 7. 實作設定管理和使用者自訂功能
-
-- [ ] 7.1 建立設定儲存和管理系統
-
-    - 實作使用者設定的本地儲存
-    - 建立設定驗證和預設值機制
-    - 加入設定匯入匯出功能
-    - _Requirements: 7.1, 7.2, 7.3_
-
-- [ ] 7.2 實作熱鍵自訂和衝突處理
-
-    - 加入熱鍵組合的即時驗證
-    - 實作熱鍵衝突檢測和解決方案
-    - 建立熱鍵設定的動態更新機制
-    - _Requirements: 7.1, 7.2, 7.4_
-
-- [ ] 8. 實作錯誤處理和恢復機制
-
-- [ ] 8.1 加入前端錯誤處理
-
-    - 實作截圖失敗的重試和降級機制
-    - 加入網路連線問題的處理和快取
-    - 建立使用者友善的錯誤訊息顯示
-    - _Requirements: 4.3, 6.2_
-
-- [ ] 8.2 加入後端錯誤處理和限流
-
-    - 實作 OpenAI API 的指數退避重試機制
-    - 加入請求限流和佇列管理
-    - 建立系統資源監控和優雅降級
-    - _Requirements: 4.3, 6.2, 6.4_
-
-- [ ] 9. 實作測試套件
-
-- [ ] 9.1 建立前端單元測試
-
-    - 使用 Jest 和 React Testing Library 建立測試框架
-    - 實作各個組件和管理器的單元測試
-    - 加入 Electron API 的 Mock 測試
-    - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4_
-
-- [ ] 9.2 建立後端 API 測試
-
-    - 使用 pytest 建立測試框架
-    - 實作 API 端點和服務的單元測試
-    - 加入 OpenAI API 的 Mock 測試
-    - _Requirements: 4.1, 4.2, 4.3, 6.1, 6.2, 6.3, 6.4_
-
-- [ ] 9.3 實作整合測試和端到端測試
-
-    - 建立前後端整合測試
-    - 實作完整使用者流程的端到端測試
-    - 加入隱私保護和安全性功能的驗證測試
-    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
-
-- [ ] 10. 效能最佳化和部署準備
-
-- [ ] 10.1 實作效能最佳化
-
-    - 加入前端啟動時間和記憶體使用最佳化
-    - 實作後端圖片處理和 API 回應最佳化
-    - 建立效能監控和分析工具
-    - _Requirements: 6.3, 6.4_
-
-- [ ] 10.2 準備應用程式打包和分發
-
-    - 設定 Electron 應用程式的打包配置
-    - 建立跨平台的建置和分發流程
-    - 加入應用程式簽名和安全性驗證
-    - _Requirements: 8.1, 8.5_
+- [ ] 11.2 準備應用程式打包和分發
+  - 設定 Electron 應用程式的跨平台打包配置
+  - 建立自動化建置和分發流程
+  - 加入應用程式簽名和安全性驗證
+  - 創建安裝程式和更新機制
+  - _Requirements: 7.5, 8.1_
