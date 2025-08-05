@@ -1,108 +1,146 @@
 <center>
 
-# Python 專案模板
+# 👻 Ghost AI
 
-[![PyPI version](https://img.shields.io/pypi/v/swebenchv2.svg)](https://pypi.org/project/swebenchv2/)
-[![python](https://img.shields.io/badge/-Python_3.10_%7C_3.11_%7C_3.12-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Python](https://img.shields.io/badge/-Python_3.10_%7C_3.11_%7C_3.12-blue?logo=python&logoColor=white)](https://python.org)
+[![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Electron](https://img.shields.io/badge/-Electron-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![FastAPI](https://img.shields.io/badge/-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![OpenAI](https://img.shields.io/badge/-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
 [![uv](https://img.shields.io/badge/-uv_dependency_management-2C5F2D?logo=python&logoColor=white)](https://docs.astral.sh/uv/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![tests](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml)
 [![code-quality](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml)
 [![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost_ai/tree/master?tab=License-1-ov-file)
 [![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Mai0313/ghost_ai/pulls)
-[![contributors](https://img.shields.io/github/contributors/Mai0313/ghost_ai.svg)](https://github.com/Mai0313/ghost_ai/graphs/contributors)
+[![Privacy](https://img.shields.io/badge/Privacy-First-purple?logo=shield&logoColor=white)](https://github.com/Mai0313/ghost_ai)
+[![Cross Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron&logoColor=white)](https://github.com/Mai0313/ghost_ai)
 
 </center>
 
-🚀 **一個完整的 Python 專案模板，幫助開發者快速啟動專案，內含完整的 CI/CD 流水線和現代化工具**
+👻 **一個隱形的 AI 驅動截圖分析工具，能夠捕獲、分析並提供洞察，且不留任何痕跡**
 
-點擊 [<kbd>使用此模板</kbd>](https://github.com/Mai0313/ghost_ai/generate) 來建立新的儲存庫，或使用我們的初始化腳本進行個人化設定。
+Ghost AI 是一個隱私優先的桌面應用程式，讓你能夠透過全域熱鍵捕獲截圖，使用 OpenAI 的 Vision API 進行分析，並獲得智能回應 - 同時對螢幕分享和其他監控軟體完全隱形。
 
-**其他語言版本**: [English](README.md) | [中文](README_cn.md)
+**其他語言版本**: [English](README.md) | [繁體中文](README_cn.md)
 
 ## ✨ 功能特色
 
-### 🏗️ **現代化專案結構**
+### 👻 **隱形操作**
 
-- **src/ 佈局**: 遵循 Python 封裝最佳實踐
-- **uv 依賴管理**: 快速、可靠的現代化依賴解析
-- **多版本支援**: Python 3.10、3.11 和 3.12
-- **型別提示**: 完整的型別註解支援與驗證
+- **幽靈模式**: 在截圖和螢幕分享時完全隱形
+- **隱蔽熱鍵**: 使用低層級鍵盤鉤子避免被監控軟體偵測
+- **隱藏程序**: 偽裝程序名稱和視窗標題以獲得最大隱私保護
+- **記憶體處理**: 不在磁碟留下痕跡 - 所有圖片處理都在記憶體中進行
 
-### 🔧 **開發環境**
+### ⚡ **閃電般快速捕獲**
 
-- **VS Code Dev Container**: 完整配置，包含 zsh、oh-my-zsh 和 powerlevel10k 主題
-- **Docker 支援**: 開發和生產環境的多階段 Dockerfile
-- **Pre-commit hooks**: 使用 ruff 自動化程式碼格式化和檢查
-- **本地開發**: 使用 Make 命令輕鬆設定
+- **全域熱鍵**: 透過可自訂的按鍵組合從任何應用程式觸發截圖
+- **即時分析**: 使用 OpenAI Vision API 進行即時圖片分析
+- **智能提示**: 添加自訂提示或使用智能預設值進行情境感知分析
+- **多種捕獲模式**: 全螢幕、活動視窗或自訂區域選擇
 
-### 🧪 **測試與品質保證**
+### 🤖 **AI 驅動智能**
 
-- **pytest 框架**: 全面的測試與覆蓋率報告
-- **平行執行**: 使用 pytest-xdist 加速測試執行
-- **程式碼覆蓋率**: HTML 和 XML 報告，可配置閾值
-- **品質門檻**: 每次提交都自動進行程式碼品質檢查
+- **OpenAI Vision**: 先進的圖片理解和分析能力
+- **情境感知**: 提供自訂提示以獲得關於截圖的特定洞察
+- **錯誤處理**: 強健的重試機制和優雅的錯誤恢復
+- **速率限制**: 內建 API 配額管理和請求最佳化
 
-### 🚀 **完整 CI/CD 流水線**
+### 🔒 **隱私與安全**
 
-- **多版本測試**: 跨 Python 版本的自動化測試
-- **程式碼品質檢查**: ruff 檢查和格式化驗證
-- **文檔部署**: 自動 GitHub Pages 部署
-- **發布自動化**: 語義化版本控制和發布草稿
-- **自動標籤**: 智能 PR 分類
+- **零持久化**: 圖片永不接觸磁碟 - 完全在記憶體中處理
+- **加密通訊**: 所有 API 呼叫使用 HTTPS 和憑證固定
+- **鍵盤記錄器偵測**: 警告使用者監控軟體的潛在隱私風險
+- **自動清理**: 記憶體和網路痕跡自動清除
 
-### 📚 **文檔系統**
+### 🎨 **使用者體驗**
 
-- **MkDocs Material**: 美觀且響應式的文檔
-- **自動生成**: 從程式碼和筆記本自動生成文檔的腳本
-- **API 文檔**: 自動 API 參考生成
-- **部落格支援**: 內建專案更新部落格功能
+- **簡潔介面**: 僅在需要時出現的極簡 UI
+- **可自訂設定**: 個人化熱鍵、預設提示和行為
+- **複製與分享**: 輕鬆複製分析結果和原始截圖
+- **跨平台**: 在 Windows、macOS 和 Linux 上無縫運作
 
-### 🤖 **自動化腳本**
+### 🏗️ **現代化架構**
 
-- **專案初始化**: `scripts/initpyrepo.go` 用於建立個人化專案
-- **文檔生成**: `scripts/gen_docs.py` 用於自動生成文檔
-- **Makefile 命令**: 常見開發任務自動化
+- **前端**: TypeScript + Electron 提供跨平台桌面體驗
+- **後端**: Python + FastAPI 提供高效能 API 處理
+- **關注點分離**: 使用 `ghost_ui` 和 `ghost_ai` 模組的清晰架構
+- **型別安全**: 完整的 TypeScript 和 Python 型別註解
 
 ## 🚀 快速開始
 
-### 選項 1: 使用 GitHub 模板
+### 系統需求
 
-1. 點擊 [<kbd>使用此模板</kbd>](https://github.com/Mai0313/ghost_ai/generate)
-2. 配置您的新儲存庫
-3. 複製並開始開發
+- **Python 3.10+** 用於後端 API
+- **Node.js 18+** 用於 Electron 前端
+- **OpenAI API 金鑰** 用於圖片分析
 
-### 選項 2: 使用初始化腳本
+### 安裝步驟
 
-1. 複製此儲存庫
-2. 執行初始化腳本：
+1. **複製儲存庫**
+
     ```bash
-    go run scripts/initpyrepo.go
-    ```
-3. 依照提示自訂您的專案
-
-### 選項 3: 手動設定
-
-1. 複製儲存庫
-2. 安裝依賴：
-    ```bash
-    make uv-install  # 如果尚未安裝 uv
-    uv sync          # 安裝專案依賴
-    ```
-3. 設定 pre-commit hooks：
-    ```bash
-    make format      # 執行 pre-commit hooks
+    git clone https://github.com/Mai0313/ghost_ai.git
+    cd ghost_ai
     ```
 
-### 選項 4: 快速自訂（推薦）
+2. **設定後端 (ghost_ai)**
 
-1. 複製此儲存庫
-2. 全局替換 `ghost_ai` 為您的專案名稱（snake_case 格式）
-3. 全局替換 `GhostAI` 為您的專案標題（PascalCase 格式）
-4. 執行初始設定：
     ```bash
-    make uv-install && uv sync && make format
+    # 如果尚未安裝 uv
+    make uv-install
+
+    # 安裝 Python 依賴
+    cd src/ghost_ai
+    uv sync
+
+    # 設定環境變數
+    cp .env.example .env
+    # 編輯 .env 並添加您的 OpenAI API 金鑰
     ```
+
+3. **設定前端 (ghost_ui)**
+
+    ```bash
+    cd src/ghost_ui
+    npm install
+    ```
+
+4. **配置您的 OpenAI API 金鑰**
+
+    ```bash
+    # 在 src/ghost_ai/.env 中
+    OPENAI_API_KEY=your_api_key_here
+    ```
+
+### 執行應用程式
+
+1. **啟動後端 API**
+
+    ```bash
+    cd src/ghost_ai
+    uv run uvicorn app.main:app --reload --port 8000
+    ```
+
+2. **啟動前端應用程式**
+
+    ```bash
+    cd src/ghost_ui
+    npm run dev
+    ```
+
+3. **設定您的熱鍵** (預設: `Ctrl+Shift+S`)
+
+    - 應用程式將在啟動時註冊全域熱鍵
+    - 從任何應用程式按下熱鍵即可捕獲和分析截圖
+
+### 首次使用
+
+1. 按下您配置的熱鍵來捕獲截圖
+2. 輸入描述您想了解圖片內容的提示
+3. 等待 AI 分析並查看結果
+4. 複製結果或進行另一次截圖
 
 ## 📁 專案結構
 

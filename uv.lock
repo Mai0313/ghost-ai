@@ -573,6 +573,75 @@ all = [
 ]
 
 [[package]]
+name = "ghost-ai"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "notebook" },
+    { name = "poethepoet" },
+    { name = "pre-commit" },
+]
+docs = [
+    { name = "anyio" },
+    { name = "fire" },
+    { name = "griffe-typingdoc" },
+    { name = "markdown-exec", extra = ["ansi"] },
+    { name = "mkdocs-autorefs" },
+    { name = "mkdocs-coverage" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "tabulate" },
+]
+test = [
+    { name = "genbadge", extra = ["all"] },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist", extra = ["psutil"] },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "notebook" },
+    { name = "poethepoet" },
+    { name = "pre-commit" },
+]
+docs = [
+    { name = "anyio" },
+    { name = "fire" },
+    { name = "griffe-typingdoc" },
+    { name = "markdown-exec", extras = ["ansi"] },
+    { name = "mkdocs-autorefs" },
+    { name = "mkdocs-coverage" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extras = ["python"] },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "tabulate" },
+]
+test = [
+    { name = "genbadge", extras = ["all"] },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist", extras = ["psutil"] },
+]
+
+[[package]]
 name = "ghp-import"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2086,75 +2155,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2f/db/98b5c277be99dd18bfd91dd04e1b759cad18d1a338188c936e92f921c7e2/referencing-0.36.2.tar.gz", hash = "sha256:df2e89862cd09deabbdba16944cc3f10feb6b3e6f18e902f7cc25609a34775aa", size = 74744, upload-time = "2025-01-25T08:48:16.138Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/b1/3baf80dc6d2b7bc27a95a67752d0208e410351e3feb4eb78de5f77454d8d/referencing-0.36.2-py3-none-any.whl", hash = "sha256:e8699adbbf8b5c7de96d8ffa0eb5c158b3beafce084968e2ea8bb08c6794dcd0", size = 26775, upload-time = "2025-01-25T08:48:14.241Z" },
-]
-
-[[package]]
-name = "repo-template"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pydantic" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "notebook" },
-    { name = "poethepoet" },
-    { name = "pre-commit" },
-]
-docs = [
-    { name = "anyio" },
-    { name = "fire" },
-    { name = "griffe-typingdoc" },
-    { name = "markdown-exec", extra = ["ansi"] },
-    { name = "mkdocs-autorefs" },
-    { name = "mkdocs-coverage" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "rich" },
-    { name = "ruff" },
-    { name = "tabulate" },
-]
-test = [
-    { name = "genbadge", extra = ["all"] },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist", extra = ["psutil"] },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pydantic" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "notebook" },
-    { name = "poethepoet" },
-    { name = "pre-commit" },
-]
-docs = [
-    { name = "anyio" },
-    { name = "fire" },
-    { name = "griffe-typingdoc" },
-    { name = "markdown-exec", extras = ["ansi"] },
-    { name = "mkdocs-autorefs" },
-    { name = "mkdocs-coverage" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extras = ["python"] },
-    { name = "rich" },
-    { name = "ruff" },
-    { name = "tabulate" },
-]
-test = [
-    { name = "genbadge", extras = ["all"] },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist", extras = ["psutil"] },
 ]
 
 [[package]]
