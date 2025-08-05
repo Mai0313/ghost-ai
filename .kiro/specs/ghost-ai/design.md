@@ -28,25 +28,39 @@ graph TB
             ARM --> AS[音頻處理]
         end
 
-        subgraph "API 客戶端"
-            SC --> AC[API Client]
-            TI --> AC
-            AR --> AC
-            AC --> HTTP[HTTP 請求]
+        subgraph "OpenAI 直接整合"
+            SC --> OC[OpenAI Client]
+            TI --> OC
+            AR --> OC
+            OC --> OAI[OpenAI API]
         end
     end
 
-    subgraph "後端 API (./src/ghost_ai/)"
-        HTTP --> API[FastAPI 路由]
+    subgraph "外部 API"
+        OAI --> VISION[Vision API]
+        OAI --> WHISPER[Whisper API]
+        OAI --> CHAT[Chat Completion API]
+    end
+
+    subgraph "回應處理"
+        VISION --> RES[分析結果]
+        WHISPER --> RES
+        CHAT --> RES
+        RES --> UI[用戶界面]
+        UI --> HIM
+    end
+
+    subgraph "後端 API (./src/ghost_ai/) - 後期擴展"
+        style "後端 API (./src/ghost_ai/) - 後期擴展" fill:#f9f9f9,stroke:#ccc,stroke-dasharray: 5 5
         
-        subgraph "API 處理層"
-            API --> IAH[圖片分析處理器]
+        subgraph "API 處理層 (後期)"
+            API[FastAPI 路由] --> IAH[圖片分析處理器]
             API --> AAH[音頻分析處理器]
             API --> UH[上傳處理器]
             API --> VH[驗證處理器]
         end
 
-        subgraph "服務層"
+        subgraph "服務層 (後期)"
             IAH --> OAS[OpenAI 服務]
             IAH --> IPS[圖片處理服務]
             AAH --> STT[語音轉文字服務]
@@ -54,25 +68,12 @@ graph TB
             UH --> FS[檔案服務]
             VH --> VS[驗證服務]
         end
-
-        subgraph "外部 API"
-            OAS --> OAI[OpenAI API]
-            STT --> WHISPER[Whisper API]
-        end
-    end
-
-    subgraph "回應處理"
-        OAI --> RES[分析結果]
-        WHISPER --> RES
-        RES --> HTTP
-        HTTP --> UI[用戶界面]
-        UI --> HIM
     end
 ```
 
 ### 技術棧選擇
 
-**前端 (./frontend/ - TypeScript/Electron)**
+**前端 (./frontend/ - TypeScript/Electron) - 主要開發重點**
 
 - **Electron**: 提供跨平台桌面應用支援和系統級 API 存取
 - **TypeScript**: 型別安全和更好的開發體驗
@@ -81,18 +82,19 @@ graph TB
 - **electron-screenshot-desktop**: 處理螢幕截圖
 - **node-record-lpcm16**: 音頻錄音功能
 - **electron-window-state**: 視窗狀態管理和隱藏功能
-- **axios**: HTTP 客戶端，與後端 API 通訊
+- **openai**: OpenAI 官方 JavaScript SDK，直接呼叫 Chat Completion API
+- **axios**: HTTP 客戶端，用於 API 通訊
 
-**後端 (./src/ghost_ai/ - Python)**
+**後端 (./src/ghost_ai/ - Python) - 後期擴展選項**
 
-- **FastAPI**: 高效能 API 框架，支援自動文件生成
+- **FastAPI**: 高效能 API 框架，支援自動文件生成（後期實作）
 - **uv**: Python 套件管理器，替代 pip 和 requirements.txt
-- **OpenAI Python SDK**: 官方 SDK 處理圖片分析和語音轉文字
-- **Pillow**: 圖片處理和驗證
-- **pydub**: 音頻處理和格式轉換
-- **uvicorn**: ASGI 伺服器
-- **python-multipart**: 處理檔案上傳
-- **whisper**: 本地語音轉文字備選方案
+- **OpenAI Python SDK**: 官方 SDK 處理圖片分析和語音轉文字（後期實作）
+- **Pillow**: 圖片處理和驗證（後期實作）
+- **pydub**: 音頻處理和格式轉換（後期實作）
+- **uvicorn**: ASGI 伺服器（後期實作）
+- **python-multipart**: 處理檔案上傳（後期實作）
+- **whisper**: 本地語音轉文字備選方案（後期實作）
 
 ## Components and Interfaces
 
@@ -195,30 +197,53 @@ interface AudioDevice {
 }
 ```
 
-#### 5. API Client (./frontend/src/shared/api-client.ts)
+#### 5. OpenAI Client (./frontend/src/shared/openai-client.ts)
 
 ```typescript
-interface APIClient {
+interface OpenAIClient {
   // 基礎配置
+  apiKey: string;
   baseURL: string;
   timeout: number;
   
-  // 圖片分析 API
+  // 圖片分析 API (Vision)
   analyzeImageWithText(imageBuffer: Buffer, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
-  uploadImage(imageBuffer: Buffer): Promise<UploadResponse>;
+  analyzeImageBase64(imageBase64: string, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
   
-  // 音頻處理 API
+  // 音頻處理 API (Whisper)
   transcribeAudio(audioBuffer: Buffer): Promise<TranscriptionResult>;
-  analyzeAudio(audioBuffer: Buffer): Promise<AudioAnalysisResult>;
-  uploadAudio(audioBuffer: Buffer): Promise<UploadResponse>;
+  transcribeAudioBase64(audioBase64: string): Promise<TranscriptionResult>;
   
-  // 狀態查詢 API
-  getAnalysisResult(requestId: string): Promise<AnalysisResult>;
-  getServerHealth(): Promise<HealthStatus>;
+  // Chat Completion API
+  chatCompletion(messages: ChatMessage[], model?: string): Promise<ChatCompletionResult>;
   
   // 錯誤處理
   handleApiError(error: any): Promise<ErrorResponse>;
   retry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T>;
+}
+
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string | Array<{
+    type: 'text' | 'image_url';
+    text?: string;
+    image_url?: {
+      url: string;
+      detail?: 'low' | 'high' | 'auto';
+    };
+  }>;
+}
+
+interface ChatCompletionResult {
+  requestId: string;
+  content: string;
+  model: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  timestamp: string;
 }
 
 interface UploadResponse {

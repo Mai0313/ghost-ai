@@ -1,13 +1,13 @@
 # Implementation Plan
 
-- [ ] 1. 建立專案結構和核心介面
-  - 確認 `./src/ghost_ai/` 目錄作為後端 Python API 專案（已存在）
-  - 在 `./src/ghost_ai/` 中建立 FastAPI 結構：`app/`, `services/`, `models/`, `utils/`
+- [ ] 1. 建立前端專案結構和核心介面
   - 創建 `./frontend/` 目錄作為獨立前端 Electron 專案
   - 在 `./frontend/` 中建立 Electron 結構：`src/main/`, `src/renderer/`, `src/shared/`
-  - 定義支援三個核心功能的 TypeScript 介面檔案和 Python 資料模型檔案
-  - 設定前端 `package.json`, `tsconfig.json` 和後端使用 `uv` 管理的 `pyproject.toml`
-  - 配置前後端分離的 API 通訊架構
+  - 定義支援三個核心功能的 TypeScript 介面檔案
+  - 設定前端 `package.json`, `tsconfig.json` 和必要的依賴套件
+  - 安裝 OpenAI SDK 和其他必要的前端套件（electron, typescript, react 等）
+  - 配置環境變數支援：`OPENAI_BASE_URL` 和 `OPENAI_API_KEY`
+  - 配置直接呼叫 OpenAI Chat Completion API 的架構
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
 - [ ] 2. 實作全域熱鍵系統
@@ -99,36 +99,28 @@
   - 實作提示詞的動態替換和變數支援
   - _Requirements: 5.3, 5.4_
 
-- [ ] 7. 實作後端 API 服務
-- [ ] 7.1 建立 FastAPI 應用程式架構
-  - 在 `./src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
-  - 建立支援文字圖片分析和音頻處理的路由
-  - 實作 CORS 中介軟體以支援前端跨域請求
-  - 使用 `uv` 管理 Python 套件依賴
-  - 創建環境變數和設定管理系統
+- [ ] 7. 實作 OpenAI 直接整合服務
+- [ ] 7.1 建立 OpenAI 客戶端服務
+  - 在 `./frontend/src/shared/openai-client.ts` 建立 OpenAI 客戶端
+  - 實作 Chat Completion API 的直接呼叫邏輯
+  - 加入環境變數配置：`OPENAI_BASE_URL` 和 `OPENAI_API_KEY`
+  - 創建 API 金鑰管理和安全儲存機制
+  - 實作錯誤處理和重試機制
   - _Requirements: 6.1, 6.2, 8.3_
 
-- [ ] 7.2 實作圖片和文字分析服務
-  - 在 `./src/ghost_ai/services/` 建立 ImageAnalysisHandler 和相關服務
+- [ ] 7.2 實作圖片和文字分析整合
   - 整合 OpenAI Vision API 進行圖片分析
-  - 實作文字和圖片的綜合分析邏輯
-  - 加入分析結果的格式化和後處理
+  - 實作文字和圖片的綜合分析邏輯，直接在前端處理
+  - 加入圖片 base64 編碼和格式處理
+  - 創建分析結果的格式化和顯示邏輯
   - _Requirements: 6.1, 6.2, 6.4_
 
-- [ ] 7.3 實作音頻處理服務
-  - 在 `./src/ghost_ai/services/` 建立 AudioAnalysisHandler 和音頻處理服務
+- [ ] 7.3 實作音頻處理整合
   - 整合 OpenAI Whisper API 進行語音轉文字
-  - 實作音頻格式驗證和轉換功能
-  - 加入音頻品質檢測和優化處理
+  - 實作音頻格式驗證和轉換功能（在前端處理）
+  - 加入音頻 base64 編碼和上傳邏輯
+  - 創建語音轉文字結果的處理和顯示
   - _Requirements: 6.5_
-
-- [ ] 7.4 實作前後端 API 通訊
-  - 在 `./frontend/src/shared/api-client.ts` 建立 API 客戶端
-  - 實作圖片上傳和分析請求的 HTTP 通訊
-  - 加入音頻上傳和轉錄請求的 HTTP 通訊
-  - 創建錯誤處理和重試機制
-  - 實作請求/回應的型別安全
-  - _Requirements: 1.3, 1.5, 2.5, 6.1, 6.2, 6.4, 6.5_
 
 - [ ] 8. 實作系統整合與穩定性
 - [ ] 8.1 建立系統托盤和狀態管理
@@ -178,7 +170,7 @@
 - [ ] 11. 效能最佳化和部署準備
 - [ ] 11.1 實作效能最佳化
   - 加入前端啟動時間和記憶體使用最佳化
-  - 實作後端 API 回應時間和資源使用最佳化
+  - 實作 OpenAI API 呼叫的效能最佳化和快取機制
   - 建立效能監控和分析工具
   - 創建資源使用的動態調整機制
   - _Requirements: 7.1, 7.2, 7.3_
@@ -189,3 +181,33 @@
   - 加入應用程式簽名和安全性驗證
   - 創建安裝程式和更新機制
   - _Requirements: 7.5, 8.1_
+
+- [ ] 12. 後端 API 服務開發（後期擴展）
+- [ ] 12.1 建立 FastAPI 應用程式架構
+  - 在 `./src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
+  - 建立支援文字圖片分析和音頻處理的路由
+  - 實作 CORS 中介軟體以支援前端跨域請求
+  - 使用 `uv` 管理 Python 套件依賴
+  - 創建環境變數和設定管理系統
+  - _Requirements: 6.1, 6.2, 8.3_
+
+- [ ] 12.2 實作後端圖片和文字分析服務
+  - 在 `./src/ghost_ai/services/` 建立 ImageAnalysisHandler 和相關服務
+  - 整合 OpenAI Vision API 進行圖片分析（後端版本）
+  - 實作文字和圖片的綜合分析邏輯
+  - 加入分析結果的格式化和後處理
+  - _Requirements: 6.1, 6.2, 6.4_
+
+- [ ] 12.3 實作後端音頻處理服務
+  - 在 `./src/ghost_ai/services/` 建立 AudioAnalysisHandler 和音頻處理服務
+  - 整合 OpenAI Whisper API 進行語音轉文字（後端版本）
+  - 實作音頻格式驗證和轉換功能
+  - 加入音頻品質檢測和優化處理
+  - _Requirements: 6.5_
+
+- [ ] 12.4 實作前後端 API 通訊切換
+  - 修改 `./frontend/src/shared/api-client.ts` 支援後端 API 呼叫
+  - 實作前端與後端 API 的切換機制
+  - 加入後端 API 的錯誤處理和重試機制
+  - 創建前端直接呼叫和後端 API 的配置選項
+  - _Requirements: 1.3, 1.5, 2.5, 6.1, 6.2, 6.4, 6.5_
