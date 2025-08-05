@@ -10,50 +10,69 @@ Ghost AI 是一個智能桌面助手系統，提供三個核心功能模組：�
 
 ```mermaid
 graph TB
-    subgraph "用戶交互層"
-        U[User] --> HK1[文字輸入熱鍵]
-        U --> HK2[語音錄音熱鍵]
-        U --> HK3[界面隱藏熱鍵]
+    subgraph "前端應用 (./frontend/)"
+        subgraph "用戶交互層"
+            U[User] --> HK1[文字輸入熱鍵]
+            U --> HK2[語音錄音熱鍵]
+            U --> HK3[界面隱藏熱鍵]
+        end
+
+        subgraph "前端核心模組"
+            HK1 --> TIM[文字輸入模組]
+            HK2 --> ARM[音頻錄音模組]
+            HK3 --> HIM[界面隱藏模組]
+            
+            TIM --> SC[螢幕截圖]
+            TIM --> TI[文字輸入框]
+            ARM --> AR[音頻捕獲]
+            ARM --> AS[音頻處理]
+        end
+
+        subgraph "API 客戶端"
+            SC --> AC[API Client]
+            TI --> AC
+            AR --> AC
+            AC --> HTTP[HTTP 請求]
+        end
     end
 
-    subgraph "核心功能模組"
-        HK1 --> TIM[文字輸入模組]
-        HK2 --> ARM[音頻錄音模組]
-        HK3 --> HIM[界面隱藏模組]
+    subgraph "後端 API (./src/ghost_ai/)"
+        HTTP --> API[FastAPI 路由]
         
-        TIM --> SC[螢幕截圖]
-        TIM --> TI[文字輸入框]
-        ARM --> AR[音頻捕獲]
-        ARM --> AS[音頻存儲]
-    end
+        subgraph "API 處理層"
+            API --> IAH[圖片分析處理器]
+            API --> AAH[音頻分析處理器]
+            API --> UH[上傳處理器]
+            API --> VH[驗證處理器]
+        end
 
-    subgraph "處理層"
-        SC --> IP[圖片處理]
-        TI --> TP[文字處理]
-        AR --> AP[音頻處理]
-        
-        IP --> AI[AI分析引擎]
-        TP --> AI
-        AP --> AI
-    end
+        subgraph "服務層"
+            IAH --> OAS[OpenAI 服務]
+            IAH --> IPS[圖片處理服務]
+            AAH --> STT[語音轉文字服務]
+            AAH --> APS[音頻處理服務]
+            UH --> FS[檔案服務]
+            VH --> VS[驗證服務]
+        end
 
-    subgraph "後端服務"
-        AI --> API[FastAPI後端]
-        API --> OAI[OpenAI API]
-        API --> STT[語音轉文字]
-        API --> VAL[驗證與安全]
+        subgraph "外部 API"
+            OAS --> OAI[OpenAI API]
+            STT --> WHISPER[Whisper API]
+        end
     end
 
     subgraph "回應處理"
         OAI --> RES[分析結果]
-        RES --> UI[用戶界面]
+        WHISPER --> RES
+        RES --> HTTP
+        HTTP --> UI[用戶界面]
         UI --> HIM
     end
 ```
 
 ### 技術棧選擇
 
-**前端 (TypeScript/Electron)**
+**前端 (./frontend/ - TypeScript/Electron)**
 
 - **Electron**: 提供跨平台桌面應用支援和系統級 API 存取
 - **TypeScript**: 型別安全和更好的開發體驗
@@ -62,10 +81,12 @@ graph TB
 - **electron-screenshot-desktop**: 處理螢幕截圖
 - **node-record-lpcm16**: 音頻錄音功能
 - **electron-window-state**: 視窗狀態管理和隱藏功能
+- **axios**: HTTP 客戶端，與後端 API 通訊
 
-**後端 (Python)**
+**後端 (./src/ghost_ai/ - Python)**
 
 - **FastAPI**: 高效能 API 框架，支援自動文件生成
+- **uv**: Python 套件管理器，替代 pip 和 requirements.txt
 - **OpenAI Python SDK**: 官方 SDK 處理圖片分析和語音轉文字
 - **Pillow**: 圖片處理和驗證
 - **pydub**: 音頻處理和格式轉換
@@ -75,7 +96,7 @@ graph TB
 
 ## Components and Interfaces
 
-### 前端組件架構
+### 前端組件架構 (./frontend/)
 
 ```mermaid
 graph TD
@@ -85,6 +106,7 @@ graph TD
         MP --> SM[Screenshot Manager]
         MP --> ARM[Audio Recording Manager]
         MP --> HM[Hide Manager]
+        MP --> AC[API Client]
     end
 
     subgraph "Electron Renderer Process"
@@ -96,6 +118,11 @@ graph TD
         RP --> HC[Hide Control Component]
     end
 
+    subgraph "API 通訊層"
+        AC --> HTTP[HTTP Client]
+        HTTP --> BE[後端 API]
+    end
+
     subgraph "功能模組"
         GHM --> TIM[文字輸入模組]
         GHM --> ARM2[錄音模組]
@@ -103,6 +130,7 @@ graph TD
     end
 
     MP <--> RP
+    RP --> AC
 ```
 
 #### 1. Global Hotkey Manager
@@ -167,44 +195,76 @@ interface AudioDevice {
 }
 ```
 
-#### 5. API Client
+#### 5. API Client (./frontend/src/shared/api-client.ts)
 
 ```typescript
 interface APIClient {
+  // 基礎配置
+  baseURL: string;
+  timeout: number;
+  
+  // 圖片分析 API
   analyzeImageWithText(imageBuffer: Buffer, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
-  analyzeAudio(audioBuffer: Buffer): Promise<AudioAnalysisResult>;
+  uploadImage(imageBuffer: Buffer): Promise<UploadResponse>;
+  
+  // 音頻處理 API
   transcribeAudio(audioBuffer: Buffer): Promise<TranscriptionResult>;
-  uploadImage(imageBuffer: Buffer): Promise<string>;
-  uploadAudio(audioBuffer: Buffer): Promise<string>;
+  analyzeAudio(audioBuffer: Buffer): Promise<AudioAnalysisResult>;
+  uploadAudio(audioBuffer: Buffer): Promise<UploadResponse>;
+  
+  // 狀態查詢 API
   getAnalysisResult(requestId: string): Promise<AnalysisResult>;
+  getServerHealth(): Promise<HealthStatus>;
+  
+  // 錯誤處理
+  handleApiError(error: any): Promise<ErrorResponse>;
+  retry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T>;
+}
+
+interface UploadResponse {
+  requestId: string;
+  uploadUrl?: string;
+  status: 'uploaded' | 'processing' | 'completed' | 'error';
+}
+
+interface HealthStatus {
+  status: 'healthy' | 'unhealthy';
+  version: string;
+  uptime: number;
 }
 
 interface AudioAnalysisResult {
+  requestId: string;
   transcription: string;
   analysis: string;
   confidence: number;
   duration: number;
+  timestamp: string;
 }
 
 interface TranscriptionResult {
+  requestId: string;
   text: string;
   confidence: number;
   language: string;
+  duration: number;
+  timestamp: string;
 }
 ```
 
-### 後端組件架構
+### 後端組件架構 (./src/ghost_ai/)
 
 ```mermaid
 graph TD
-    subgraph "FastAPI Application"
+    subgraph "FastAPI Application (./src/ghost_ai/app/)"
         API[FastAPI Router] --> IAH[Image Analysis Handler]
         API --> AAH[Audio Analysis Handler]
         API --> UH[Upload Handler]
         API --> VH[Validation Handler]
+        API --> CORS[CORS Middleware]
     end
 
-    subgraph "Services"
+    subgraph "Services (./src/ghost_ai/services/)"
         IAH --> OAS[OpenAI Service]
         IAH --> IPS[Image Processing Service]
         AAH --> STT[Speech-to-Text Service]
@@ -213,11 +273,24 @@ graph TD
         VH --> VS[Validation Service]
     end
 
-    subgraph "Security Layer"
+    subgraph "Models (./src/ghost_ai/models/)"
+        API --> DM[Data Models]
+        DM --> REQ[Request Models]
+        DM --> RES[Response Models]
+    end
+
+    subgraph "Utils (./src/ghost_ai/utils/)"
         VS --> RL[Rate Limiter]
         VS --> IV[Image Validator]
         VS --> AV[Audio Validator]
         FS --> MC[Memory Cleaner]
+        MC --> LOG[Logger]
+    end
+
+    subgraph "Configuration"
+        API --> CFG[Config Manager]
+        CFG --> ENV[Environment Variables]
+        CFG --> UV[UV Package Manager]
     end
 ```
 

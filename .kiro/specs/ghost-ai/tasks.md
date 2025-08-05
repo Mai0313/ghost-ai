@@ -1,19 +1,20 @@
 # Implementation Plan
 
 - [ ] 1. 建立專案結構和核心介面
-  - 創建 `./src/ghost_ai/` 目錄作為後端 Python API 專案
-  - 在 `ghost_ai/` 中建立 FastAPI 結構：`app/`, `services/`, `models/`, `utils/`
-  - 創建 `./src/ghost_ui/` 目錄作為前端 Electron 專案
-  - 在 `ghost_ui/` 中建立 Electron 結構：`src/main/`, `src/renderer/`, `src/shared/`
+  - 確認 `./src/ghost_ai/` 目錄作為後端 Python API 專案（已存在）
+  - 在 `./src/ghost_ai/` 中建立 FastAPI 結構：`app/`, `services/`, `models/`, `utils/`
+  - 創建 `./frontend/` 目錄作為獨立前端 Electron 專案
+  - 在 `./frontend/` 中建立 Electron 結構：`src/main/`, `src/renderer/`, `src/shared/`
   - 定義支援三個核心功能的 TypeScript 介面檔案和 Python 資料模型檔案
-  - 設定各自的 `package.json`, `requirements.txt`, `tsconfig.json`, `pyproject.toml`
+  - 設定前端 `package.json`, `tsconfig.json` 和後端使用 `uv` 管理的 `pyproject.toml`
+  - 配置前後端分離的 API 通訊架構
   - _Requirements: 1.1, 2.1, 3.1, 4.1_
 
 - [ ] 2. 實作全域熱鍵系統
 - [ ] 2.1 建立全域熱鍵管理器
-  - 在 `src/ghost_ui/src/main/hotkey-manager.ts` 建立 GlobalHotkeyManager 類別
+  - 在 `./frontend/src/main/hotkey-manager.ts` 建立 GlobalHotkeyManager 類別
   - 實作三個核心功能的熱鍵註冊：文字輸入、語音錄音、界面隱藏
-  - 在 `src/ghost_ui/src/shared/types.ts` 定義熱鍵相關的 TypeScript 介面
+  - 在 `./frontend/src/shared/types.ts` 定義熱鍵相關的 TypeScript 介面
   - 加入熱鍵衝突檢測和替代方案邏輯
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
@@ -26,14 +27,14 @@
 
 - [ ] 3. 實作文字輸入與螢幕截圖分析功能
 - [ ] 3.1 建立文字輸入界面
-  - 在 `src/ghost_ui/src/renderer/components/` 創建 TextInputComponent
+  - 在 `./frontend/src/renderer/components/` 創建 TextInputComponent
   - 實作熱鍵觸發的輸入框顯示邏輯
   - 加入文字輸入驗證和送出機制
   - 創建輸入框的樣式和動畫效果
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 3.2 實作螢幕截圖管理器
-  - 在 `src/ghost_ui/src/main/screenshot-manager.ts` 建立 ScreenshotManager 類別
+  - 在 `./frontend/src/main/screenshot-manager.ts` 建立 ScreenshotManager 類別
   - 實作自動螢幕截圖功能，當用戶送出文字時觸發
   - 加入記憶體中的圖片處理和緩衝區管理
   - 創建截圖失敗的錯誤處理和重試機制
@@ -48,7 +49,7 @@
 
 - [ ] 4. 實作語音錄音功能
 - [ ] 4.1 建立音頻錄音管理器
-  - 在 `src/ghost_ui/src/main/audio-manager.ts` 建立 AudioRecordingManager 類別
+  - 在 `./frontend/src/main/audio-manager.ts` 建立 AudioRecordingManager 類別
   - 實作麥克風權限請求和音頻設備檢測
   - 加入錄音開始/停止的控制邏輯
   - 創建音頻數據的記憶體處理和格式轉換
@@ -70,7 +71,7 @@
 
 - [ ] 5. 實作隱藏式操作界面
 - [ ] 5.1 建立界面隱藏管理器
-  - 在 `src/ghost_ui/src/main/hide-manager.ts` 建立 HideManager 類別
+  - 在 `./frontend/src/main/hide-manager.ts` 建立 HideManager 類別
   - 實作界面完全隱藏和恢復顯示的邏輯
   - 加入螢幕截圖和螢幕分享時的隱藏機制
   - 創建隱藏狀態的持久化儲存
@@ -100,25 +101,34 @@
 
 - [ ] 7. 實作後端 API 服務
 - [ ] 7.1 建立 FastAPI 應用程式架構
-  - 在 `src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
+  - 在 `./src/ghost_ai/app/main.py` 創建 FastAPI 主應用程式
   - 建立支援文字圖片分析和音頻處理的路由
-  - 實作 CORS 和安全性中介軟體
+  - 實作 CORS 中介軟體以支援前端跨域請求
+  - 使用 `uv` 管理 Python 套件依賴
   - 創建環境變數和設定管理系統
   - _Requirements: 6.1, 6.2, 8.3_
 
 - [ ] 7.2 實作圖片和文字分析服務
-  - 在 `src/ghost_ai/services/` 建立 ImageAnalysisHandler 和相關服務
+  - 在 `./src/ghost_ai/services/` 建立 ImageAnalysisHandler 和相關服務
   - 整合 OpenAI Vision API 進行圖片分析
   - 實作文字和圖片的綜合分析邏輯
   - 加入分析結果的格式化和後處理
   - _Requirements: 6.1, 6.2, 6.4_
 
 - [ ] 7.3 實作音頻處理服務
-  - 建立 AudioAnalysisHandler 和音頻處理服務
+  - 在 `./src/ghost_ai/services/` 建立 AudioAnalysisHandler 和音頻處理服務
   - 整合 OpenAI Whisper API 進行語音轉文字
   - 實作音頻格式驗證和轉換功能
   - 加入音頻品質檢測和優化處理
   - _Requirements: 6.5_
+
+- [ ] 7.4 實作前後端 API 通訊
+  - 在 `./frontend/src/shared/api-client.ts` 建立 API 客戶端
+  - 實作圖片上傳和分析請求的 HTTP 通訊
+  - 加入音頻上傳和轉錄請求的 HTTP 通訊
+  - 創建錯誤處理和重試機制
+  - 實作請求/回應的型別安全
+  - _Requirements: 1.3, 1.5, 2.5, 6.1, 6.2, 6.4, 6.5_
 
 - [ ] 8. 實作系統整合與穩定性
 - [ ] 8.1 建立系統托盤和狀態管理
