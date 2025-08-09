@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Ghost AI是一個智能桌面助手系統，提供三個核心功能：文字輸入與螢幕截圖分析、語音錄音與實時對話、以及隱藏式操作界面。系統通過全域熱鍵操作，為用戶提供無縫的AI輔助體驗，支援自定義提示詞和多模態輸入處理。所有功能都設計為隱蔽運行，確保不會在螢幕分享或截圖中被發現。
+Ghost AI是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手系統，提供三個核心功能：文字輸入與螢幕截圖分析、語音錄音與實時對話、以及隱藏式操作界面。系統採用單一應用程式架構，直接整合 OpenAI API，通過全域熱鍵操作為用戶提供無縫的AI輔助體驗。支援自定義提示詞和多模態輸入處理，所有功能都設計為隱蔽運行，確保不會在螢幕分享或截圖中被發現，並可封裝為全平台可用的桌面應用程式。
 
 ## Requirements
 
@@ -72,23 +72,24 @@ Ghost AI是一個智能桌面助手系統，提供三個核心功能：文字輸
 
 #### Acceptance Criteria
 
-1. WHEN 後端收到截圖和提示詞 THEN 系統 SHALL 透過OpenAI API處理圖片分析請求
-2. WHEN OpenAI回傳分析結果 THEN 系統 SHALL 將結果傳送回前端顯示
+1. WHEN 應用程式收到截圖和提示詞 THEN 系統 SHALL 直接透過OpenAI API處理圖片分析請求
+2. WHEN OpenAI回傳分析結果 THEN 系統 SHALL 在應用程式界面中顯示結果
 3. IF API請求失敗 THEN 系統 SHALL 顯示適當的錯誤訊息並提供重試選項
 4. WHEN 分析完成 THEN 用戶 SHALL 能夠複製結果或進行後續操作
 5. WHEN 處理音頻輸入 THEN 系統 SHALL 支援語音轉文字並整合到分析流程
 
 ### Requirement 7：系統整合與穩定性
 
-**User Story:** 作為用戶，我希望系統能夠穩定運行，並與作業系統良好整合，提供可靠的服務。
+**User Story:** 作為用戶，我希望系統能夠穩定運行，並與作業系統良好整合，提供可靠的跨平台服務。
 
 #### Acceptance Criteria
 
-1. WHEN 系統啟動 THEN 系統 SHALL 在系統托盤中顯示圖示並提供基本控制
+1. WHEN 應用程式啟動 THEN 系統 SHALL 在系統托盤中顯示圖示並提供基本控制
 2. WHEN 系統遇到錯誤 THEN 系統 SHALL 記錄錯誤日誌並嘗試自動恢復
 3. WHEN 用戶登出或關機 THEN 系統 SHALL 正確清理資源並保存設定
 4. IF 系統崩潰 THEN 重啟後 SHALL 能恢復到上次的工作狀態
 5. WHEN 系統更新 THEN 系統 SHALL 保留用戶的所有自定義設定
+6. WHEN 應用程式打包 THEN 系統 SHALL 支援 Windows、macOS 和 Linux 平台
 
 ### Requirement 8：隱私保護與安全性
 
