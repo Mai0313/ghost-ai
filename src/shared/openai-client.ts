@@ -87,7 +87,7 @@ export class OpenAIClient {
     };
   }
 
-  async transcribeAudio(audioBuffer: Buffer): Promise<TranscriptionResult> {
+  async transcribeAudio(_audioBuffer: Buffer): Promise<TranscriptionResult> {
     this.ensureClient();
     const requestId = crypto.randomUUID();
 

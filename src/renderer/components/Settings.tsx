@@ -47,12 +47,17 @@ export function Settings() {
     <div>
       <h4>OpenAI Settings</h4>
       <div style={{ display: 'grid', gap: 8 }}>
-        <label>API Key</label>
-        <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-        <label>Base URL</label>
-        <input value={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
-        <label>Model</label>
-        <input value={model} onChange={(e) => setModel(e.target.value)} />
+        <label htmlFor="openai-api-key">API Key</label>
+        <input
+          id="openai-api-key"
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+        <label htmlFor="openai-base-url">Base URL</label>
+        <input id="openai-base-url" value={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
+        <label htmlFor="openai-model">Model</label>
+        <input id="openai-model" value={model} onChange={(e) => setModel(e.target.value)} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button onClick={onSave}>Save</button>

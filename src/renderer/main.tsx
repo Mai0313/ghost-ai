@@ -156,8 +156,11 @@ function App() {
       >
         {tab === 'ask' && (
           <div>
-            <label style={{ color: '#BDBDBD', fontSize: 12 }}>Prompt</label>
+            <label htmlFor="ask-prompt" style={{ color: '#BDBDBD', fontSize: 12 }}>
+              Prompt
+            </label>
             <textarea
+              id="ask-prompt"
               placeholder="Ask about your screen..."
               rows={3}
               style={{
@@ -172,8 +175,11 @@ function App() {
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
-            <label style={{ color: '#BDBDBD', fontSize: 12 }}>Custom Prompt</label>
+            <label htmlFor="ask-custom" style={{ color: '#BDBDBD', fontSize: 12 }}>
+              Custom Prompt
+            </label>
             <input
+              id="ask-custom"
               style={{
                 width: '100%',
                 marginBottom: 8,
