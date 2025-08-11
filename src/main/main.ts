@@ -90,7 +90,11 @@ app.whenReady().then(async () => {
     {
       label: 'File',
       submenu: [
-        { label: 'Show Overlay', accelerator: 'Ctrl+Shift+S', click: () => mainWindow?.webContents.send('text-input:show') },
+        {
+          label: 'Show Overlay',
+          accelerator: 'Ctrl+Shift+S',
+          click: () => mainWindow?.webContents.send('text-input:show'),
+        },
         { type: 'separator' },
         { role: 'quit' },
       ],
@@ -151,15 +155,20 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
 
 ipcMain.handle('openai:get-config', () => loadOpenAIConfig());
 
-ipcMain.handle('capture:analyze', async (_, payload: { textPrompt: string; customPrompt: string }) => {
-  ensureHiddenOnCapture();
-  const image = await captureScreen();
-  const result = await openAIClient.analyzeImageWithText(image, payload.textPrompt, payload.customPrompt);
-  return result;
-});
+ipcMain.handle(
+  'capture:analyze',
+  async (_, payload: { textPrompt: string; customPrompt: string }) => {
+    ensureHiddenOnCapture();
+    const image = await captureScreen();
+    const result = await openAIClient.analyzeImageWithText(
+      image,
+      payload.textPrompt,
+      payload.customPrompt,
+    );
+    return result;
+  },
+);
 
 ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
   return openAIClient.validateConfig(cfg);
 });
-
-

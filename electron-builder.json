@@ -5,9 +5,7 @@
     "output": "release",
     "buildResources": "build"
   },
-  "files": [
-    "dist/**/*"
-  ],
+  "files": ["dist/**/*"],
   "mac": {
     "target": ["dmg"],
     "category": "public.app-category.productivity"
@@ -19,5 +17,3 @@
     "target": ["AppImage", "deb"]
   }
 }
-
-

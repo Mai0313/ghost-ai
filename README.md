@@ -79,46 +79,45 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 1. **Clone the repository**
 
-    ```bash
-    git clone https://github.com/Mai0313/ghost_ai.git
-    cd ghost_ai
-    ```
+   ```bash
+   git clone https://github.com/Mai0313/ghost_ai.git
+   cd ghost_ai
+   ```
 
 2. **Install dependencies**
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 3. **Configure your OpenAI API settings**
 
-    The application will prompt you to configure your OpenAI API settings on first run:
-    - API Key
-    - Base URL (optional, defaults to https://api.openai.com/v1)
-    - Model selection
-    - Other preferences
-    
-    All settings are stored securely using Electron's built-in encryption.
+   The application will prompt you to configure your OpenAI API settings on first run:
+   - API Key
+   - Base URL (optional, defaults to https://api.openai.com/v1)
+   - Model selection
+   - Other preferences
+
+   All settings are stored securely using Electron's built-in encryption.
 
 ### Running the Application
 
 1. **Start the application in development mode**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 2. **Set up your hotkeys** (configurable in settings)
-
-    - **Text Input + Screenshot**: `Ctrl+Shift+S` (default)
-    - **Voice Recording**: `Ctrl+Shift+V` (default)  
-    - **Hide Interface**: `Ctrl+Shift+H` (default)
+   - **Text Input + Screenshot**: `Ctrl+Shift+S` (default)
+   - **Voice Recording**: `Ctrl+Shift+V` (default)
+   - **Hide Interface**: `Ctrl+Shift+H` (default)
 
 3. **Build for production**
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   npm run build
+   ```
 
 ### First Use
 
@@ -185,7 +184,7 @@ npm install <package> --save-dev        # Add dev dependency
 # Windows
 npm run build:win                       # Build Windows executable (.exe)
 
-# macOS  
+# macOS
 npm run build:mac                       # Build macOS application (.dmg)
 
 # Linux
@@ -229,7 +228,7 @@ Edit the hotkey configuration in the settings:
 
 ```typescript
 // Default hotkey: Ctrl+Shift+S
-const defaultHotkey = "CommandOrControl+Shift+S";
+const defaultHotkey = 'CommandOrControl+Shift+S';
 
 // Custom hotkey examples:
 // "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) or Cmd+Alt+G (macOS)
@@ -255,11 +254,11 @@ Customize privacy and security options:
 
 ```typescript
 interface PrivacySettings {
-  stealthMode: boolean;           // Hide from screen sharing
-  memoryOnly: boolean;            // Never save to disk
-  autoCleanup: boolean;           // Auto-clear memory traces
-  processHiding: boolean;         // Disguise process names
-  keyloggerDetection: boolean;    // Warn about monitoring software
+  stealthMode: boolean; // Hide from screen sharing
+  memoryOnly: boolean; // Never save to disk
+  autoCleanup: boolean; // Auto-clear memory traces
+  processHiding: boolean; // Disguise process names
+  keyloggerDetection: boolean; // Warn about monitoring software
 }
 ```
 
@@ -269,11 +268,11 @@ Set up default analysis prompts:
 
 ```typescript
 const defaultPrompts = {
-  general: "Describe what you see in this image",
-  code: "Explain the code shown in this screenshot",
-  ui: "Analyze the user interface design and suggest improvements",
-  error: "Help me understand and fix this error message",
-  text: "Extract and format the text from this image"
+  general: 'Describe what you see in this image',
+  code: 'Explain the code shown in this screenshot',
+  ui: 'Analyze the user interface design and suggest improvements',
+  error: 'Help me understand and fix this error message',
+  text: 'Extract and format the text from this image',
 };
 ```
 
@@ -283,25 +282,25 @@ const defaultPrompts = {
 
 1. **Install dependencies**
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 2. **Configure API settings**
 
-    The application will guide you through setting up your OpenAI API configuration on first run.
+   The application will guide you through setting up your OpenAI API configuration on first run.
 
 3. **Run in development mode**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 4. **Run tests**
 
-    ```bash
-    npm test
-    ```
+   ```bash
+   npm test
+   ```
 
 ### Building for Production
 
@@ -354,6 +353,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for privacy-conscious developers**
 
-*Ghost AI - Invisible AI-powered screenshot analysis*
+_Ghost AI - Invisible AI-powered screenshot analysis_
 
 </center>

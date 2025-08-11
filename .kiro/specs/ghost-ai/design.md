@@ -21,12 +21,12 @@ graph TB
             HK1 --> TIM[文字輸入模組]
             HK2 --> ARM[音頻錄音模組]
             HK3 --> HIM[界面隱藏模組]
-            
+
             TIM --> SC[螢幕截圖管理器]
             TIM --> WM[視窗管理器]
             ARM --> AR[音頻捕獲管理器]
             ARM --> AS[音頻處理器]
-            
+
             SC --> OC[OpenAI Client]
             AR --> OC
             OC --> OAI[OpenAI API]
@@ -36,7 +36,7 @@ graph TB
             WM --> TI[文字輸入界面]
             ARM --> ARI[音頻錄音界面]
             HIM --> HC[隱藏控制界面]
-            
+
             TI --> RC[結果顯示組件]
             ARI --> RC
             RC --> NC[通知組件]
@@ -209,21 +209,29 @@ interface OpenAIClient {
   initialize(config: OpenAIConfig): void;
   updateConfig(config: Partial<OpenAIConfig>): void;
   validateConfig(config: OpenAIConfig): Promise<boolean>;
-  
+
   // 圖片分析 API (Vision)
-  analyzeImageWithText(imageBuffer: Buffer, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
-  analyzeImageBase64(imageBase64: string, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
-  
+  analyzeImageWithText(
+    imageBuffer: Buffer,
+    textPrompt: string,
+    customPrompt: string,
+  ): Promise<AnalysisResult>;
+  analyzeImageBase64(
+    imageBase64: string,
+    textPrompt: string,
+    customPrompt: string,
+  ): Promise<AnalysisResult>;
+
   // 音頻處理 API (Whisper)
   transcribeAudio(audioBuffer: Buffer): Promise<TranscriptionResult>;
   transcribeAudioBase64(audioBase64: string): Promise<TranscriptionResult>;
-  
+
   // Chat Completion API
   chatCompletion(messages: ChatMessage[], model?: string): Promise<ChatCompletionResult>;
-  
+
   // 模型管理
   listAvailableModels(): Promise<ModelInfo[]>;
-  
+
   // 錯誤處理
   handleApiError(error: any): Promise<ErrorResponse>;
   retry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T>;
@@ -247,14 +255,16 @@ interface ModelInfo {
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string | Array<{
-    type: 'text' | 'image_url';
-    text?: string;
-    image_url?: {
-      url: string;
-      detail?: 'low' | 'high' | 'auto';
-    };
-  }>;
+  content:
+    | string
+    | Array<{
+        type: 'text' | 'image_url';
+        text?: string;
+        image_url?: {
+          url: string;
+          detail?: 'low' | 'high' | 'auto';
+        };
+      }>;
 }
 
 interface ChatCompletionResult {
@@ -466,150 +476,129 @@ interface ElectronBuildConfig {
 ### 錯誤處理策略
 
 1. **熱鍵註冊失敗**
-
-    - 自動嘗試替代熱鍵組合
-    - 提示使用者手動選擇其他組合
-    - 記錄錯誤但不中斷應用程式運行
+   - 自動嘗試替代熱鍵組合
+   - 提示使用者手動選擇其他組合
+   - 記錄錯誤但不中斷應用程式運行
 
 2. **截圖失敗**
-
-    - 重試機制（最多 3 次）
-    - 降級到視窗截圖模式
-    - 顯示友善的錯誤訊息
+   - 重試機制（最多 3 次）
+   - 降級到視窗截圖模式
+   - 顯示友善的錯誤訊息
 
 3. **網路連線問題**
-
-    - 自動重試機制
-    - 離線模式提示
-    - 快取請求以供稍後重試
+   - 自動重試機制
+   - 離線模式提示
+   - 快取請求以供稍後重試
 
 4. **OpenAI API 錯誤**
-
-    - 指數退避重試機制
-    - API 配額管理和使用量監控
-    - 降級到簡化分析模式
+   - 指數退避重試機制
+   - API 配額管理和使用量監控
+   - 降級到簡化分析模式
 
 5. **跨平台相容性錯誤**
-
-    - 平台特定的 API 降級處理
-    - 功能可用性檢測
-    - 平台特定的錯誤訊息
+   - 平台特定的 API 降級處理
+   - 功能可用性檢測
+   - 平台特定的錯誤訊息
 
 6. **系統資源不足**
-
-    - 記憶體使用監控和清理
-    - 優雅的功能降級
-    - 資源使用警告
+   - 記憶體使用監控和清理
+   - 優雅的功能降級
+   - 資源使用警告
 
 ## Testing Strategy
 
 ### 測試策略
 
 1. **單元測試**
-
-    - Jest + React Testing Library 測試 UI 組件
-    - Jest 測試 Main Process 的服務模組
-    - Mock Electron API 和系統呼叫
-    - Mock OpenAI API 回應
+   - Jest + React Testing Library 測試 UI 組件
+   - Jest 測試 Main Process 的服務模組
+   - Mock Electron API 和系統呼叫
+   - Mock OpenAI API 回應
 
 2. **整合測試**
-
-    - 測試 Main Process 和 Renderer Process 的 IPC 通訊
-    - 熱鍵功能測試
-    - 截圖功能測試
-    - OpenAI API 整合測試
+   - 測試 Main Process 和 Renderer Process 的 IPC 通訊
+   - 熱鍵功能測試
+   - 截圖功能測試
+   - OpenAI API 整合測試
 
 3. **端到端測試**
-
-    - Spectron 或 Playwright for Electron
-    - 完整使用者流程測試
-    - 跨平台相容性測試 (Windows, macOS, Linux)
+   - Spectron 或 Playwright for Electron
+   - 完整使用者流程測試
+   - 跨平台相容性測試 (Windows, macOS, Linux)
 
 4. **效能測試**
-
-    - 記憶體洩漏檢測
-    - 啟動時間測試
-    - API 回應時間測試
-    - 跨平台效能比較
+   - 記憶體洩漏檢測
+   - 啟動時間測試
+   - API 回應時間測試
+   - 跨平台效能比較
 
 ### 安全性測試
 
 1. **隱私保護測試**
-
-    - 驗證無磁碟儲存
-    - 記憶體清理驗證
-    - 網路流量分析
+   - 驗證無磁碟儲存
+   - 記憶體清理驗證
+   - 網路流量分析
 
 2. **熱鍵安全性測試**
-
-    - 鍵盤記錄軟體偵測測試
-    - 低層級鉤子功能驗證
-    - 系統日誌檢查
+   - 鍵盤記錄軟體偵測測試
+   - 低層級鉤子功能驗證
+   - 系統日誌檢查
 
 ## Security Considerations
 
 ### 隱私保護機制
 
 1. **記憶體處理**
-
-    - 所有圖片資料僅在記憶體中處理
-    - 使用安全的記憶體清理函數
-    - 避免虛擬記憶體交換
+   - 所有圖片資料僅在記憶體中處理
+   - 使用安全的記憶體清理函數
+   - 避免虛擬記憶體交換
 
 2. **網路安全**
-
-    - HTTPS 強制加密
-    - 憑證固定 (Certificate Pinning)
-    - 請求標頭混淆
+   - HTTPS 強制加密
+   - 憑證固定 (Certificate Pinning)
+   - 請求標頭混淆
 
 3. **程序隱蔽**
-
-    - 隨機程序名稱
-    - 隱藏視窗標題
-    - 最小化系統足跡
+   - 隨機程序名稱
+   - 隱藏視窗標題
+   - 最小化系統足跡
 
 ### 資料保護
 
 1. **暫存資料管理**
-
-    - 自動清理機制
-    - 加密暫存資料
-    - 定期記憶體掃描
+   - 自動清理機制
+   - 加密暫存資料
+   - 定期記憶體掃描
 
 2. **API 金鑰保護**
-
-    - 本地加密儲存（使用 Electron 的 safeStorage API）
-    - 執行時期記憶體加密
-    - 前端設定界面的安全輸入
-    - 設定匯出時的敏感資料過濾
+   - 本地加密儲存（使用 Electron 的 safeStorage API）
+   - 執行時期記憶體加密
+   - 前端設定界面的安全輸入
+   - 設定匯出時的敏感資料過濾
 
 ## Performance Optimization
 
 ### 效能最佳化
 
 1. **應用程式啟動最佳化**
-
-    - 延遲載入非關鍵組件
-    - 預載入常用資源
-    - 背景服務初始化
-    - 分階段初始化系統服務
+   - 延遲載入非關鍵組件
+   - 預載入常用資源
+   - 背景服務初始化
+   - 分階段初始化系統服務
 
 2. **記憶體使用最佳化**
-
-    - 及時釋放圖片和音頻緩衝區
-    - 組件生命週期管理
-    - 垃圾回收最佳化
-    - 記憶體使用監控
+   - 及時釋放圖片和音頻緩衝區
+   - 組件生命週期管理
+   - 垃圾回收最佳化
+   - 記憶體使用監控
 
 3. **跨平台效能最佳化**
-
-    - 平台特定的最佳化策略
-    - 原生 API 使用最佳化
-    - 資源使用的平台適配
+   - 平台特定的最佳化策略
+   - 原生 API 使用最佳化
+   - 資源使用的平台適配
 
 4. **API 通訊最佳化**
-
-    - 連線池管理
-    - 請求快取機制
-    - 壓縮和最佳化圖片/音頻數據
-    - 批次處理支援
+   - 連線池管理
+   - 請求快取機制
+   - 壓縮和最佳化圖片/音頻數據
+   - 批次處理支援

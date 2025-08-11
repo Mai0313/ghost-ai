@@ -33,7 +33,11 @@ export class OpenAIClient {
     if (!this.client || !this.config) throw new Error('OpenAIClient not initialized');
   }
 
-  async analyzeImageWithText(imageBuffer: Buffer, textPrompt: string, customPrompt: string): Promise<AnalysisResult> {
+  async analyzeImageWithText(
+    imageBuffer: Buffer,
+    textPrompt: string,
+    customPrompt: string,
+  ): Promise<AnalysisResult> {
     this.ensureClient();
     const requestId = crypto.randomUUID();
     const base64 = imageBuffer.toString('base64');
@@ -73,7 +77,7 @@ export class OpenAIClient {
     return {
       requestId,
       content: contentText,
-      model: response.model ?? (model ?? this.config.model),
+      model: response.model ?? model ?? this.config.model,
       timestamp: new Date().toISOString(),
     };
   }
@@ -92,5 +96,3 @@ export class OpenAIClient {
 }
 
 export const openAIClient = new OpenAIClient();
-
-

@@ -15,5 +15,3 @@ export class ImageProcessor {
     return imageBuffer.toString('base64');
   }
 }
-
-

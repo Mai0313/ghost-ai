@@ -2,9 +2,11 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AnalysisResult, OpenAIConfig } from '@shared/types';
 
 const api = {
-  updateOpenAIConfig: (config: Partial<OpenAIConfig>) => ipcRenderer.invoke('openai:update-config', config),
+  updateOpenAIConfig: (config: Partial<OpenAIConfig>) =>
+    ipcRenderer.invoke('openai:update-config', config),
   getOpenAIConfig: (): Promise<OpenAIConfig | null> => ipcRenderer.invoke('openai:get-config'),
-  validateOpenAIConfig: (cfg: OpenAIConfig): Promise<boolean> => ipcRenderer.invoke('openai:validate-config', cfg),
+  validateOpenAIConfig: (cfg: OpenAIConfig): Promise<boolean> =>
+    ipcRenderer.invoke('openai:validate-config', cfg),
   analyzeCurrentScreen: (textPrompt: string, customPrompt: string): Promise<AnalysisResult> =>
     ipcRenderer.invoke('capture:analyze', { textPrompt, customPrompt }),
   onTextInputShow: (handler: () => void) => ipcRenderer.on('text-input:show', () => handler()),
@@ -18,5 +20,3 @@ declare global {
 }
 
 contextBridge.exposeInMainWorld('ghostAI', api);
-
-

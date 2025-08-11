@@ -46,19 +46,21 @@ export function Settings() {
       <h4>OpenAI Settings</h4>
       <div style={{ display: 'grid', gap: 8 }}>
         <label>API Key</label>
-        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} />
+        <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
         <label>Base URL</label>
-        <input value={baseURL} onChange={e => setBaseURL(e.target.value)} />
+        <input value={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
         <label>Model</label>
-        <input value={model} onChange={e => setModel(e.target.value)} />
+        <input value={model} onChange={(e) => setModel(e.target.value)} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button onClick={onSave}>Save</button>
-        <button onClick={onTest} disabled={testing}>{testing ? 'Testing…' : 'Test'}</button>
-        {ok !== null && <span style={{ color: ok ? '#52c41a' : '#ff4d4f' }}>{ok ? 'Valid' : 'Invalid'}</span>}
+        <button onClick={onTest} disabled={testing}>
+          {testing ? 'Testing…' : 'Test'}
+        </button>
+        {ok !== null && (
+          <span style={{ color: ok ? '#52c41a' : '#ff4d4f' }}>{ok ? 'Valid' : 'Invalid'}</span>
+        )}
       </div>
     </div>
   );
 }
-
-

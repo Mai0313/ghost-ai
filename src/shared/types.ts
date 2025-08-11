@@ -53,5 +53,3 @@ export interface UserSettings {
   openaiConfig: OpenAIConfig;
   isFirstRun: boolean;
 }
-
-

@@ -24,5 +24,3 @@
   "include": ["src", "vite.config.ts", "tsup.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
-
-

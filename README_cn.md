@@ -79,46 +79,45 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 1. **複製儲存庫**
 
-    ```bash
-    git clone https://github.com/Mai0313/ghost_ai.git
-    cd ghost_ai
-    ```
+   ```bash
+   git clone https://github.com/Mai0313/ghost_ai.git
+   cd ghost_ai
+   ```
 
 2. **安裝依賴**
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 3. **配置您的 OpenAI API 設定**
 
-    應用程式首次執行時會提示您配置 OpenAI API 設定：
-    - API 金鑰
-    - 基礎 URL（可選，預設為 https://api.openai.com/v1）
-    - 模型選擇
-    - 其他偏好設定
-    
-    所有設定都使用 Electron 內建加密功能安全儲存。
+   應用程式首次執行時會提示您配置 OpenAI API 設定：
+   - API 金鑰
+   - 基礎 URL（可選，預設為 https://api.openai.com/v1）
+   - 模型選擇
+   - 其他偏好設定
+
+   所有設定都使用 Electron 內建加密功能安全儲存。
 
 ### 執行應用程式
 
 1. **以開發模式啟動應用程式**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 2. **設定您的熱鍵** (可在設定中配置)
-
-    - **文字輸入 + 截圖**: `Ctrl+Shift+S` (預設)
-    - **語音錄音**: `Ctrl+Shift+V` (預設)
-    - **隱藏界面**: `Ctrl+Shift+H` (預設)
+   - **文字輸入 + 截圖**: `Ctrl+Shift+S` (預設)
+   - **語音錄音**: `Ctrl+Shift+V` (預設)
+   - **隱藏界面**: `Ctrl+Shift+H` (預設)
 
 3. **建置生產版本**
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   npm run build
+   ```
 
 ### 首次使用
 
@@ -185,7 +184,7 @@ npm install <package> --save-dev        # 添加開發依賴
 # Windows
 npm run build:win                       # 建置 Windows 執行檔 (.exe)
 
-# macOS  
+# macOS
 npm run build:mac                       # 建置 macOS 應用程式 (.dmg)
 
 # Linux
@@ -229,7 +228,7 @@ npm run build:linux                     # 建置 Linux 套件 (.AppImage, .deb)
 
 ```typescript
 // 預設熱鍵: Ctrl+Shift+S
-const defaultHotkey = "CommandOrControl+Shift+S";
+const defaultHotkey = 'CommandOrControl+Shift+S';
 
 // 自訂熱鍵範例:
 // "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) 或 Cmd+Alt+G (macOS)
@@ -255,25 +254,25 @@ const defaultHotkey = "CommandOrControl+Shift+S";
 
 1. **安裝依賴**
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 2. **配置 API 設定**
 
-    應用程式首次執行時會引導您設定 OpenAI API 配置。
+   應用程式首次執行時會引導您設定 OpenAI API 配置。
 
 3. **以開發模式執行**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 4. **執行測試**
 
-    ```bash
-    npm test
-    ```
+   ```bash
+   npm test
+   ```
 
 ### 建置生產版本
 

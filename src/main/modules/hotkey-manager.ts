@@ -25,5 +25,3 @@ export function registerHotkeys(handlers: HotkeyHandlers) {
 export function unregisterAllHotkeys() {
   globalShortcut.unregisterAll();
 }
-
-

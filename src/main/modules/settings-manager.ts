@@ -2,7 +2,10 @@ import Store from 'electron-store';
 import { safeStorage } from 'electron';
 import type { OpenAIConfig, UserSettings } from '@shared/types';
 
-const store = new Store<{ encryptedOpenAI?: string; userSettings?: Omit<UserSettings, 'openaiConfig'> }>();
+const store = new Store<{
+  encryptedOpenAI?: string;
+  userSettings?: Omit<UserSettings, 'openaiConfig'>;
+}>();
 
 export function saveOpenAIConfig(cfg: OpenAIConfig) {
   const json = JSON.stringify(cfg);
@@ -17,7 +20,9 @@ export function loadOpenAIConfig(): OpenAIConfig | null {
   if (!encrypted) return null;
   try {
     const buf = Buffer.from(encrypted, 'base64');
-    const json = safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(buf) : buf.toString('utf8');
+    const json = safeStorage.isEncryptionAvailable()
+      ? safeStorage.decryptString(buf)
+      : buf.toString('utf8');
     return JSON.parse(json) as OpenAIConfig;
   } catch {
     return null;
@@ -32,5 +37,3 @@ export function saveUserSettings(partial: Partial<UserSettings>) {
 export function loadUserSettings(): Partial<UserSettings> {
   return store.get('userSettings') ?? {};
 }
-
-

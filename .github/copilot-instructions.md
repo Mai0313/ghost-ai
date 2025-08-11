@@ -1,6 +1,7 @@
 # Ghost AI — Copilot Instructions (需求與計畫整合)
 
 本文件整合 `.kiro/specs/ghost-ai` 中的需求與實作計畫，作為 Copilot 與協作開發的工作指南。專案為純 Electron + TypeScript 跨平台桌面應用，直接整合 OpenAI API，核心能力包含：
+
 - 文字輸入 + 螢幕截圖分析
 - 語音錄音（並預留 WebRTC 實時對話）
 - 隱藏式操作界面與全域熱鍵
@@ -16,6 +17,7 @@
 以下匯總自 `requirements.md`，保留 User Story 與 Acceptance Criteria，作為 DoD（Definition of Done）的依據。
 
 ### R1：文字輸入與螢幕截圖分析
+
 - User Story：作為用戶，我希望透過熱鍵快速呼叫輸入框，輸入問題並自動截圖，讓 AI 助手分析當前螢幕內容並回答。
 - Acceptance Criteria：
   1. 當用戶按下設定熱鍵，系統會立即顯示文字輸入框。
@@ -25,6 +27,7 @@
   5. API 回應後，在適當界面顯示 AI 回答。
 
 ### R2：語音錄音與實時對話（預留）
+
 - User Story：作為用戶，我希望透過按鈕或熱鍵開始錄音，並預留未來 WebRTC 實時對話能力。
 - Acceptance Criteria：
   1. 按下錄音按鈕或熱鍵，立即開始錄音。
@@ -35,6 +38,7 @@
   6. 首次使用時，提供設定界面讓用戶輸入OpenAI API金鑰和基礎URL。
 
 ### R3：隱藏式操作界面
+
 - User Story：作為用戶，我希望可隱藏操作界面，避免在螢幕分享或截圖時被看到。
 - Acceptance Criteria：
   1. 按下隱藏熱鍵，立即隱藏所有可見界面。
@@ -44,6 +48,7 @@
   5. 隱藏狀態下，全域熱鍵仍可運作。
 
 ### R4：全域熱鍵系統
+
 - User Story：作為用戶，我希望能自定義所有功能熱鍵，並在任何應用中可用。
 - Acceptance Criteria：
   1. 設定熱鍵時檢查衝突並警告。
@@ -53,6 +58,7 @@
   5. 修改設定後，立即更新註冊。
 
 ### R5：自定義提示詞與API設定管理
+
 - User Story：作為用戶，我希望能設定與管理自定義 AI 提示詞，以及配置OpenAI API連接設定。
 - Acceptance Criteria：
   1. 提供簡潔的提示詞編輯介面。
@@ -64,6 +70,7 @@
   7. 保存API設定時加密儲存敏感資訊並驗證連接有效性。
 
 ### R6：AI 分析與回應處理
+
 - User Story：作為用戶，我希望 AI 能準確分析輸入與螢幕內容，提供有用回應。
 - Acceptance Criteria：
   1. 收到截圖與提示詞後，使用前端設定的API金鑰直接透過 OpenAI API 處理圖片分析。
@@ -73,6 +80,7 @@
   5. 處理音訊時，支援語音轉文字並整合分析流程。
 
 ### R7：系統整合與穩定性
+
 - User Story：作為用戶，我希望系統穩定運行並與作業系統良好整合。
 - Acceptance Criteria：
   1. 啟動後在系統托盤顯示圖示並提供基本控制。
@@ -83,6 +91,7 @@
   6. 應用程式可打包到 Windows/macOS/Linux。
 
 ### R8：隱私保護與安全性
+
 - User Story：作為用戶，我希望我的資料被妥善保護，系統運行不被他人輕易偵測。
 - Acceptance Criteria：
   1. 運行時採用隱蔽的程序名稱與視窗標題。
@@ -248,9 +257,6 @@
   - `npm run build` - 建置並打包應用程式
   - `npm run test` - 執行測試
 
-
 ---
 
 本文件作為 Copilot 的主要參照，協助在開發過程中自動對齊需求（R1–R8）與實作計畫（1–11）。提交 PR/Commit 前，請對照本文件之驗收標準與對應開發項目，確保一致。
-
-
