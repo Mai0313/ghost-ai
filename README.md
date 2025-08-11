@@ -103,7 +103,7 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
 3. **Set up the frontend (ghost_ui)**
 
     ```bash
-    cd src/ghost_ui
+    cd ghost_ui
     npm install
     ```
 
@@ -126,7 +126,7 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
 2. **Start the frontend application**
 
     ```bash
-    cd src/ghost_ui
+    cd ghost_ui
     npm run dev
     ```
 
@@ -154,16 +154,16 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
 ├── docker/                 # Docker configurations
 ├── docs/                   # MkDocs documentation
 ├── scripts/                # Automation scripts
+├── ghost_ui/               # Frontend Electron app
+│   ├── src/main/           # Electron main process
+│   ├── src/renderer/       # React renderer process
+│   └── src/shared/         # Shared utilities
 ├── src/
-│   ├── ghost_ai/          # Backend Python API
-│   │   ├── app/           # FastAPI application
-│   │   ├── services/      # Business logic services
-│   │   ├── models/        # Data models
-│   │   └── utils/         # Utility functions
-│   └── ghost_ui/          # Frontend Electron app
-│       ├── src/main/      # Electron main process
-│       ├── src/renderer/  # React renderer process
-│       └── src/shared/    # Shared utilities
+│   └── ghost_ai/           # Backend Python API
+│       ├── app/            # FastAPI application
+│       ├── services/       # Business logic services
+│       ├── models/         # Data models
+│       └── utils/          # Utility functions
 ├── tests/                  # Test suite
 ├── pyproject.toml          # Python project configuration
 ├── Makefile               # Development commands
@@ -191,7 +191,7 @@ uv add <package> --dev                  # Add development dependency
 
 ```bash
 # Development
-cd src/ghost_ui
+cd ghost_ui
 npm run dev                             # Start development mode
 npm run build                           # Build for production
 npm run test                            # Run TypeScript tests
@@ -309,7 +309,7 @@ const defaultPrompts = {
     cd src/ghost_ai && uv sync
 
     # Frontend
-    cd src/ghost_ui && npm install
+    cd ghost_ui && npm install
     ```
 
 2. **Run in development mode**
@@ -319,7 +319,7 @@ const defaultPrompts = {
     cd src/ghost_ai && uv run uvicorn app.main:app --reload
 
     # Terminal 2: Start frontend
-    cd src/ghost_ui && npm run dev
+    cd ghost_ui && npm run dev
     ```
 
 3. **Run tests**
@@ -329,7 +329,7 @@ const defaultPrompts = {
     cd src/ghost_ai && uv run pytest
 
     # Frontend tests
-    cd src/ghost_ui && npm test
+    cd ghost_ui && npm test
     ```
 
 ### Building for Production
@@ -339,7 +339,7 @@ const defaultPrompts = {
 cd src/ghost_ai && uv build
 
 # Build frontend
-cd src/ghost_ui && npm run build
+cd ghost_ui && npm run build
 ```
 
 ## 🤝 Contributing
