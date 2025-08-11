@@ -4,6 +4,8 @@ export function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [baseURL, setBaseURL] = useState('https://api.openai.com/v1');
   const [model, setModel] = useState('gpt-4o-mini');
+  const [testing, setTesting] = useState(false);
+  const [ok, setOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -21,6 +23,24 @@ export function Settings() {
     alert('Saved OpenAI settings');
   };
 
+  const onTest = async () => {
+    setTesting(true);
+    setOk(null);
+    try {
+      const success = await window.ghostAI.validateOpenAIConfig({
+        apiKey,
+        baseURL,
+        model,
+        timeout: 60000,
+        maxTokens: 1000,
+        temperature: 0.7,
+      } as any);
+      setOk(success);
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div>
       <h4>OpenAI Settings</h4>
@@ -32,7 +52,11 @@ export function Settings() {
         <label>Model</label>
         <input value={model} onChange={e => setModel(e.target.value)} />
       </div>
-      <button onClick={onSave} style={{ marginTop: 8 }}>Save</button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button onClick={onSave}>Save</button>
+        <button onClick={onTest} disabled={testing}>{testing ? 'Testing…' : 'Test'}</button>
+        {ok !== null && <span style={{ color: ok ? '#52c41a' : '#ff4d4f' }}>{ok ? 'Valid' : 'Invalid'}</span>}
+      </div>
     </div>
   );
 }

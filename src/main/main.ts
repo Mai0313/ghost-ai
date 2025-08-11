@@ -59,7 +59,8 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Ghost AI');
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Show/Hide', click: () => toggleHidden(mainWindow) },
+    { label: 'Show Overlay', click: () => mainWindow?.webContents.send('text-input:show') },
+    { label: 'Toggle Hide', click: () => toggleHidden(mainWindow) },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]);
@@ -84,6 +85,23 @@ app.whenReady().then(async () => {
   await initializeOpenAI();
   createWindow();
   createTray();
+  // Application menu
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'File',
+      submenu: [
+        { label: 'Show Overlay', accelerator: 'Ctrl+Shift+S', click: () => mainWindow?.webContents.send('text-input:show') },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }],
+    },
+  ];
+  const appMenu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(appMenu);
   registerHotkeys({
     onTextInput: async () => {
       if (!mainWindow) return;
@@ -138,6 +156,10 @@ ipcMain.handle('capture:analyze', async (_, payload: { textPrompt: string; custo
   const image = await captureScreen();
   const result = await openAIClient.analyzeImageWithText(image, payload.textPrompt, payload.customPrompt);
   return result;
+});
+
+ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
+  return openAIClient.validateConfig(cfg);
 });
 
 
