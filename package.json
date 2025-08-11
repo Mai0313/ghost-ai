@@ -6,7 +6,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k -n VITE,MAIN,ELECTRON \"vite\" \"tsup --watch\" \"nodemon --watch dist/main.js --exec \"electron dist/main.js\"\"",
+    "dev": "concurrently -k -n VITE,MAIN,ELECTRON \"npm:dev:renderer\" \"npm:dev:main\" \"npm:dev:electron\"",
+    "dev:renderer": "vite",
+    "dev:main": "tsup --watch",
+    "dev:electron": "wait-on dist/main.js && nodemon --watch dist/main.js --exec electron -- dist/main.js",
     "build": "rimraf dist && vite build && tsup",
     "dist": "npm run build && electron-builder",
     "lint": "echo 'No linter configured yet'",
@@ -27,6 +30,7 @@
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
+    "@vitejs/plugin-react": "*",
     "concurrently": "*",
     "electron": "*",
     "electron-builder": "*",
@@ -35,14 +39,14 @@
     "tsup": "*",
     "typescript": "*",
     "vite": "*",
-    "@vitejs/plugin-react": "*"
+    "wait-on": "^8.0.4"
   },
   "dependencies": {
+    "electron-store": "*",
+    "electron-window-state": "*",
     "openai": "*",
     "react": "*",
     "react-dom": "*",
-    "screenshot-desktop": "*",
-    "electron-store": "*",
-    "electron-window-state": "*"
+    "screenshot-desktop": "*"
   }
 }

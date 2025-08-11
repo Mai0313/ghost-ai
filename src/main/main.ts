@@ -1,5 +1,6 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, nativeImage, Tray, Menu } from 'electron';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import os from 'node:os';
 import { openAIClient } from '@shared/openai-client';
@@ -8,6 +9,10 @@ import { registerHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager'
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture } from './modules/hide-manager';
 import { loadOpenAIConfig, saveOpenAIConfig } from './modules/settings-manager';
+
+// __dirname is not defined in ESM; compute it from import.meta.url
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -18,9 +23,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
     height: 640,
-    show: false,
-    frame: false,
-    transparent: true,
+    show: true,
+    frame: isDev,
+    transparent: !isDev,
+    backgroundColor: isDev ? '#121212' : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -37,6 +43,14 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // In dev or first run, automatically show the overlay input so users see UI
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (isDev) {
+      mainWindow?.show();
+      mainWindow?.webContents.send('text-input:show');
+    }
   });
 }
 
@@ -85,6 +99,15 @@ app.whenReady().then(async () => {
       await toggleHidden(mainWindow);
     },
   });
+
+  // If no OpenAI config yet, guide user by showing the overlay
+  try {
+    const cfg = loadOpenAIConfig();
+    if (!cfg) {
+      mainWindow?.show();
+      mainWindow?.webContents.send('text-input:show');
+    }
+  } catch {}
 });
 
 app.on('window-all-closed', () => {
