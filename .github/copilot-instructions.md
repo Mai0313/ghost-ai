@@ -142,6 +142,22 @@
   - 打包設定（Win/macOS/Linux）
   - 對應需求：R1, R2, R3, R4, R7.6
 
+### UI 指南（Renderer 端）
+
+- 新的 UI 採用「頂部置中控制列 + 下方回應泡泡」設計，與原本的面板不同：
+  - 控制列位於螢幕頂部置中，包含 `Listen`、`Ask`、`Hide`、`Settings` 四個按鈕。
+  - 錄音中按鈕會切換成紅色並顯示 `mm:ss` 計時。
+  - 回應泡泡置於控制列下方，包含回應內容區、提示輸入框、自訂提示欄位、`Send` 與 `Copy response`。
+  - 樣式使用內聯樣式，深色玻璃質感（半透明深色背景 + 邊框 + 陰影）。
+  - 主要檔案：`src/renderer/main.tsx`、`src/renderer/components/Settings.tsx`、`src/renderer/components/Icons.tsx`。
+
+- 重要互動流程：
+  - `window.ghostAI.onTextInputShow` 觸發後顯示控制列與泡泡。
+  - `Ask` 分頁中點擊 `Send` 使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`。
+  - `Settings` 分頁沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`。
+
+- 型別補充：在 `tsconfig.json` 加入 `"types": ["vite/client"]` 以支援 `import.meta.env`。
+
 - [ ] 2. 全域熱鍵系統
   - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`
     - 對應：R4 全部條目

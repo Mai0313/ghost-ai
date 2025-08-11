@@ -44,28 +44,94 @@ export function Settings() {
   };
 
   return (
-    <div>
-      <h4>OpenAI Settings</h4>
-      <div style={{ display: 'grid', gap: 8 }}>
-        <label htmlFor="openai-api-key">API Key</label>
+    <div style={{ color: 'white' }}>
+      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>OpenAI Settings</div>
+      <div style={{ display: 'grid', gap: 10 }}>
+        <label htmlFor="openai-api-key" style={{ fontSize: 12, color: '#BDBDBD' }}>
+          API Key
+        </label>
         <input
           id="openai-api-key"
+          style={{
+            background: '#141414',
+            border: '1px solid #2a2a2a',
+            color: 'white',
+            padding: '10px 12px',
+            borderRadius: 10,
+            outline: 'none',
+          }}
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
         />
-        <label htmlFor="openai-base-url">Base URL</label>
-        <input id="openai-base-url" value={baseURL} onChange={(e) => setBaseURL(e.target.value)} />
-        <label htmlFor="openai-model">Model</label>
-        <input id="openai-model" value={model} onChange={(e) => setModel(e.target.value)} />
+
+        <label htmlFor="openai-base-url" style={{ fontSize: 12, color: '#BDBDBD' }}>
+          Base URL
+        </label>
+        <input
+          id="openai-base-url"
+          style={{
+            background: '#141414',
+            border: '1px solid #2a2a2a',
+            color: 'white',
+            padding: '10px 12px',
+            borderRadius: 10,
+            outline: 'none',
+          }}
+          value={baseURL}
+          onChange={(e) => setBaseURL(e.target.value)}
+        />
+
+        <label htmlFor="openai-model" style={{ fontSize: 12, color: '#BDBDBD' }}>
+          Model
+        </label>
+        <input
+          id="openai-model"
+          style={{
+            background: '#141414',
+            border: '1px solid #2a2a2a',
+            color: 'white',
+            padding: '10px 12px',
+            borderRadius: 10,
+            outline: 'none',
+          }}
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+        />
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-        <button onClick={onSave}>Save</button>
-        <button disabled={testing} onClick={onTest}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button
+          style={{
+            border: 'none',
+            borderRadius: 10,
+            padding: '10px 14px',
+            background: '#2B66F6',
+            color: 'white',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+          onClick={onSave}
+        >
+          Save
+        </button>
+        <button
+          disabled={testing}
+          style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'transparent',
+            color: '#E6E6E6',
+            padding: '10px 14px',
+            borderRadius: 10,
+            cursor: testing ? 'not-allowed' : 'pointer',
+          }}
+          onClick={onTest}
+        >
           {testing ? 'Testing…' : 'Test'}
         </button>
         {ok !== null && (
-          <span style={{ color: ok ? '#52c41a' : '#ff4d4f' }}>{ok ? 'Valid' : 'Invalid'}</span>
+          <span style={{ color: ok ? '#52c41a' : '#ff4d4f', alignSelf: 'center' }}>
+            {ok ? 'Valid' : 'Invalid'}
+          </span>
         )}
       </div>
     </div>

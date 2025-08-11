@@ -1,8 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { Settings } from './components/Settings';
-import { IconEyeOff, IconGear, IconText, IconWaveBars } from './components/Icons';
+import {
+  IconEyeOff,
+  IconGear,
+  IconMicOff,
+  IconSend,
+  IconText,
+  IconWaveBars,
+  IconX,
+} from './components/Icons';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
@@ -14,6 +22,8 @@ function App() {
   const [tab, setTab] = useState<'ask' | 'settings'>('ask');
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     window.ghostAI.onTextInputShow(() => setVisible(true));
@@ -22,6 +32,22 @@ function App() {
   useEffect(() => {
     window.ghostAI.onAudioToggle(() => setRecording((prev) => !prev));
   }, []);
+
+  useEffect(() => {
+    if (recording) {
+      setElapsedMs(0);
+      timerRef.current = window.setInterval(() => {
+        setElapsedMs((ms) => ms + 1000);
+      }, 1000) as unknown as number;
+    } else if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, [recording]);
 
   const onSubmit = useCallback(async () => {
     if (!text) return;
@@ -35,34 +61,52 @@ function App() {
     }
   }, [text, customPrompt]);
 
+  const timeLabel = useMemo(() => {
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+
+    return `${minutes}:${seconds}`;
+  }, [elapsedMs]);
+
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        display: visible ? 'flex' : 'none',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: visible ? 'block' : 'none',
         pointerEvents: 'none',
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
       }}
     >
-      {/* Floating bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* Top center control bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          pointerEvents: 'auto',
+        }}
+      >
         <div
           style={{
-            pointerEvents: 'auto',
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 6,
+            background: 'rgba(30,30,30,0.92)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12,
             padding: 6,
-            paddingLeft: 8,
-            paddingRight: 8,
-            borderRadius: 999,
-            background: 'rgba(60,60,60,0.85)',
-            boxShadow: '0 6px 24px rgba(0,0,0,0.35)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
           }}
         >
-          {/* Listen button */}
+          {/* Left primary pill */}
           <button
             style={{
               display: 'flex',
@@ -70,34 +114,36 @@ function App() {
               gap: 8,
               border: 'none',
               borderRadius: 999,
-              padding: '10px 14px',
-              background: '#2B66F6',
+              padding: '9px 12px',
+              background: recording ? 'rgba(255,40,40,0.9)' : '#2B66F6',
               color: 'white',
               fontWeight: 600,
               cursor: 'pointer',
             }}
+            title={recording ? 'Stop recording' : 'Start recording'}
+            onClick={() => setRecording((r) => !r)}
           >
-            <IconWaveBars />
-            Listen
+            {recording ? <IconMicOff color="white" /> : <IconWaveBars />}
+            {recording ? timeLabel : 'Listen'}
           </button>
 
-          {/* Ask question */}
+          {/* Ask */}
           <button
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 8,
               background: 'transparent',
-              color: tab === 'ask' ? 'white' : '#D0D0D0',
+              color: tab === 'ask' ? 'white' : '#BDBDBD',
               border: 'none',
-              padding: '10px 12px',
+              padding: '9px 12px',
               borderRadius: 999,
               cursor: 'pointer',
             }}
             onClick={() => setTab('ask')}
           >
-            <IconText color={tab === 'ask' ? 'white' : '#D0D0D0'} />
-            Ask question
+            <IconText color={tab === 'ask' ? 'white' : '#BDBDBD'} />
+            Ask
           </button>
 
           {/* Hide */}
@@ -107,9 +153,9 @@ function App() {
               alignItems: 'center',
               gap: 8,
               background: 'transparent',
-              color: '#D0D0D0',
+              color: '#BDBDBD',
               border: 'none',
-              padding: '10px 12px',
+              padding: '9px 10px',
               borderRadius: 999,
               cursor: 'pointer',
             }}
@@ -118,44 +164,107 @@ function App() {
             <IconEyeOff />
             Hide
           </button>
-        </div>
 
-        {/* Settings round button */}
-        <button
-          style={{
-            pointerEvents: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 44,
-            height: 44,
-            borderRadius: 999,
-            background: 'rgba(80,80,80,0.9)',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 6px 24px rgba(0,0,0,0.35)',
-          }}
-          onClick={() => setTab('settings')}
-        >
-          <IconGear />
-        </button>
+          {/* Separator dot menu for future actions */}
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              color: '#BDBDBD',
+              border: 'none',
+              padding: '8px 8px',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+            title="Settings"
+            onClick={() => setTab('settings')}
+          >
+            <IconGear />
+          </button>
+        </div>
       </div>
 
-      {/* Panel */}
+      {/* Bubble panel beneath top bar */}
       <div
         style={{
+          position: 'absolute',
+          top: 76,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 760,
           pointerEvents: 'auto',
-          marginTop: 16,
-          width: 740,
-          padding: 16,
-          borderRadius: 16,
-          background: 'rgba(28,28,28,0.92)',
-          color: 'white',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
         }}
       >
-        {tab === 'ask' && (
-          <div>
+        <div
+          style={{
+            display: tab === 'settings' ? 'block' : 'none',
+            background: 'rgba(20,20,20,0.92)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 16,
+            padding: 16,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontWeight: 700 }}>Settings</div>
+            <button
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+              title="Close"
+              onClick={() => setTab('ask')}
+            >
+              <IconX />
+            </button>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <Settings />
+          </div>
+        </div>
+
+        {/* Ask / Response bubble */}
+        <div
+          style={{
+            display: tab === 'ask' ? 'flex' : 'none',
+            flexDirection: 'column',
+            gap: 12,
+            background: 'rgba(28,28,28,0.94)',
+            color: 'white',
+            borderRadius: 16,
+            padding: 14,
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ opacity: 0.8, fontSize: 12 }}>AI Response</div>
+            <button
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+              title="Hide"
+              onClick={() => setVisible(false)}
+            >
+              <IconX />
+            </button>
+          </div>
+
+          {!!result && (
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 12,
+                padding: 12,
+                whiteSpace: 'pre-wrap',
+                lineHeight: 1.6,
+              }}
+            >
+              {result}
+            </div>
+          )}
+
+          {/* Prompt composer */}
+          <div style={{ display: 'grid', gap: 8 }}>
             <label htmlFor="ask-prompt" style={{ color: '#BDBDBD', fontSize: 12 }}>
               Prompt
             </label>
@@ -165,12 +274,13 @@ function App() {
               rows={3}
               style={{
                 width: '100%',
-                marginBottom: 8,
-                background: '#1c1c1c',
+                background: '#141414',
                 color: 'white',
-                borderRadius: 8,
+                borderRadius: 10,
                 padding: 10,
-                border: '1px solid #333',
+                border: '1px solid #2a2a2a',
+                outline: 'none',
+                resize: 'vertical',
               }}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -182,12 +292,12 @@ function App() {
               id="ask-custom"
               style={{
                 width: '100%',
-                marginBottom: 8,
-                background: '#1c1c1c',
+                background: '#141414',
                 color: 'white',
-                borderRadius: 8,
+                borderRadius: 10,
                 padding: 10,
-                border: '1px solid #333',
+                border: '1px solid #2a2a2a',
+                outline: 'none',
               }}
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
@@ -196,24 +306,39 @@ function App() {
               <button
                 disabled={busy || !text}
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   padding: '10px 14px',
-                  background: busy ? '#2b66f666' : '#2B66F6',
+                  background: busy || !text ? '#2b66f666' : '#2B66F6',
                   color: 'white',
-                  cursor: 'pointer',
+                  cursor: busy || !text ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                 }}
                 onClick={onSubmit}
               >
-                {busy ? 'Analyzing…' : 'Analyze current screen'}
+                {busy ? 'Analyzing…' : 'Send'}
+                {!busy && <IconSend />}
+              </button>
+              <button
+                disabled={!result}
+                style={{
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'transparent',
+                  color: '#E6E6E6',
+                  padding: '9px 12px',
+                  borderRadius: 10,
+                  cursor: result ? 'pointer' : 'not-allowed',
+                }}
+                onClick={() => navigator.clipboard.writeText(result || '')}
+              >
+                Copy response
               </button>
             </div>
-            {!!result && <pre style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{result}</pre>}
           </div>
-        )}
-
-        {tab === 'settings' && <Settings />}
+        </div>
       </div>
     </div>
   );

@@ -54,9 +54,10 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 ### 🎨 **User Experience**
 
-- **Clean Interface**: Minimalist UI that appears only when needed
+- **Floating HUD**: A modern top‑center control bar with Listen, Ask, Hide, and Settings
+- **Conversation Bubble**: Responses appear in a clean bubble below the HUD; one‑click copy
+- **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
-- **Copy & Share**: Easy copying of analysis results and original screenshots
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
 
 ### 🏗️ **Modern Architecture**
@@ -122,9 +123,9 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 ### First Use
 
 1. Press your configured hotkey to capture a screenshot
-2. Enter a prompt describing what you want to know about the image
-3. Wait for AI analysis and view the results
-4. Copy the results or take another screenshot
+2. Use the top control bar to switch between Ask and Settings
+3. Enter a prompt and optional custom prompt, then click Send
+4. View the AI response inside the bubble and use Copy response if needed
 
 ## 📁 Project Structure
 

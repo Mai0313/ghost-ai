@@ -53,3 +53,57 @@ export function IconGear({ color = '#E6E6E6' }: { color?: string }) {
     </svg>
   );
 }
+
+export function IconMic({ color = '#E6E6E6' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 14a4 4 0 004-4V7a4 4 0 10-8 0v3a4 4 0 004 4z" stroke={color} strokeWidth="2" />
+      <path d="M19 11a7 7 0 01-14 0" stroke={color} strokeLinecap="round" strokeWidth="2" />
+      <path d="M12 18v3" stroke={color} strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function IconMicOff({ color = '#ff6b6b' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 14a4 4 0 004-4V7a4 4 0 00-6.83-2.83" stroke={color} strokeWidth="2" />
+      <path d="M5 11a7 7 0 0011.07 5.64" stroke={color} strokeLinecap="round" strokeWidth="2" />
+      <path d="M12 18v3" stroke={color} strokeLinecap="round" strokeWidth="2" />
+      <path d="M3 3l18 18" stroke={color} strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function IconDots({ color = '#E6E6E6' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="5" cy="12" fill={color} r="2" />
+      <circle cx="12" cy="12" fill={color} r="2" />
+      <circle cx="19" cy="12" fill={color} r="2" />
+    </svg>
+  );
+}
+
+export function IconSend({ color = 'white' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M22 2L11 13"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path d="M22 2l-7 20-4-9-9-4 20-7z" stroke={color} strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function IconX({ color = '#E6E6E6' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 6L6 18M6 6l12 12" stroke={color} strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
