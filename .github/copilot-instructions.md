@@ -129,7 +129,7 @@
   - 建立目錄：`src/main/`, `src/renderer/`, `src/shared/`, `src/services/`
   - 定義三大功能的 TS 介面；設定 `package.json`/`tsconfig.json`
   - 安裝 OpenAI SDK 與必要套件（electron, typescript, react, electron-builder…）
-  - 設定環境變數：`OPENAI_BASE_URL`, `OPENAI_API_KEY`
+  - 以 UI 設定方式管理 `OPENAI_BASE_URL`, `OPENAI_API_KEY`（不強制使用環境變數）
   - 打包設定（Win/macOS/Linux）
   - 對應需求：R1, R2, R3, R4, R7.6
 
@@ -227,6 +227,9 @@
   - `./src/shared/types.ts`
   - `./src/renderer/components/TextInputComponent`
 
+- 建置輸出路徑：
+  - 產出至 `dist/`（主行程與預載），Renderer 產出至 `dist/renderer/`
+
 ---
 
 ## 技術架構與開發指令
@@ -241,7 +244,7 @@
 
 - **開發指令**：
   - `npm install` - 安裝依賴
-  - `npm run dev` - 啟動開發模式（首次使用會提示設定 OpenAI API）
+  - `npm run dev` - 啟動開發模式（首次使用建議進入設定面板設定 OpenAI API）
   - `npm run build` - 建置並打包應用程式
   - `npm run test` - 執行測試
 

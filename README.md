@@ -169,7 +169,7 @@ npm run lint                            # Lint TypeScript code
 npm run format                          # Format code
 
 # Packaging
-npm run dist                            # Build and package for all platforms
+    npm run dist                            # Build and package (electron-builder)
 npm run dist:win                        # Package for Windows
 npm run dist:mac                        # Package for macOS
 npm run dist:linux                      # Package for Linux

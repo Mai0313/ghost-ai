@@ -169,7 +169,7 @@ npm run lint                            # 檢查 TypeScript 程式碼
 npm run format                          # 格式化程式碼
 
 # 打包
-npm run dist                            # 建置並打包所有平台
+    npm run dist                            # 建置並打包（electron-builder）
 npm run dist:win                        # 打包 Windows 版本
 npm run dist:mac                        # 打包 macOS 版本
 npm run dist:linux                      # 打包 Linux 版本

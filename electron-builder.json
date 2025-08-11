@@ -1,0 +1,23 @@
+{
+  "appId": "com.ghost.ai",
+  "productName": "Ghost AI",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.productivity"
+  },
+  "win": {
+    "target": ["nsis"]
+  },
+  "linux": {
+    "target": ["AppImage", "deb"]
+  }
+}
+
+

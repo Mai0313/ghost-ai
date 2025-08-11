@@ -1,0 +1,48 @@
+{
+  "name": "ghost_ai",
+  "version": "1.0.0",
+  "description": "Ghost AI - Invisible AI-powered desktop assistant (Electron + React + TypeScript)",
+  "main": "dist/main.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n VITE,MAIN,ELECTRON \"vite\" \"tsup --watch\" \"nodemon --watch dist/main.js --exec \"electron dist/main.js\"\"",
+    "build": "rimraf dist && vite build && tsup",
+    "dist": "npm run build && electron-builder",
+    "lint": "echo 'No linter configured yet'",
+    "format": "echo 'No formatter configured yet'",
+    "test": "echo 'No tests yet'"
+  },
+  "keywords": [
+    "electron",
+    "typescript",
+    "react",
+    "openai",
+    "desktop",
+    "assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "concurrently": "*",
+    "electron": "*",
+    "electron-builder": "*",
+    "nodemon": "*",
+    "rimraf": "*",
+    "tsup": "*",
+    "typescript": "*",
+    "vite": "*",
+    "@vitejs/plugin-react": "*"
+  },
+  "dependencies": {
+    "openai": "*",
+    "react": "*",
+    "react-dom": "*",
+    "screenshot-desktop": "*",
+    "electron-store": "*",
+    "electron-window-state": "*"
+  }
+}
