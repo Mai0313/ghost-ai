@@ -1,9 +1,11 @@
 # Ghost AI — Copilot Instructions (需求與計畫整合)
 
-本文件整合 `.kiro/specs/ghost-ai` 中的需求與實作計畫，作為 Copilot 與協作開發的工作指南。專案為 Electron + TypeScript 跨平台桌面應用，直接整合 OpenAI API，核心能力包含：
+本文件整合 `.kiro/specs/ghost-ai` 中的需求與實作計畫，作為 Copilot 與協作開發的工作指南。專案為純 Electron + TypeScript 跨平台桌面應用，直接整合 OpenAI API，核心能力包含：
 - 文字輸入 + 螢幕截圖分析
 - 語音錄音（並預留 WebRTC 實時對話）
 - 隱藏式操作界面與全域熱鍵
+
+**重要：本專案採用純前端 TypeScript + Electron 架構，完全無後端服務。所有功能都在 Electron 應用程式內實現，包括 OpenAI API 設定都可在前端界面中配置。**
 
 更新時請與 `.kiro/specs/ghost-ai/{requirements.md,tasks.md,design.md}` 保持一致。
 
@@ -30,6 +32,7 @@
   3. 再次按下時停止錄音並保存音訊。
   4. 麥克風權限被拒時，顯示權限請求指引。
   5. 錄音完成後，預留 WebRTC 實時對話介面。
+  6. 首次使用時，提供設定界面讓用戶輸入OpenAI API金鑰和基礎URL。
 
 ### R3：隱藏式操作界面
 - User Story：作為用戶，我希望可隱藏操作界面，避免在螢幕分享或截圖時被看到。
@@ -49,19 +52,21 @@
   4. 註冊失敗時通知用戶並提供替代方案。
   5. 修改設定後，立即更新註冊。
 
-### R5：自定義提示詞管理
-- User Story：作為用戶，我希望能設定與管理自定義 AI 提示詞。
+### R5：自定義提示詞與API設定管理
+- User Story：作為用戶，我希望能設定與管理自定義 AI 提示詞，以及配置OpenAI API連接設定。
 - Acceptance Criteria：
   1. 提供簡潔的提示詞編輯介面。
   2. 保存時驗證格式並儲存至本地。
   3. 發送請求時自動包含自定義提示詞。
   4. 過長時給出警告與優化建議。
   5. 重置時恢復預設模板。
+  6. 開啟設定時提供API金鑰、基礎URL、模型選擇等配置選項。
+  7. 保存API設定時加密儲存敏感資訊並驗證連接有效性。
 
 ### R6：AI 分析與回應處理
 - User Story：作為用戶，我希望 AI 能準確分析輸入與螢幕內容，提供有用回應。
 - Acceptance Criteria：
-  1. 收到截圖與提示詞後，直接透過 OpenAI API 處理圖片分析。
+  1. 收到截圖與提示詞後，使用前端設定的API金鑰直接透過 OpenAI API 處理圖片分析。
   2. 回傳分析結果後，在界面顯示。
   3. API 失敗時顯示錯誤並可重試。
   4. 分析完成後，支援複製結果或進行後續操作。
@@ -85,6 +90,8 @@
   3. 與 API 通訊採用加密連線並清理網路日誌。
   4. 偵測到監控軟體時警告用戶潛在風險。
   5. 關閉應用時清理所有暫存與記憶體痕跡。
+  6. 儲存API金鑰時使用本地加密儲存，不依賴外部服務。
+  7. 設定敏感資訊時提供安全性警告和最佳實踐建議。
 
 ---
 
@@ -119,7 +126,7 @@
 以下整合自 `tasks.md`，為開發優先序與工作拆解，含路徑約定與需求對應：
 
 - [ ] 1. 專案骨架與核心介面
-  - 建立目錄：`ghost_ui/src/main/`, `ghost_ui/src/renderer/`, `ghost_ui/src/shared/`, `ghost_ui/src/services/`
+  - 建立目錄：`src/main/`, `src/renderer/`, `src/shared/`, `src/services/`
   - 定義三大功能的 TS 介面；設定 `package.json`/`tsconfig.json`
   - 安裝 OpenAI SDK 與必要套件（electron, typescript, react, electron-builder…）
   - 設定環境變數：`OPENAI_BASE_URL`, `OPENAI_API_KEY`
@@ -127,21 +134,21 @@
   - 對應需求：R1, R2, R3, R4, R7.6
 
 - [ ] 2. 全域熱鍵系統
-  - [ ] 2.1 `./ghost_ui/src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./ghost_ui/src/shared/types.ts`
+  - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`
     - 對應：R4 全部條目
   - [ ] 2.2 熱鍵設定管理：本地儲存、自訂 UI、驗證、動態更新、預設與重置
     - 對應：R4.1, R4.2, R4.4, R4.5
 
 - [ ] 3. 文字輸入與螢幕截圖分析
-  - [ ] 3.1 `./ghost_ui/src/renderer/components/TextInputComponent`：熱鍵觸發顯示、輸入驗證與送出、統一樣式
+  - [ ] 3.1 `./src/renderer/components/TextInputComponent`：熱鍵觸發顯示、輸入驗證與送出、統一樣式
     - 對應：R1.1–R1.3
-  - [ ] 3.2 `./ghost_ui/src/main/screenshot-manager.ts`：跨平台截圖、記憶體處理、重試與錯誤處理
+  - [ ] 3.2 `./src/main/screenshot-manager.ts`：跨平台截圖、記憶體處理、重試與錯誤處理
     - 對應：R1.2, R1.4
   - [ ] 3.3 整合：組合用戶問題/截圖/自定義提示詞，格式化 Chat Completion 請求，顯示結果與重試
     - 對應：R1.3, R1.5
 
 - [ ] 4. 語音錄音
-  - [ ] 4.1 `./ghost_ui/src/main/audio-manager.ts`：權限請求、設備檢測、開始/停止、記憶體處理與格式轉換
+  - [ ] 4.1 `./src/main/audio-manager.ts`：權限請求、設備檢測、開始/停止、記憶體處理與格式轉換
     - 對應：R2.1, R2.2, R2.4
   - [ ] 4.2 錄音狀態指示 UI：時長與音量指示、通知與確認
     - 對應：R2.2, R2.3
@@ -149,20 +156,22 @@
     - 對應：R2.5
 
 - [ ] 5. 隱藏式操作界面
-  - [ ] 5.1 `./ghost_ui/src/main/hide-manager.ts`：完全隱藏/恢復、截圖/分享時隱藏、狀態持久化
+  - [ ] 5.1 `./src/main/hide-manager.ts`：完全隱藏/恢復、截圖/分享時隱藏、狀態持久化
     - 對應：R3.1, R3.2, R3.4
   - [ ] 5.2 隱藏狀態管理：記憶與恢復、重啟恢復、隱藏模式下熱鍵保持、用戶通知
     - 對應：R3.3, R3.4, R3.5
 
-- [ ] 6. 自定義提示詞管理
+- [ ] 6. 自定義提示詞與API設定管理
   - [ ] 6.1 本地儲存與管理、編輯 UI 與驗證、模板與預設、匯入匯出
     - 對應：R5.1, R5.2, R5.5
-  - [ ] 6.2 與分析流程整合：組合邏輯、長度驗證與優化建議、預覽、動態替換與變數
+  - [ ] 6.2 API設定管理界面：OpenAI API設定的前端配置、金鑰/URL/模型設定、驗證與測試、加密儲存、首次使用引導
+    - 對應：R5.6, R5.7, R6.6
+  - [ ] 6.3 與分析流程整合：組合邏輯、長度驗證與優化建議、預覽、動態替換與變數
     - 對應：R5.3, R5.4
 
 - [ ] 7. OpenAI 直接整合
-  - [ ] 7.1 `./ghost_ui/src/shared/openai-client.ts`：Chat Completion 呼叫、環境變數、金鑰管理、安全與重試
-    - 對應：R6.1, R6.2, R8.3
+  - [ ] 7.1 `./src/shared/openai-client.ts`：Chat Completion 呼叫、前端動態配置、金鑰管理、安全與重試、模型清單獲取
+    - 對應：R6.1, R6.2, R6.6, R8.3
   - [ ] 7.2 Vision 圖片分析整合：文字+圖片綜合分析、base64/格式處理、結果格式化與顯示（Main Process）
     - 對應：R6.1, R6.2, R6.4
   - [ ] 7.3 Whisper 語音轉文字：格式驗證與轉換、base64 處理、結果顯示
@@ -208,32 +217,33 @@
 
 ## 五、關鍵設定與約定
 
-- 環境變數：`OPENAI_BASE_URL`, `OPENAI_API_KEY`
+- 前端設定：OpenAI API金鑰、基礎URL、模型選擇等都可在應用程式設定界面中配置
 - 主要檔案與路徑（計畫中已標註）：
-  - `./ghost_ui/src/main/hotkey-manager.ts`
-  - `./ghost_ui/src/main/screenshot-manager.ts`
-  - `./ghost_ui/src/main/audio-manager.ts`
-  - `./ghost_ui/src/main/hide-manager.ts`
-  - `./ghost_ui/src/shared/openai-client.ts`
-  - `./ghost_ui/src/shared/types.ts`
-  - `./ghost_ui/src/renderer/components/TextInputComponent`
+  - `./src/main/hotkey-manager.ts`
+  - `./src/main/screenshot-manager.ts`
+  - `./src/main/audio-manager.ts`
+  - `./src/main/hide-manager.ts`
+  - `./src/shared/openai-client.ts`
+  - `./src/shared/types.ts`
+  - `./src/renderer/components/TextInputComponent`
 
 ---
 
-## UI 與封裝現況（補充）
+## 技術架構與開發指令
 
-- 新增 `ghost_ui` Electron + React + Vite 介面：
-  - `OPENAI_API_KEY`、`OPENAI_BASE_URL` 可透過 `.env` 或 UI 設定（UI 優先）。
-  - 模型清單使用 OpenAI SDK `client.models.list()` 動態取得。
-  - 已加上極簡玻璃擬態風格，暗色主題，支援模型選擇與聊天面板。
-  - 封裝使用 `electron-builder`：Windows（NSIS .exe）、macOS（.dmg）、Linux（AppImage/deb）。
+- **純前端 Electron + TypeScript 架構**：
+  - 單一桌面應用程式，完全無後端服務
+  - `OPENAI_API_KEY`、`OPENAI_BASE_URL`、模型選擇等都透過前端 UI 設定
+  - 模型清單使用 OpenAI SDK `client.models.list()` 動態取得
+  - 所有 AI 處理都在 Main Process 中直接呼叫 OpenAI API
+  - API設定使用 Electron safeStorage 進行本地加密儲存
+  - 封裝使用 `electron-builder`：Windows（NSIS .exe）、macOS（.dmg）、Linux（AppImage/deb）
 
-- 開發指令（前端介面）：
-  - 進入 `ghost_ui` 後：
-    - `npm install`
-    - `cp .env.example .env` 並設定 key/base url（可先留空，改用 UI 設定）
-    - `npm run dev` 啟動 Vite（Electron 自動載入 URL）
-    - `npm run build` 會同時 build 前端並以 electron-builder 產生發佈包
+- **開發指令**：
+  - `npm install` - 安裝依賴
+  - `npm run dev` - 啟動開發模式（首次使用會提示設定 OpenAI API）
+  - `npm run build` - 建置並打包應用程式
+  - `npm run test` - 執行測試
 
 
 ---

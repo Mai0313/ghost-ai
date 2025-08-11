@@ -5,8 +5,8 @@
   - 定義支援三個核心功能的 TypeScript 介面檔案
   - 設定 `package.json`, `tsconfig.json` 和必要的依賴套件
   - 安裝 OpenAI SDK 和其他必要套件（electron, typescript, react, electron-builder 等）
-  - 配置環境變數支援：`OPENAI_BASE_URL` 和 `OPENAI_API_KEY`
-  - 配置直接呼叫 OpenAI API 的架構
+  - 移除所有環境變數依賴，改為前端設定界面配置
+  - 配置純前端架構，直接呼叫 OpenAI API
   - 設定跨平台打包配置 (Windows, macOS, Linux)
   - _Requirements: 1.1, 2.1, 3.1, 4.1, 7.6_
 
@@ -84,7 +84,7 @@
   - 建立隱藏狀態的用戶通知機制
   - _Requirements: 3.3, 3.4, 3.5_
 
-- [ ] 6. 實作自定義提示詞管理
+- [ ] 6. 實作自定義提示詞與API設定管理
 - [ ] 6.1 建立提示詞管理系統
   - 創建提示詞的本地儲存和管理機制
   - 實作提示詞編輯界面和驗證邏輯
@@ -92,7 +92,15 @@
   - 建立提示詞的匯入匯出功能
   - _Requirements: 5.1, 5.2, 5.5_
 
-- [ ] 6.2 整合提示詞到分析流程
+- [ ] 6.2 實作API設定管理界面
+  - 創建OpenAI API設定的前端配置界面
+  - 實作API金鑰、基礎URL、模型選擇的設定功能
+  - 加入設定驗證和連接測試功能
+  - 建立安全的本地加密儲存機制
+  - 實作首次使用的設定引導流程
+  - _Requirements: 5.6, 5.7, 6.6_
+
+- [ ] 6.3 整合提示詞到分析流程
   - 實作自定義提示詞與用戶輸入的組合邏輯
   - 加入提示詞長度驗證和優化建議
   - 創建提示詞效果的預覽功能
@@ -103,10 +111,11 @@
 - [ ] 7.1 建立 OpenAI 客戶端服務
   - 在 `./src/shared/openai-client.ts` 建立 OpenAI 客戶端
   - 實作 Chat Completion API 的直接呼叫邏輯
-  - 加入環境變數配置：`OPENAI_BASE_URL` 和 `OPENAI_API_KEY`
-  - 創建 API 金鑰管理和安全儲存機制
+  - 移除環境變數依賴，改為從前端設定中動態載入配置
+  - 創建動態API配置更新和驗證機制
   - 實作錯誤處理和重試機制
-  - _Requirements: 6.1, 6.2, 8.3_
+  - 加入模型清單動態獲取功能
+  - _Requirements: 6.1, 6.2, 6.6, 8.3_
 
 - [ ] 7.2 實作圖片和文字分析整合
   - 整合 OpenAI Vision API 進行圖片分析

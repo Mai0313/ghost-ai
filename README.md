@@ -2,13 +2,11 @@
 
 # 👻 Ghost AI
 
-[![Python](https://img.shields.io/badge/-Python_3.10_%7C_3.11_%7C_3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/-Electron-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![FastAPI](https://img.shields.io/badge/-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![OpenAI](https://img.shields.io/badge/-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
-[![uv](https://img.shields.io/badge/-uv_dependency_management-2C5F2D?logo=python&logoColor=white)](https://docs.astral.sh/uv/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![tests](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml)
 [![code-quality](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml)
 [![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost_ai/tree/master?tab=License-1-ov-file)
@@ -18,9 +16,9 @@
 
 </center>
 
-👻 **An invisible AI-powered screenshot analyzer that captures, analyzes, and provides insights without leaving a trace**
+👻 **An invisible AI-powered desktop assistant that captures, analyzes, and provides insights without leaving a trace**
 
-Ghost AI is a privacy-first desktop application that allows you to capture screenshots with a global hotkey, analyze them using OpenAI's Vision API, and get intelligent responses - all while remaining completely invisible to screen sharing and other monitoring software.
+Ghost AI is a privacy-first cross-platform desktop application built with Electron and TypeScript. It provides three core features: text input with screenshot analysis, voice recording with real-time conversation support, and stealth operation interface. The system integrates directly with OpenAI API through global hotkeys, with all API settings configurable through the frontend interface, offering seamless AI assistance while remaining completely invisible to screen sharing and monitoring software.
 
 **Other Languages**: [English](README.md) | [繁體中文](README_cn.md)
 
@@ -63,18 +61,19 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
 
 ### 🏗️ **Modern Architecture**
 
-- **Frontend**: TypeScript + Electron for cross-platform desktop experience
-- **Backend**: Python + FastAPI for high-performance API processing
-- **Separation of Concerns**: Clean architecture with `ghost_ui` and `ghost_ai` modules
-- **Type Safety**: Full TypeScript and Python type annotations
+- **Frontend-Only Application**: Pure Electron + TypeScript with no backend dependencies
+- **UI Framework**: React for responsive and modern user interface
+- **Direct API Integration**: OpenAI SDK integrated directly in the main process
+- **Frontend Configuration**: All API settings configurable through the user interface
+- **Type Safety**: Full TypeScript type annotations throughout the codebase
+- **Memory-First**: All processing happens in memory without disk persistence
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Python 3.10+** for the backend API
-- **Node.js 18+** for the Electron frontend
-- **OpenAI API Key** for image analysis
+- **Node.js 18+** for the Electron application
+- **OpenAI API Key** for AI analysis features
 
 ### Installation
 
@@ -85,55 +84,41 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
     cd ghost_ai
     ```
 
-2. **Set up the backend (ghost_ai)**
+2. **Install dependencies**
 
     ```bash
-    # Install uv if not already installed
-    make uv-install
-
-    # Install Python dependencies
-    cd src/ghost_ai
-    uv sync
-
-    # Set up environment variables
-    cp .env.example .env
-    # Edit .env and add your OpenAI API key
-    ```
-
-3. **Set up the frontend (ghost_ui)**
-
-    ```bash
-    cd ghost_ui
     npm install
     ```
 
-4. **Configure your OpenAI API key**
+3. **Configure your OpenAI API settings**
 
-    ```bash
-    # In src/ghost_ai/.env
-    OPENAI_API_KEY=your_api_key_here
-    ```
+    The application will prompt you to configure your OpenAI API settings on first run:
+    - API Key
+    - Base URL (optional, defaults to https://api.openai.com/v1)
+    - Model selection
+    - Other preferences
+    
+    All settings are stored securely using Electron's built-in encryption.
 
 ### Running the Application
 
-1. **Start the backend API**
+1. **Start the application in development mode**
 
     ```bash
-    cd src/ghost_ai
-    uv run uvicorn app.main:app --reload --port 8000
-    ```
-
-2. **Start the frontend application**
-
-    ```bash
-    cd ghost_ui
     npm run dev
     ```
 
-3. **Set up your hotkey** (default: `Ctrl+Shift+S`)
+2. **Set up your hotkeys** (configurable in settings)
 
-    - The application will register a global hotkey on startup
-    - Press the hotkey from any application to capture and analyze screenshots
+    - **Text Input + Screenshot**: `Ctrl+Shift+S` (default)
+    - **Voice Recording**: `Ctrl+Shift+V` (default)  
+    - **Hide Interface**: `Ctrl+Shift+H` (default)
+
+3. **Build for production**
+
+    ```bash
+    npm run build
+    ```
 
 ### First Use
 
@@ -151,66 +136,60 @@ Ghost AI is a privacy-first desktop application that allows you to capture scree
 │   └── copilot-instructions.md
 ├── .kiro/
 │   └── specs/ghost-ai/     # Project specifications and requirements
-├── docker/                 # Docker configurations
-├── docs/                   # MkDocs documentation
-├── scripts/                # Automation scripts
-├── ghost_ui/               # Frontend Electron app
-│   ├── src/main/           # Electron main process
-│   ├── src/renderer/       # React renderer process
-│   └── src/shared/         # Shared utilities
 ├── src/
-│   └── ghost_ai/           # Backend Python API
-│       ├── app/            # FastAPI application
-│       ├── services/       # Business logic services
-│       ├── models/         # Data models
-│       └── utils/          # Utility functions
+│   ├── main/               # Electron main process
+│   │   ├── hotkey-manager.ts    # Global hotkey management
+│   │   ├── screenshot-manager.ts # Screenshot capture
+│   │   ├── audio-manager.ts     # Voice recording
+│   │   └── hide-manager.ts      # Stealth interface
+│   ├── renderer/           # React renderer process
+│   │   ├── components/     # UI components
+│   │   └── pages/          # Application pages
+│   ├── shared/             # Shared utilities
+│   │   ├── openai-client.ts     # OpenAI API integration
+│   │   └── types.ts             # TypeScript definitions
+│   └── services/           # Business logic services
 ├── tests/                  # Test suite
-├── pyproject.toml          # Python project configuration
-├── Makefile               # Development commands
+├── package.json            # Node.js project configuration
+├── tsconfig.json           # TypeScript configuration
+├── electron-builder.json   # Electron packaging configuration
 └── README.md
 ```
 
 ## 🛠️ Available Commands
 
-### Backend (ghost_ai)
+### Development Commands
 
 ```bash
 # Development
-cd src/ghost_ai
-uv run uvicorn app.main:app --reload    # Start development server
-uv run pytest                          # Run Python tests
-uv run ruff check                       # Lint Python code
-uv run ruff format                      # Format Python code
-
-# Dependencies
-uv add <package>                        # Add production dependency
-uv add <package> --dev                  # Add development dependency
-```
-
-### Frontend (ghost_ui)
-
-```bash
-# Development
-cd ghost_ui
 npm run dev                             # Start development mode
 npm run build                           # Build for production
-npm run test                            # Run TypeScript tests
+npm run test                            # Run tests
 npm run lint                            # Lint TypeScript code
+npm run format                          # Format code
+
+# Packaging
+npm run dist                            # Build and package for all platforms
+npm run dist:win                        # Package for Windows
+npm run dist:mac                        # Package for macOS
+npm run dist:linux                      # Package for Linux
 
 # Dependencies
 npm install <package>                   # Add dependency
 npm install <package> --save-dev        # Add dev dependency
 ```
 
-### Global Commands
+### Platform-Specific Builds
 
 ```bash
-# Project management
-make clean                              # Clean autogenerated files
-make format                             # Run pre-commit hooks
-make test                               # Run all tests
-make gen-docs                           # Generate documentation
-make uv-install                         # Install uv dependency manager
+# Windows
+npm run build:win                       # Build Windows executable (.exe)
+
+# macOS  
+npm run build:mac                       # Build macOS application (.dmg)
+
+# Linux
+npm run build:linux                     # Build Linux packages (.AppImage, .deb)
 ```
 
 ## 🎯 How It Works
@@ -260,15 +239,15 @@ const defaultHotkey = "CommandOrControl+Shift+S";
 
 ### API Configuration
 
-Configure your OpenAI API settings:
+Configure your OpenAI API settings through the application's settings interface:
 
-```bash
-# src/ghost_ai/.env
-OPENAI_API_KEY=your_api_key_here
-OPENAI_MODEL=gpt-4-vision-preview
-OPENAI_MAX_TOKENS=1000
-OPENAI_TEMPERATURE=0.7
-```
+- **API Key**: Your OpenAI API key (stored securely using Electron's safeStorage)
+- **Base URL**: Custom API endpoint (defaults to https://api.openai.com/v1)
+- **Model**: Choose from available models (dynamically fetched from OpenAI)
+- **Max Tokens**: Maximum tokens per request (default: 1000)
+- **Temperature**: Response creativity (default: 0.7)
+
+All settings are encrypted and stored locally - no external services required.
 
 ### Privacy Settings
 
@@ -305,41 +284,33 @@ const defaultPrompts = {
 1. **Install dependencies**
 
     ```bash
-    # Backend
-    cd src/ghost_ai && uv sync
-
-    # Frontend
-    cd ghost_ui && npm install
+    npm install
     ```
 
-2. **Run in development mode**
+2. **Configure API settings**
+
+    The application will guide you through setting up your OpenAI API configuration on first run.
+
+3. **Run in development mode**
 
     ```bash
-    # Terminal 1: Start backend
-    cd src/ghost_ai && uv run uvicorn app.main:app --reload
-
-    # Terminal 2: Start frontend
-    cd ghost_ui && npm run dev
+    npm run dev
     ```
 
-3. **Run tests**
+4. **Run tests**
 
     ```bash
-    # Backend tests
-    cd src/ghost_ai && uv run pytest
-
-    # Frontend tests
-    cd ghost_ui && npm test
+    npm test
     ```
 
 ### Building for Production
 
 ```bash
-# Build backend
-cd src/ghost_ai && uv build
+# Build the application
+npm run build
 
-# Build frontend
-cd ghost_ui && npm run build
+# Package for distribution
+npm run dist
 ```
 
 ## 🤝 Contributing

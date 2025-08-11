@@ -2,13 +2,11 @@
 
 # 👻 Ghost AI
 
-[![Python](https://img.shields.io/badge/-Python_3.10_%7C_3.11_%7C_3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/-Electron-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![FastAPI](https://img.shields.io/badge/-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![OpenAI](https://img.shields.io/badge/-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
-[![uv](https://img.shields.io/badge/-uv_dependency_management-2C5F2D?logo=python&logoColor=white)](https://docs.astral.sh/uv/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![tests](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml)
 [![code-quality](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml)
 [![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost_ai/tree/master?tab=License-1-ov-file)
@@ -18,9 +16,9 @@
 
 </center>
 
-👻 **一個隱形的 AI 驅動截圖分析工具，能夠捕獲、分析並提供洞察，且不留任何痕跡**
+👻 **一個隱形的 AI 驅動桌面助手，能夠捕獲、分析並提供洞察，且不留任何痕跡**
 
-Ghost AI 是一個隱私優先的桌面應用程式，讓你能夠透過全域熱鍵捕獲截圖，使用 OpenAI 的 Vision API 進行分析，並獲得智能回應 - 同時對螢幕分享和其他監控軟體完全隱形。
+Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面應用程式。提供三個核心功能：文字輸入與螢幕截圖分析、語音錄音與實時對話支援、以及隱蔽式操作界面。系統透過全域熱鍵直接整合 OpenAI API，所有 API 設定都可透過前端界面配置，提供無縫的 AI 輔助體驗，同時對螢幕分享和監控軟體完全隱形。
 
 **其他語言版本**: [English](README.md) | [繁體中文](README_cn.md)
 
@@ -63,18 +61,19 @@ Ghost AI 是一個隱私優先的桌面應用程式，讓你能夠透過全域�
 
 ### 🏗️ **現代化架構**
 
-- **前端**: TypeScript + Electron 提供跨平台桌面體驗
-- **後端**: Python + FastAPI 提供高效能 API 處理
-- **關注點分離**: 使用 `ghost_ui` 和 `ghost_ai` 模組的清晰架構
-- **型別安全**: 完整的 TypeScript 和 Python 型別註解
+- **純前端應用程式**: 純 Electron + TypeScript，無任何後端依賴
+- **UI 框架**: React 提供響應式和現代化的使用者界面
+- **直接 API 整合**: OpenAI SDK 直接整合在主程序中
+- **前端配置**: 所有 API 設定都可透過使用者界面配置
+- **型別安全**: 整個程式碼庫完整的 TypeScript 型別註解
+- **記憶體優先**: 所有處理都在記憶體中進行，不會持久化到磁碟
 
 ## 🚀 快速開始
 
 ### 系統需求
 
-- **Python 3.10+** 用於後端 API
-- **Node.js 18+** 用於 Electron 前端
-- **OpenAI API 金鑰** 用於圖片分析
+- **Node.js 18+** 用於 Electron 應用程式
+- **OpenAI API 金鑰** 用於 AI 分析功能
 
 ### 安裝步驟
 
@@ -85,55 +84,41 @@ Ghost AI 是一個隱私優先的桌面應用程式，讓你能夠透過全域�
     cd ghost_ai
     ```
 
-2. **設定後端 (ghost_ai)**
+2. **安裝依賴**
 
     ```bash
-    # 如果尚未安裝 uv
-    make uv-install
-
-    # 安裝 Python 依賴
-    cd src/ghost_ai
-    uv sync
-
-    # 設定環境變數
-    cp .env.example .env
-    # 編輯 .env 並添加您的 OpenAI API 金鑰
-    ```
-
-3. **設定前端 (ghost_ui)**
-
-    ```bash
-    cd ghost_ui
     npm install
     ```
 
-4. **配置您的 OpenAI API 金鑰**
+3. **配置您的 OpenAI API 設定**
 
-    ```bash
-    # 在 src/ghost_ai/.env 中
-    OPENAI_API_KEY=your_api_key_here
-    ```
+    應用程式首次執行時會提示您配置 OpenAI API 設定：
+    - API 金鑰
+    - 基礎 URL（可選，預設為 https://api.openai.com/v1）
+    - 模型選擇
+    - 其他偏好設定
+    
+    所有設定都使用 Electron 內建加密功能安全儲存。
 
 ### 執行應用程式
 
-1. **啟動後端 API**
+1. **以開發模式啟動應用程式**
 
     ```bash
-    cd src/ghost_ai
-    uv run uvicorn app.main:app --reload --port 8000
-    ```
-
-2. **啟動前端應用程式**
-
-    ```bash
-    cd ghost_ui
     npm run dev
     ```
 
-3. **設定您的熱鍵** (預設: `Ctrl+Shift+S`)
+2. **設定您的熱鍵** (可在設定中配置)
 
-    - 應用程式將在啟動時註冊全域熱鍵
-    - 從任何應用程式按下熱鍵即可捕獲和分析截圖
+    - **文字輸入 + 截圖**: `Ctrl+Shift+S` (預設)
+    - **語音錄音**: `Ctrl+Shift+V` (預設)
+    - **隱藏界面**: `Ctrl+Shift+H` (預設)
+
+3. **建置生產版本**
+
+    ```bash
+    npm run build
+    ```
 
 ### 首次使用
 
@@ -149,86 +134,173 @@ Ghost AI 是一個隱私優先的桌面應用程式，讓你能夠透過全域�
 ├── .github/
 │   ├── workflows/          # CI/CD 工作流程
 │   └── copilot-instructions.md
-├── docker/                 # Docker 配置
-├── docs/                   # MkDocs 文檔
-├── scripts/                # 自動化腳本
-├── ghost_ui/               # 前端 Electron 應用
-│   ├── src/main/           # Electron 主進程
-│   ├── src/renderer/       # React 渲染進程
-│   └── src/shared/         # 共用工具
+├── .kiro/
+│   └── specs/ghost-ai/     # 專案規格和需求
 ├── src/
-│   └── ghost_ai/           # 後端 Python API
+│   ├── main/               # Electron 主程序
+│   │   ├── hotkey-manager.ts    # 全域熱鍵管理
+│   │   ├── screenshot-manager.ts # 螢幕截圖捕獲
+│   │   ├── audio-manager.ts     # 語音錄音
+│   │   └── hide-manager.ts      # 隱蔽界面
+│   ├── renderer/           # React 渲染程序
+│   │   ├── components/     # UI 組件
+│   │   └── pages/          # 應用程式頁面
+│   ├── shared/             # 共用工具
+│   │   ├── openai-client.ts     # OpenAI API 整合
+│   │   └── types.ts             # TypeScript 定義
+│   └── services/           # 業務邏輯服務
 ├── tests/                  # 測試套件
-├── pyproject.toml          # 專案配置
-├── Makefile                # 開發命令
+├── package.json            # Node.js 專案配置
+├── tsconfig.json           # TypeScript 配置
+├── electron-builder.json   # Electron 打包配置
 └── README.md
 ```
 
 ## 🛠️ 可用命令
 
+### 開發命令
+
 ```bash
 # 開發
-make clean          # 清理自動生成的檔案
-make format         # 執行 pre-commit hooks
-make test           # 執行所有測試
-make gen-docs       # 生成文檔
+npm run dev                             # 啟動開發模式
+npm run build                           # 建置生產版本
+npm run test                            # 執行測試
+npm run lint                            # 檢查 TypeScript 程式碼
+npm run format                          # 格式化程式碼
+
+# 打包
+npm run dist                            # 建置並打包所有平台
+npm run dist:win                        # 打包 Windows 版本
+npm run dist:mac                        # 打包 macOS 版本
+npm run dist:linux                      # 打包 Linux 版本
 
 # 依賴管理
-make uv-install     # 安裝 uv 依賴管理器
-uv add <package>    # 添加生產依賴
-uv add <package> --dev  # 添加開發依賴
+npm install <package>                   # 添加依賴
+npm install <package> --save-dev        # 添加開發依賴
 ```
 
-## 🎯 包含內容
-
-### CI/CD 工作流程
-
-- **測試**: PR 上的多版本 Python 測試
-- **程式碼品質**: 自動化 ruff 檢查和 pre-commit 驗證
-- **文檔**: 自動 GitHub Pages 部署
-- **發布**: 自動發布草稿和變更日誌生成
-- **標籤**: 基於 PR 內容的自動標籤
-
-### 開發工具
-
-- **ruff**: 快速 Python 檢查器和格式化器
-- **pytest**: 帶覆蓋率的測試框架
-- **pre-commit**: 程式碼品質的 Git hooks
-- **MkDocs**: 文檔生成
-- **Docker**: 容器化開發和部署
-
-### 專案模板
-
-- **Python 套件**: 即用型套件結構
-- **配置檔案**: 包含所有必要的配置檔案
-- **文檔**: 完整的文檔設定
-- **測試**: 全面的測試配置
-
-## 🎨 自訂指南
-
-### 專案名稱自訂
-
-本模板設計為可透過簡單的全局替換快速自訂：
-
-1. **替換套件名稱**: 將所有 `ghost_ai` 替換為您的專案名稱（建議使用 snake_case）
-2. **替換專案標題**: 將所有 `GhostAI` 替換為您的專案標題（建議使用 PascalCase）
-3. **更新中繼資料**: 修改 `pyproject.toml` 中的作者、描述等資訊
-
-範例：
+### 平台特定建置
 
 ```bash
-# 如果您的專案叫做 "awesome_project"
-find . -type f -name "*.py" -o -name "*.md" -o -name "*.toml" | xargs sed -i 's/ghost_ai/awesome_project/g'
-find . -type f -name "*.py" -o -name "*.md" -o -name "*.toml" | xargs sed -i 's/GhostAI/AwesomeProject/g'
+# Windows
+npm run build:win                       # 建置 Windows 執行檔 (.exe)
+
+# macOS  
+npm run build:mac                       # 建置 macOS 應用程式 (.dmg)
+
+# Linux
+npm run build:linux                     # 建置 Linux 套件 (.AppImage, .deb)
+```
+
+## 🎯 運作原理
+
+### 捕獲流程
+
+1. **熱鍵觸發**: 按下您配置的全域熱鍵 (例如 `Ctrl+Shift+S`)
+2. **隱形模式**: 應用程式立即隱藏所有視窗
+3. **螢幕截圖**: 系統將當前螢幕捕獲到記憶體中
+4. **提示輸入**: UI 出現讓您輸入分析指令
+5. **AI 分析**: 圖片和提示發送到 OpenAI Vision API
+6. **結果顯示**: 分析結果在簡潔的界面中顯示
+7. **記憶體清理**: 所有痕跡自動從記憶體中清除
+
+### 隱私保護
+
+- **無磁碟儲存**: 截圖永不保存到磁碟
+- **記憶體處理**: 所有圖片資料僅在 RAM 中處理
+- **隱蔽操作**: 對螢幕錄製和分享隱形
+- **安全通訊**: 加密的 API 呼叫與憑證固定
+- **程序隱藏**: 偽裝程序名稱和視窗標題
+- **自動清理**: 退出時清除記憶體和網路痕跡
+
+### AI 整合
+
+- **OpenAI Vision API**: 最先進的圖片理解技術
+- **自訂提示**: 根據您的特定需求調整分析
+- **情境感知**: AI 理解圖片內容和您的問題
+- **錯誤恢復**: 強健的 API 失敗和速率限制處理
+- **回應最佳化**: 智能快取和請求批次處理
+
+## ⚙️ 配置
+
+### 熱鍵自訂
+
+在設定中編輯熱鍵配置：
+
+```typescript
+// 預設熱鍵: Ctrl+Shift+S
+const defaultHotkey = "CommandOrControl+Shift+S";
+
+// 自訂熱鍵範例:
+// "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) 或 Cmd+Alt+G (macOS)
+// "CommandOrControl+Shift+A"   // Ctrl+Shift+A (Windows/Linux) 或 Cmd+Shift+A (macOS)
+// "F12"                        // 功能鍵 F12
+```
+
+### API 配置
+
+透過應用程式的設定界面配置您的 OpenAI API 設定：
+
+- **API 金鑰**: 您的 OpenAI API 金鑰（使用 Electron safeStorage 安全儲存）
+- **基礎 URL**: 自訂 API 端點（預設為 https://api.openai.com/v1）
+- **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）
+- **最大 Token 數**: 每次請求的最大 token 數（預設：1000）
+- **溫度**: 回應創意度（預設：0.7）
+
+所有設定都經過加密並本地儲存 - 無需外部服務。
+
+## 🔧 開發
+
+### 設定開發環境
+
+1. **安裝依賴**
+
+    ```bash
+    npm install
+    ```
+
+2. **配置 API 設定**
+
+    應用程式首次執行時會引導您設定 OpenAI API 配置。
+
+3. **以開發模式執行**
+
+    ```bash
+    npm run dev
+    ```
+
+4. **執行測試**
+
+    ```bash
+    npm test
+    ```
+
+### 建置生產版本
+
+```bash
+# 建置應用程式
+npm run build
+
+# 打包分發
+npm run dist
 ```
 
 ## 🤝 貢獻
 
 我們歡迎貢獻！請隨時：
 
-- 開啟問題回報錯誤或功能請求
-- 提交拉取請求進行改進
-- 分享您使用此模板的經驗
+- 🐛 回報錯誤和問題
+- 💡 建議新功能或改進
+- 🔧 提交拉取請求
+- 📖 改進文檔
+- 🧪 添加測試並提高覆蓋率
+
+### 開發指南
+
+- 遵循現有的程式碼風格和慣例
+- 為新功能添加測試
+- 根據需要更新文檔
+- 確保所有測試在提交 PR 前通過
 
 ## 📖 文檔
 

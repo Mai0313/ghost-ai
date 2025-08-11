@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ghost AI 是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手系統，提供三個核心功能模組：文字輸入與螢幕分析、語音錄音處理、以及隱藏式界面管理。系統採用單一應用程式架構，直接整合 OpenAI API，通過事件驅動和全域熱鍵系統實現無縫操作。支援多模態AI交互和自定義提示詞管理，可打包為 Windows、macOS 和 Linux 的原生桌面應用程式。整個系統設計重點在於隱私保護、跨平台相容性、使用者體驗和系統穩定性。
+Ghost AI 是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手系統，提供三個核心功能模組：文字輸入與螢幕分析、語音錄音處理、以及隱藏式界面管理。系統採用純前端架構，無需任何後端服務，直接整合 OpenAI API，通過事件驅動和全域熱鍵系統實現無縫操作。所有API設定（包括金鑰、基礎URL、模型選擇）都可在前端界面中配置和管理。支援多模態AI交互和自定義提示詞管理，可打包為 Windows、macOS 和 Linux 的原生桌面應用程式。整個系統設計重點在於隱私保護、跨平台相容性、使用者體驗和系統穩定性。
 
 ## Architecture
 
@@ -205,10 +205,10 @@ interface AudioDevice {
 
 ```typescript
 interface OpenAIClient {
-  // 基礎配置
-  apiKey: string;
-  baseURL: string;
-  timeout: number;
+  // 基礎配置 - 從前端設定中動態載入
+  initialize(config: OpenAIConfig): void;
+  updateConfig(config: Partial<OpenAIConfig>): void;
+  validateConfig(config: OpenAIConfig): Promise<boolean>;
   
   // 圖片分析 API (Vision)
   analyzeImageWithText(imageBuffer: Buffer, textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
@@ -221,9 +221,28 @@ interface OpenAIClient {
   // Chat Completion API
   chatCompletion(messages: ChatMessage[], model?: string): Promise<ChatCompletionResult>;
   
+  // 模型管理
+  listAvailableModels(): Promise<ModelInfo[]>;
+  
   // 錯誤處理
   handleApiError(error: any): Promise<ErrorResponse>;
   retry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T>;
+}
+
+interface OpenAIConfig {
+  apiKey: string;
+  baseURL: string;
+  model: string;
+  timeout: number;
+  maxTokens: number;
+  temperature: number;
+}
+
+interface ModelInfo {
+  id: string;
+  name: string;
+  description: string;
+  capabilities: string[];
 }
 
 interface ChatMessage {
@@ -373,12 +392,15 @@ interface UserSettings {
   privacyMode: boolean;
   audioDevice: string;
   rememberHideState: boolean;
+  openaiConfig: OpenAIConfig;
+  isFirstRun: boolean;
 }
 
 interface AppState {
   isVisible: boolean;
   isHidden: boolean;
   isRecording: boolean;
+  isConfigured: boolean;
   currentTextRequest?: TextInputRequest;
   currentAudioRequest?: AudioRecordingRequest;
   analysisHistory: AnalysisResult[];
@@ -556,9 +578,10 @@ interface ElectronBuildConfig {
 
 2. **API 金鑰保護**
 
-    - 環境變數儲存
-    - 執行時期加密
-    - 存取權限控制
+    - 本地加密儲存（使用 Electron 的 safeStorage API）
+    - 執行時期記憶體加密
+    - 前端設定界面的安全輸入
+    - 設定匯出時的敏感資料過濾
 
 ## Performance Optimization
 

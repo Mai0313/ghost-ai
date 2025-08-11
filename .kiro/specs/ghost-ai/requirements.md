@@ -54,9 +54,9 @@ Ghost AI是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手�
 4. IF 熱鍵註冊失敗 THEN 系統 SHALL 通知用戶並提供替代方案
 5. WHEN 用戶修改熱鍵設定 THEN 系統 SHALL 立即更新全域熱鍵註冊
 
-### Requirement 5：自定義提示詞管理
+### Requirement 5：自定義提示詞與API設定管理
 
-**User Story:** 作為用戶，我希望能夠設定和管理自定義的AI提示詞，以便獲得更符合需求的回答。
+**User Story:** 作為用戶，我希望能夠設定和管理自定義的AI提示詞，以及配置OpenAI API連接設定，以便獲得更符合需求的回答。
 
 #### Acceptance Criteria
 
@@ -65,6 +65,8 @@ Ghost AI是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手�
 3. WHEN 發送請求到AI THEN 系統 SHALL 自動將自定義提示詞包含在請求中
 4. IF 提示詞過長 THEN 系統 SHALL 提供警告並建議優化
 5. WHEN 用戶重置提示詞 THEN 系統 SHALL 恢復到預設的提示詞模板
+6. WHEN 用戶開啟設定 THEN 系統 SHALL 提供API金鑰、基礎URL、模型選擇等配置選項
+7. WHEN 用戶保存API設定 THEN 系統 SHALL 加密儲存敏感資訊並驗證連接有效性
 
 ### Requirement 6：AI分析與回應處理
 
@@ -72,11 +74,12 @@ Ghost AI是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手�
 
 #### Acceptance Criteria
 
-1. WHEN 應用程式收到截圖和提示詞 THEN 系統 SHALL 直接透過OpenAI API處理圖片分析請求
+1. WHEN 應用程式收到截圖和提示詞 THEN 系統 SHALL 使用前端設定的API金鑰直接透過OpenAI API處理圖片分析請求
 2. WHEN OpenAI回傳分析結果 THEN 系統 SHALL 在應用程式界面中顯示結果
 3. IF API請求失敗 THEN 系統 SHALL 顯示適當的錯誤訊息並提供重試選項
 4. WHEN 分析完成 THEN 用戶 SHALL 能夠複製結果或進行後續操作
 5. WHEN 處理音頻輸入 THEN 系統 SHALL 支援語音轉文字並整合到分析流程
+6. WHEN 用戶首次使用 THEN 系統 SHALL 提供設定界面讓用戶輸入OpenAI API金鑰和基礎URL
 
 ### Requirement 7：系統整合與穩定性
 
@@ -102,3 +105,5 @@ Ghost AI是一個基於 Electron 和 TypeScript 的跨平台智能桌面助手�
 3. WHEN 與API通訊 THEN 系統 SHALL 使用加密連線並清理網路日誌
 4. IF 系統偵測到監控軟體 THEN 應用程式 SHALL 警告用戶潛在的隱私風險
 5. WHEN 應用程式關閉 THEN 系統 SHALL 清理所有暫存資料和記憶體痕跡
+6. WHEN 儲存API金鑰 THEN 系統 SHALL 使用本地加密儲存，不依賴外部服務
+7. WHEN 用戶設定敏感資訊 THEN 系統 SHALL 提供安全性警告和最佳實踐建議
