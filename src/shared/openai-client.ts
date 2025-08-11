@@ -1,6 +1,8 @@
-import OpenAI from 'openai';
-import crypto from 'node:crypto';
 import type { AnalysisResult, ChatMessage, OpenAIConfig, TranscriptionResult } from './types';
+
+import crypto from 'node:crypto';
+
+import OpenAI from 'openai';
 
 export class OpenAIClient {
   private client: OpenAI | null = null;
@@ -23,6 +25,7 @@ export class OpenAIClient {
       // Minimal call: list models
       // @ts-ignore: types may vary across SDK versions
       const list = await client.models.list();
+
       return Array.isArray(list.data) && list.data.length >= 0;
     } catch {
       return false;
@@ -55,6 +58,7 @@ export class OpenAIClient {
     });
 
     const contentText = response.choices?.[0]?.message?.content ?? '';
+
     return {
       requestId,
       content: contentText,
@@ -74,6 +78,7 @@ export class OpenAIClient {
       max_tokens: this.config.maxTokens,
     });
     const contentText = response.choices?.[0]?.message?.content ?? '';
+
     return {
       requestId,
       content: contentText,
@@ -85,6 +90,7 @@ export class OpenAIClient {
   async transcribeAudio(audioBuffer: Buffer): Promise<TranscriptionResult> {
     this.ensureClient();
     const requestId = crypto.randomUUID();
+
     // Whisper transcription (placeholder): SDKs often require FormData/file objects. Keep a stub for now.
     // Return a basic stub to integrate the flow; implement real upload later.
     return {

@@ -1,5 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import type { AnalysisResult, OpenAIConfig } from '@shared/types';
+
+import { contextBridge, ipcRenderer } from 'electron';
 
 const api = {
   updateOpenAIConfig: (config: Partial<OpenAIConfig>) =>

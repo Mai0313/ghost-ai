@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
 import { Settings } from './components/Settings';
-import { RecordIndicator } from './components/RecordIndicator';
 import { IconEyeOff, IconGear, IconText, IconWaveBars } from './components/Icons';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
@@ -28,6 +28,7 @@ function App() {
     setBusy(true);
     try {
       const res = await window.ghostAI.analyzeCurrentScreen(text, customPrompt);
+
       setResult(res.content ?? '');
     } finally {
       setBusy(false);
@@ -82,7 +83,6 @@ function App() {
 
           {/* Ask question */}
           <button
-            onClick={() => setTab('ask')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -94,6 +94,7 @@ function App() {
               borderRadius: 999,
               cursor: 'pointer',
             }}
+            onClick={() => setTab('ask')}
           >
             <IconText color={tab === 'ask' ? 'white' : '#D0D0D0'} />
             Ask question
@@ -101,7 +102,6 @@ function App() {
 
           {/* Hide */}
           <button
-            onClick={() => setVisible(false)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -113,6 +113,7 @@ function App() {
               borderRadius: 999,
               cursor: 'pointer',
             }}
+            onClick={() => setVisible(false)}
           >
             <IconEyeOff />
             Hide
@@ -121,7 +122,6 @@ function App() {
 
         {/* Settings round button */}
         <button
-          onClick={() => setTab('settings')}
           style={{
             pointerEvents: 'auto',
             display: 'flex',
@@ -135,6 +135,7 @@ function App() {
             cursor: 'pointer',
             boxShadow: '0 6px 24px rgba(0,0,0,0.35)',
           }}
+          onClick={() => setTab('settings')}
         >
           <IconGear />
         </button>
@@ -157,8 +158,6 @@ function App() {
           <div>
             <label style={{ color: '#BDBDBD', fontSize: 12 }}>Prompt</label>
             <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
               placeholder="Ask about your screen..."
               rows={3}
               style={{
@@ -170,11 +169,11 @@ function App() {
                 padding: 10,
                 border: '1px solid #333',
               }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
             />
             <label style={{ color: '#BDBDBD', fontSize: 12 }}>Custom Prompt</label>
             <input
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
               style={{
                 width: '100%',
                 marginBottom: 8,
@@ -184,11 +183,12 @@ function App() {
                 padding: 10,
                 border: '1px solid #333',
               }}
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
             />
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button
                 disabled={busy || !text}
-                onClick={onSubmit}
                 style={{
                   border: 'none',
                   borderRadius: 8,
@@ -198,6 +198,7 @@ function App() {
                   cursor: 'pointer',
                   fontWeight: 600,
                 }}
+                onClick={onSubmit}
               >
                 {busy ? 'Analyzing…' : 'Analyze current screen'}
               </button>
@@ -213,4 +214,5 @@ function App() {
 }
 
 const root = createRoot(document.getElementById('root')!);
+
 root.render(<App />);

@@ -12,7 +12,7 @@
     "dev:electron": "wait-on dist/main.js && nodemon --watch dist/main.js --exec electron -- dist/main.js",
     "build": "rimraf dist && vite build && tsup",
     "dist": "npm run build && electron-builder",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "format": "prettier -w .",
     "test": "echo 'No tests yet'"
   },

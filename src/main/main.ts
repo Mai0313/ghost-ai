@@ -1,10 +1,11 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, nativeImage, Tray, Menu } from 'electron';
+import type { OpenAIConfig } from '@shared/types';
+
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import fs from 'node:fs';
-import os from 'node:os';
+
+import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu } from 'electron';
 import { openAIClient } from '@shared/openai-client';
-import type { OpenAIConfig } from '@shared/types';
+
 import { registerHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture } from './modules/hide-manager';
@@ -38,6 +39,7 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
   } else {
     const indexHtml = path.join(__dirname, 'renderer', 'index.html');
+
     mainWindow.loadFile(indexHtml);
   }
 
@@ -56,6 +58,7 @@ function createWindow() {
 
 function createTray() {
   const icon = nativeImage.createEmpty();
+
   tray = new Tray(icon);
   tray.setToolTip('Ghost AI');
   const contextMenu = Menu.buildFromTemplate([
@@ -64,6 +67,7 @@ function createTray() {
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]);
+
   tray.setContextMenu(contextMenu);
 }
 
@@ -78,6 +82,7 @@ async function initializeOpenAI() {
     temperature: 0.7,
   };
   const persisted = loadOpenAIConfig();
+
   openAIClient.initialize(persisted ?? defaultConfig);
 }
 
@@ -105,6 +110,7 @@ app.whenReady().then(async () => {
     },
   ];
   const appMenu = Menu.buildFromTemplate(template);
+
   Menu.setApplicationMenu(appMenu);
   registerHotkeys({
     onTextInput: async () => {
@@ -125,6 +131,7 @@ app.whenReady().then(async () => {
   // If no OpenAI config yet, guide user by showing the overlay
   try {
     const cfg = loadOpenAIConfig();
+
     if (!cfg) {
       mainWindow?.show();
       mainWindow?.webContents.send('text-input:show');
@@ -149,7 +156,9 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
   openAIClient.updateConfig(config);
   // persist merged config
   const merged = (openAIClient as any).config as OpenAIConfig; // access internal for persistence
+
   saveOpenAIConfig(merged);
+
   return true;
 });
 
@@ -165,6 +174,7 @@ ipcMain.handle(
       payload.textPrompt,
       payload.customPrompt,
     );
+
     return result;
   },
 );

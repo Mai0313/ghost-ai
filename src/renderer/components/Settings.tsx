@@ -10,6 +10,7 @@ export function Settings() {
   useEffect(() => {
     (async () => {
       const cfg = await window.ghostAI.getOpenAIConfig();
+
       if (cfg) {
         setApiKey(cfg.apiKey || '');
         setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
@@ -35,6 +36,7 @@ export function Settings() {
         maxTokens: 1000,
         temperature: 0.7,
       } as any);
+
       setOk(success);
     } finally {
       setTesting(false);
@@ -54,7 +56,7 @@ export function Settings() {
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button onClick={onSave}>Save</button>
-        <button onClick={onTest} disabled={testing}>
+        <button disabled={testing} onClick={onTest}>
           {testing ? 'Testing…' : 'Test'}
         </button>
         {ok !== null && (
