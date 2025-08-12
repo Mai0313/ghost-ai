@@ -64,7 +64,7 @@ export class OpenAIClient {
     ];
 
     // Basic retry with backoff
-    const attempt = async (tryIndex: number) => {
+    const attempt = async (_tryIndex: number) => {
       // @ts-ignore: SDK message types may differ by version
       return this.client!.chat.completions.create({
         model: this.config!.model,
