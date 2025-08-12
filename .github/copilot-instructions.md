@@ -154,9 +154,9 @@
   - 主要檔案：`src/renderer/main.tsx`、`src/renderer/components/Settings.tsx`、`src/renderer/components/Icons.tsx`。
 
 - 重要互動流程：
-  - `window.ghostAI.onTextInputShow` 僅顯示 HUD，`tab=null`（不顯示任何泡泡），必要時使用者自行點擊 `Ask`/`Settings` 顯示對應面板。
-  - `Ask` 面板中點擊 `Send` 使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`。
-  - `Settings` 面板沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`。
+  - `window.ghostAI.onTextInputShow` 顯示 HUD 並直接打開 `Ask`，焦點移到單行輸入。
+  - `Ask` 僅有一個輸入框；送出時使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`，其中 `customPrompt` 來源改為設定頁的預設值。
+  - `Settings` 面板沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`，並新增 `settings:get`、`settings:update` 管理使用者偏好（例如預設 custom prompt）。
 
 - 型別補充：在 `tsconfig.json` 加入 `"types": ["vite/client"]` 以支援 `import.meta.env`。
 
@@ -171,6 +171,12 @@
   - 關閉選單列：`mainWindow.setMenuBarVisibility(false)`
 - 只有在使用者透過熱鍵或托盤操作時才 `mainWindow.show()`，並由 Renderer 端控制 HUD/面板的顯示。
 - 截圖流程透過 `hideAllWindowsDuring` 暫時隱藏所有視窗，避免干擾截圖與留下雜訊。
+
+### 熱鍵（固定）
+
+- 不提供 UI 變更，僅在主程序註冊：
+  - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask
+  - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
 
 - [ ] 2. 全域熱鍵系統
   - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`

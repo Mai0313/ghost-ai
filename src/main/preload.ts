@@ -13,9 +13,9 @@ const api = {
   listOpenAIModels: (): Promise<string[]> => ipcRenderer.invoke('openai:list-models'),
   transcribeAudio: (audioBuffer: ArrayBuffer): Promise<{ text: string }> =>
     ipcRenderer.invoke('audio:transcribe', Buffer.from(new Uint8Array(audioBuffer))),
-  updateHotkeys: (
-    partial: Partial<{ textInput: string; audioRecord: string; hideToggle: string }>,
-  ) => ipcRenderer.invoke('hotkeys:update', partial),
+  // Settings (user preferences)
+  getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
+  updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),
   onTextInputShow: (handler: () => void) => ipcRenderer.on('text-input:show', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
 };

@@ -18,7 +18,6 @@ function App() {
   // Show minimal HUD by default so the user can see/operate it
   const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState('');
-  const [customPrompt, setCustomPrompt] = useState('Describe what you see.');
   const [result, setResult] = useState('');
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,10 +32,10 @@ function App() {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
     (window as any).ghostAI?.onTextInputShow?.(() => {
       setVisible(true);
-      setTab(null);
+      setTab('ask');
       // Focus the prompt when opened via hotkey/menu for quick typing
       setTimeout(() => {
-        const el = document.getElementById('ask-prompt') as HTMLTextAreaElement | null;
+        const el = document.getElementById('ask-input') as HTMLInputElement | null;
         el?.focus();
       }, 0);
     });
@@ -123,13 +122,14 @@ function App() {
     if (!text) return;
     setBusy(true);
     try {
-      const res = await window.ghostAI.analyzeCurrentScreen(text, customPrompt);
+      // Use custom prompt stored in settings via main process (empty means server-side default)
+      const res = await window.ghostAI.analyzeCurrentScreen(text, '');
 
       setResult(res.content ?? '');
     } finally {
       setBusy(false);
     }
-  }, [text, customPrompt]);
+  }, [text]);
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -338,13 +338,12 @@ function App() {
 
           {/* Prompt composer */}
           <div style={{ display: 'grid', gap: 8 }}>
-            <label htmlFor="ask-prompt" style={{ color: '#BDBDBD', fontSize: 12 }}>
-              Prompt
+            <label htmlFor="ask-input" style={{ color: '#BDBDBD', fontSize: 12 }}>
+              Question
             </label>
-            <textarea
-              id="ask-prompt"
+            <input
+              id="ask-input"
               placeholder="Ask about your screen..."
-              rows={3}
               style={{
                 width: '100%',
                 background: '#141414',
@@ -353,27 +352,9 @@ function App() {
                 padding: 10,
                 border: '1px solid #2a2a2a',
                 outline: 'none',
-                resize: 'vertical',
               }}
               value={text}
               onChange={(e) => setText(e.target.value)}
-            />
-            <label htmlFor="ask-custom" style={{ color: '#BDBDBD', fontSize: 12 }}>
-              Custom Prompt
-            </label>
-            <input
-              id="ask-custom"
-              style={{
-                width: '100%',
-                background: '#141414',
-                color: 'white',
-                borderRadius: 10,
-                padding: 10,
-                border: '1px solid #2a2a2a',
-                outline: 'none',
-              }}
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
             />
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button

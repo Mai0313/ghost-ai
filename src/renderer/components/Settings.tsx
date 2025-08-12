@@ -7,10 +7,7 @@ export function Settings() {
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
-  const [textHotkey, setTextHotkey] = useState('');
-  const [audioHotkey, setAudioHotkey] = useState('');
-  const [hideHotkey, setHideHotkey] = useState('');
-  const [hotkeyUpdateMsg, setHotkeyUpdateMsg] = useState<string>('');
+  const [customPrompt, setCustomPrompt] = useState('Describe what you see.');
 
   useEffect(() => {
     (async () => {
@@ -26,7 +23,6 @@ export function Settings() {
       }
       try {
         const list = await api.listOpenAIModels();
-
         if (Array.isArray(list) && list.length) setModels(list);
       } catch {}
     })();
@@ -36,7 +32,7 @@ export function Settings() {
     const api: any = (window as any).ghostAI;
 
     if (!api) return alert('Preload not ready. Please restart the app.');
-    await api.updateOpenAIConfig({ apiKey, baseURL, model });
+    await api.updateOpenAIConfig({ apiKey, baseURL, model, customPrompt } as any);
     alert('Saved OpenAI settings');
   };
 
@@ -141,14 +137,14 @@ export function Settings() {
         )}
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Hotkeys</div>
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Custom Prompt</div>
         <div style={{ display: 'grid', gap: 10 }}>
-          <label htmlFor="hk-text" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Text Input (e.g., Control+Shift+S or Command+Shift+S)
+          <label htmlFor="custom-prompt" style={{ fontSize: 12, color: '#BDBDBD' }}>
+            Default custom prompt used with Ask
           </label>
-          <input
-            id="hk-text"
-            placeholder="Default platform hotkey"
+          <textarea
+            id="custom-prompt"
+            rows={2}
             style={{
               background: '#141414',
               border: '1px solid #2a2a2a',
@@ -156,80 +152,13 @@ export function Settings() {
               padding: '10px 12px',
               borderRadius: 10,
               outline: 'none',
+              resize: 'vertical',
             }}
-            value={textHotkey}
-            onChange={(e) => setTextHotkey(e.target.value)}
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
           />
-          <label htmlFor="hk-audio" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Audio Record (e.g., Control+Shift+V)
-          </label>
-          <input
-            id="hk-audio"
-            placeholder="Default platform hotkey"
-            style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              outline: 'none',
-            }}
-            value={audioHotkey}
-            onChange={(e) => setAudioHotkey(e.target.value)}
-          />
-          <label htmlFor="hk-hide" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Toggle Hide (e.g., Control+Shift+H)
-          </label>
-          <input
-            id="hk-hide"
-            placeholder="Default platform hotkey"
-            style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              outline: 'none',
-            }}
-            value={hideHotkey}
-            onChange={(e) => setHideHotkey(e.target.value)}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              style={{
-                border: 'none',
-                borderRadius: 10,
-                padding: '10px 14px',
-                background: '#2B66F6',
-                color: 'white',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-              onClick={async () => {
-                const payload: any = {};
-
-                if (textHotkey) payload.textInput = textHotkey;
-                if (audioHotkey) payload.audioRecord = audioHotkey;
-                if (hideHotkey) payload.hideToggle = hideHotkey;
-                const api: any = (window as any).ghostAI;
-
-                if (!api) {
-                  setHotkeyUpdateMsg('Preload not ready. Please restart the app.');
-
-                  return;
-                }
-                const res = await api.updateHotkeys(payload);
-
-                setHotkeyUpdateMsg(
-                  res.ok ? 'Hotkeys updated.' : `Some hotkeys failed: ${res.failed.join(', ')}`,
-                );
-              }}
-            >
-              Update Hotkeys
-            </button>
-            {hotkeyUpdateMsg && (
-              <span style={{ alignSelf: 'center', color: '#E6E6E6' }}>{hotkeyUpdateMsg}</span>
-            )}
+          <div style={{ color: '#BDBDBD', fontSize: 12 }}>
+            Hotkeys are fixed: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
           </div>
         </div>
       </div>

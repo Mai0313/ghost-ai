@@ -12,9 +12,8 @@ declare global {
       ) => Promise<{ content: string }>;
       listOpenAIModels: () => Promise<string[]>;
       transcribeAudio: (audioBuffer: ArrayBuffer) => Promise<{ text: string }>;
-      updateHotkeys: (
-        partial: Partial<{ textInput: string; audioRecord: string; hideToggle: string }>,
-      ) => Promise<{ ok: boolean; failed: string[] }>;
+      getUserSettings: () => Promise<any>;
+      updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;
       onAudioToggle: (handler: () => void) => void;
     };

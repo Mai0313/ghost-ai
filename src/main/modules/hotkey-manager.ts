@@ -1,40 +1,30 @@
-import type { HotkeyConfig } from '@shared/types';
-
 import { globalShortcut } from 'electron';
 
 export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;
-  onAudioRecord: () => void | Promise<void>;
   onToggleHide: () => void | Promise<void>;
 }
 
-const DEFAULT_TEXT_HOTKEY = process.platform === 'darwin' ? 'Command+Shift+S' : 'Control+Shift+S';
-const DEFAULT_AUDIO_HOTKEY = process.platform === 'darwin' ? 'Command+Shift+V' : 'Control+Shift+V';
-const DEFAULT_HIDE_HOTKEY = process.platform === 'darwin' ? 'Command+Shift+H' : 'Control+Shift+H';
+// Fixed hotkeys (Cmd on macOS, Ctrl on others)
+const ASK_HOTKEY = 'CommandOrControl+Enter';
+const HIDE_HOTKEY = 'CommandOrControl+\\';
 
-export function registerHotkeys(
-  handlers: HotkeyHandlers,
-  custom?: Partial<HotkeyConfig>,
-): { ok: boolean; failed: string[] } {
+export function registerFixedHotkeys(handlers: HotkeyHandlers): {
+  ok: boolean;
+  failed: string[];
+} {
   const failures: string[] = [];
-  const text = custom?.textInput ?? DEFAULT_TEXT_HOTKEY;
-  const audio = custom?.audioRecord ?? DEFAULT_AUDIO_HOTKEY;
-  const hide = custom?.hideToggle ?? DEFAULT_HIDE_HOTKEY;
 
   try {
-    globalShortcut.register(text, () => void handlers.onTextInput());
+    globalShortcut.register(ASK_HOTKEY, () => void handlers.onTextInput());
   } catch {
-    failures.push(text);
+    failures.push(ASK_HOTKEY);
   }
+
   try {
-    globalShortcut.register(audio, () => void handlers.onAudioRecord());
+    globalShortcut.register(HIDE_HOTKEY, () => void handlers.onToggleHide());
   } catch {
-    failures.push(audio);
-  }
-  try {
-    globalShortcut.register(hide, () => void handlers.onToggleHide());
-  } catch {
-    failures.push(hide);
+    failures.push(HIDE_HOTKEY);
   }
 
   return { ok: failures.length === 0, failed: failures };
