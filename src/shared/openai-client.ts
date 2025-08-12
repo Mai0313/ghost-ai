@@ -39,6 +39,7 @@ export class OpenAIClient {
   async listModels(): Promise<string[]> {
     this.ensureClient();
     const client = this.client!;
+
     try {
       // @ts-ignore
       const list = await client.models.list();
@@ -123,10 +124,12 @@ export class OpenAIClient {
     });
 
     let finalContent = '';
+
     // @ts-ignore: streaming iterator typings vary across SDK versions
     for await (const chunk of stream) {
       try {
         const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+
         if (delta) {
           finalContent += delta;
           onDelta(delta);
@@ -159,11 +162,13 @@ export class OpenAIClient {
 
     // Build messages: include prior messages (as-is), then current user with text + image
     const messages: ChatMessage[] = [];
+
     if (Array.isArray(history) && history.length) messages.push(...history);
     const userCombinedContent: ChatMessage['content'] = [
       { type: 'text', text: `${customPrompt}\n\n${textPrompt}`.trim() },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
+
     messages.push({ role: 'user', content: userCombinedContent } as ChatMessage);
 
     // @ts-ignore Streaming create; SDK signatures vary
@@ -175,10 +180,12 @@ export class OpenAIClient {
     });
 
     let finalContent = '';
+
     // @ts-ignore: streaming iterator typings vary across SDK versions
     for await (const chunk of stream) {
       try {
         const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+
         if (delta) {
           finalContent += delta;
           onDelta(delta);

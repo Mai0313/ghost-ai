@@ -57,9 +57,11 @@ function App() {
     (window as any).ghostAI?.onTextInputShow?.(() => {
       setVisible(true);
       let willOpen = false;
+
       setTab((t) => {
         if (t === 'ask') return null; // toggle off if already open
         willOpen = true;
+
         return 'ask';
       });
       // Focus the prompt when opened via hotkey/menu for quick typing
@@ -73,6 +75,7 @@ function App() {
   useEffect(() => {
     if (visible && tab === 'ask') {
       const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+
       return () => window.clearTimeout(id);
     }
   }, [visible, tab]);
@@ -159,34 +162,42 @@ function App() {
     setBusy(true);
     setStreaming(true);
     const userMessage = text;
+
     setResult('');
     let unsubscribe: (() => void) | null = null;
+
     try {
-      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(userMessage, '', {
-        onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
-        onDelta: ({ delta }: { requestId: string; delta: string }) =>
-          setResult((prev) => prev + (delta ?? '')),
-        onDone: ({ content }: { requestId: string; content: string }) => {
-          setResult(content ?? '');
-          setStreaming(false);
-          setRequestId(null);
-          setHistory((prev) => [
-            ...prev,
-            { role: 'user', content: userMessage },
-            { role: 'assistant', content: content ?? '' },
-          ]);
+      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
+        userMessage,
+        '',
+        {
+          onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
+          onDelta: ({ delta }: { requestId: string; delta: string }) =>
+            setResult((prev) => prev + (delta ?? '')),
+          onDone: ({ content }: { requestId: string; content: string }) => {
+            setResult(content ?? '');
+            setStreaming(false);
+            setRequestId(null);
+            setHistory((prev) => [
+              ...prev,
+              { role: 'user', content: userMessage },
+              { role: 'assistant', content: content ?? '' },
+            ]);
+          },
+          onError: (_: { requestId?: string; error: string }) => {
+            setStreaming(false);
+            setRequestId(null);
+          },
         },
-        onError: (_: { requestId?: string; error: string }) => {
-          setStreaming(false);
-          setRequestId(null);
-        },
-      }, history);
+        history,
+      );
       // Clear input after sending
       setText('');
     } catch (e) {
       // fallback to non-streaming
       try {
         const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, '');
+
         setResult(res?.content ?? '');
         setHistory((prev) => [
           ...prev,
@@ -200,6 +211,7 @@ function App() {
     } finally {
       setBusy(false);
     }
+
     return () => {
       if (unsubscribe) unsubscribe();
     };
@@ -224,7 +236,9 @@ function App() {
         setResult('');
       }
     };
+
     window.addEventListener('keydown', handler, { capture: true });
+
     return () => window.removeEventListener('keydown', handler, { capture: true } as any);
   }, []);
 
@@ -449,8 +463,9 @@ function App() {
               }}
             >
               <input
-                id="ask-input"
                 ref={askInputRef}
+                disabled={busy || streaming}
+                id="ask-input"
                 placeholder={busy || streaming ? 'Thinking…' : 'Ask about your screen...'}
                 style={{
                   flex: 1,
@@ -462,7 +477,6 @@ function App() {
                   outline: 'none',
                 }}
                 value={text}
-                disabled={busy || streaming}
                 onChange={(e) => setText(e.target.value)}
                 onCompositionEnd={() => setComposing(false)}
                 onCompositionStart={() => setComposing(true)}

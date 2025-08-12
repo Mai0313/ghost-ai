@@ -2,9 +2,9 @@ import type { OpenAIConfig } from '@shared/types';
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 
 import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu } from 'electron';
-import crypto from 'node:crypto';
 import { openAIClient } from '@shared/openai-client';
 
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
@@ -242,7 +242,7 @@ ipcMain.on(
 
       evt.sender.send('capture:analyze-stream:start', { requestId });
 
-      const result = await (openAIClient as any).analyzeWithHistoryStream
+      const result = (await (openAIClient as any).analyzeWithHistoryStream)
         ? // Use history-aware streaming if available
           (openAIClient as any).analyzeWithHistoryStream(
             image,
@@ -250,7 +250,8 @@ ipcMain.on(
             payload.textPrompt,
             payload.customPrompt,
             requestId,
-            (delta: string) => evt.sender.send('capture:analyze-stream:delta', { requestId, delta }),
+            (delta: string) =>
+              evt.sender.send('capture:analyze-stream:delta', { requestId, delta }),
           )
         : openAIClient.analyzeImageWithTextStream(
             image,
@@ -265,6 +266,7 @@ ipcMain.on(
       evt.sender.send('capture:analyze-stream:done', result);
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
+
       // Best-effort request routing – if requestId isn't known yet, send without
       evt.sender.send('capture:analyze-stream:error', { error });
     }

@@ -247,7 +247,7 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
 - **API 金鑰**: 您的 OpenAI API 金鑰（使用 Electron safeStorage 安全儲存）
 - **基礎 URL**: 自訂 API 端點（預設為 https://api.openai.com/v1）
 - **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）
-注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
+  注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
 
 所有設定都經過加密並本地儲存 - 無需外部服務。
 
