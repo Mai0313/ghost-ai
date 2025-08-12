@@ -29,6 +29,7 @@ function App() {
   const barRef = useRef<HTMLDivElement | null>(null);
   const [barPos, setBarPos] = useState<{ x: number; y: number }>({ x: 0, y: 20 });
   const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const askInputRef = useRef<HTMLInputElement | null>(null);
   const [composing, setComposing] = useState(false);
 
   // Center the bar horizontally on first mount
@@ -63,13 +64,18 @@ function App() {
       });
       // Focus the prompt when opened via hotkey/menu for quick typing
       if (willOpen) {
-        setTimeout(() => {
-          const el = document.getElementById('ask-input') as HTMLInputElement | null;
-          el?.focus();
-        }, 0);
+        setTimeout(() => askInputRef.current?.focus(), 0);
       }
     });
   }, []);
+
+  // Auto-focus whenever Ask is shown
+  useEffect(() => {
+    if (visible && tab === 'ask') {
+      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+      return () => window.clearTimeout(id);
+    }
+  }, [visible, tab]);
 
   useEffect(() => {
     (window as any).ghostAI?.onAudioToggle?.(() => setRecording((prev) => !prev));
@@ -444,6 +450,7 @@ function App() {
             >
               <input
                 id="ask-input"
+                ref={askInputRef}
                 placeholder={busy || streaming ? 'Thinking…' : 'Ask about your screen...'}
                 style={{
                   flex: 1,
