@@ -27,6 +27,7 @@ function App() {
   const barRef = useRef<HTMLDivElement | null>(null);
   const [barPos, setBarPos] = useState<{ x: number; y: number }>({ x: 0, y: 20 });
   const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const [composing, setComposing] = useState(false);
 
   // Center the bar horizontally on first mount
   useLayoutEffect(() => {
@@ -157,6 +158,9 @@ function App() {
     return `${minutes}:${seconds}`;
   }, [elapsedMs]);
 
+  // Position for the response bubble: below the bar
+  const bubbleTop = barPos.y + ((barRef.current && barRef.current.offsetHeight) || 50) + 10;
+
   return (
     <div
       style={{
@@ -167,31 +171,24 @@ function App() {
         fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
       }}
     >
-      {/* Draggable control bar */}
+      {/* Draggable control bar (no extra container to avoid blocking clicks) */}
       <div
+        ref={barRef}
         style={{
           position: 'absolute',
           top: barPos.y,
           left: barPos.x,
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 6,
+          background: 'rgba(30,30,30,0.92)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 12,
+          padding: 6,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
           pointerEvents: 'auto',
         }}
       >
-        <div
-          ref={barRef}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'rgba(30,30,30,0.92)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 12,
-            padding: 6,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-          }}
-        >
           {/* Drag handle */}
           <div
             title="Drag"
@@ -204,8 +201,8 @@ function App() {
                 const dy = ev.clientY - (dragStateRef.current?.offsetY ?? 0);
                 const width = barRef.current?.offsetWidth ?? 320;
                 const height = barRef.current?.offsetHeight ?? 40;
-                const clampedX = Math.min(Math.max(10, dx), window.innerWidth - width - 10);
-                const clampedY = Math.min(Math.max(10, dy), window.innerHeight - height - 10);
+                const clampedX = Math.min(Math.max(0, dx), window.innerWidth - width);
+                const clampedY = Math.min(Math.max(0, dy), window.innerHeight - height);
                 setBarPos({ x: clampedX, y: clampedY });
               };
               const onUp = () => {
@@ -217,9 +214,10 @@ function App() {
               window.addEventListener('pointerup', onUp, { once: true });
             }}
             style={{
-              width: 10,
+              width: 12,
               cursor: 'move',
               alignSelf: 'stretch',
+              marginRight: 4,
             }}
           />
           {/* Left primary pill */}
@@ -300,106 +298,92 @@ function App() {
             <IconGear />
           </button>
         </div>
-      </div>
 
-      {/* Bubble panel beneath top bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 76,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 760,
-          pointerEvents: 'auto',
-        }}
-      >
-        <div
-          style={{
-            display: tab === 'settings' ? 'block' : 'none',
-            background: 'rgba(20,20,20,0.92)',
-            color: 'white',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 16,
-            padding: 16,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-          }}
-        >
+      {/* Bubble panel beneath (position follows bar horizontally) */}
+      <div style={{ position: 'absolute', top: bubbleTop, left: barPos.x, width: 760, pointerEvents: 'auto' }}>
+        {tab === 'settings' && (
+          <div
+            style={{
+              background: 'rgba(20,20,20,0.92)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 16,
+              padding: 16,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontWeight: 700 }}>Settings</div>
-            <button
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-              title="Close"
-                onClick={() => setTab(null)}
-            >
-              <IconX />
-            </button>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <Settings />
-          </div>
-        </div>
-
-        {/* Ask / Response bubble */}
-        <div
-          style={{
-            display: tab === 'ask' ? 'flex' : 'none',
-            flexDirection: 'column',
-            gap: 12,
-            background: 'rgba(28,28,28,0.94)',
-            color: 'white',
-            borderRadius: 16,
-            padding: 14,
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ opacity: 0.8, fontSize: 12 }}>AI Response</div>
-            <button
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-              title="Hide"
-              onClick={() => setTab(null)}
-            >
-              <IconX />
-            </button>
-          </div>
-
-          {!!result && (
-            <div
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 12,
-                padding: 12,
-                whiteSpace: 'pre-wrap',
-                lineHeight: 1.6,
-              }}
-            >
-              {result}
+              <div style={{ fontWeight: 700 }}>Settings</div>
+              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} title="Close" onClick={() => setTab(null)}>
+                <IconX />
+              </button>
             </div>
-          )}
+            <div style={{ marginTop: 8 }}>
+              <Settings />
+            </div>
+          </div>
+        )}
 
-          {/* Prompt composer */}
-          <div style={{ display: 'grid', gap: 8 }}>
-            <label htmlFor="ask-input" style={{ color: '#BDBDBD', fontSize: 12 }}>
-              Question
-            </label>
-            <input
-              id="ask-input"
-              placeholder="Ask about your screen..."
-              style={{
-                width: '100%',
-                background: '#141414',
-                color: 'white',
-                borderRadius: 10,
-                padding: 10,
-                border: '1px solid #2a2a2a',
-                outline: 'none',
-              }}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+        {tab === 'ask' && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              background: 'rgba(28,28,28,0.94)',
+              color: 'white',
+              borderRadius: 16,
+              padding: 14,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ opacity: 0.8, fontSize: 12 }}>AI Response</div>
+              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} title="Hide" onClick={() => setTab(null)}>
+                <IconX />
+              </button>
+            </div>
+
+            {!!result && (
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 12,
+                  padding: 12,
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                }}
+              >
+                {result}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                id="ask-input"
+                placeholder="Ask about your screen..."
+                style={{
+                  flex: 1,
+                  background: '#141414',
+                  color: 'white',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  border: '1px solid #2a2a2a',
+                  outline: 'none',
+                }}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onCompositionStart={() => setComposing(true)}
+                onCompositionEnd={() => setComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !composing) {
+                    e.preventDefault();
+                    if (!busy && text) void onSubmit();
+                  }
+                }}
+              />
               <button
                 disabled={busy || !text}
                 style={{
@@ -413,10 +397,11 @@ function App() {
                   color: 'white',
                   cursor: busy || !text ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
+                  whiteSpace: 'nowrap',
                 }}
                 onClick={onSubmit}
               >
-                {busy ? 'Analyzing…' : 'Send'}
+                {busy ? 'Analyzing…' : 'Submit'}
                 {!busy && <IconSend />}
               </button>
               <button
@@ -425,17 +410,18 @@ function App() {
                   border: '1px solid rgba(255,255,255,0.08)',
                   background: 'transparent',
                   color: '#E6E6E6',
-                  padding: '9px 12px',
+                  padding: '10px 12px',
                   borderRadius: 10,
                   cursor: result ? 'pointer' : 'not-allowed',
+                  whiteSpace: 'nowrap',
                 }}
                 onClick={() => navigator.clipboard.writeText(result || '')}
               >
-                Copy response
+                Copy
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
