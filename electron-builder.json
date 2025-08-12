@@ -5,13 +5,17 @@
     "output": "release",
     "buildResources": "build"
   },
+  "extraResources": [
+    "ghost.ico"
+  ],
   "files": ["dist/**/*"],
   "mac": {
     "target": ["dmg"],
     "category": "public.app-category.productivity"
   },
   "win": {
-    "target": ["nsis"]
+    "target": ["nsis"],
+    "icon": "ghost.ico"
   },
   "linux": {
     "target": ["AppImage", "deb"]

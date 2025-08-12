@@ -267,6 +267,12 @@
   - API設定使用 Electron safeStorage 進行本地加密儲存
   - 封裝使用 `electron-builder`：Windows（NSIS .exe）、macOS（.dmg）、Linux（AppImage/deb）
 
+### Packaging assets
+
+- Windows icon is set to `ghost.ico` at the repository root via `electron-builder.json` (`win.icon`).
+- The icon file is also included at runtime through `extraResources` to allow the Tray and BrowserWindow to load it using `process.resourcesPath`.
+- Runtime loading path helper is implemented in `src/main/main.ts` (`resolveAssetPath('ghost.ico')`), used for `BrowserWindow` `icon` and `Tray` icon.
+
 - **開發指令**：
   - `npm install` - 安裝依賴
   - `npm run dev` - 啟動開發模式（首次使用建議進入設定面板設定 OpenAI API）

@@ -185,6 +185,15 @@ npm install <package> --save-dev        # Add dev dependency
 npm run dist   # Build and package for your platform
 ```
 
+### Application Icon
+
+- Windows installer and app icon use `ghost.ico` in the project root.
+- To change the icon, replace the file `ghost.ico` and rebuild:
+
+```bash
+npm run dist
+```
+
 ## 🎯 How It Works
 
 ### Capture Flow

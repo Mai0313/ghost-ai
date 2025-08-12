@@ -25,6 +25,15 @@ let tray: Tray | null = null;
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+function resolveAssetPath(assetRelativePath: string) {
+  // In production, assets placed via extraResources are under process.resourcesPath
+  if (!isDev) {
+    return path.join(process.resourcesPath, assetRelativePath);
+  }
+  // In dev, __dirname points to dist/, project root is one level up
+  return path.join(__dirname, '..', assetRelativePath);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
@@ -33,6 +42,7 @@ function createWindow() {
     frame: isDev,
     transparent: !isDev,
     backgroundColor: isDev ? '#121212' : undefined,
+    icon: resolveAssetPath('ghost.ico'),
     webPreferences: {
       // Preload is bundled as CommonJS; use .cjs extension
       preload: path.join(__dirname, 'preload.cjs'),
@@ -63,8 +73,8 @@ function createWindow() {
 }
 
 function createTray() {
-  const icon = nativeImage.createEmpty();
-
+  const trayIconPath = resolveAssetPath('ghost.ico');
+  const icon = nativeImage.createFromPath(trayIconPath);
   tray = new Tray(icon);
   tray.setToolTip('Ghost AI');
   const contextMenu = Menu.buildFromTemplate([
