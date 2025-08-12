@@ -18,6 +18,8 @@ function App() {
   const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -140,17 +142,41 @@ function App() {
   }, [recording]);
 
   const onSubmit = useCallback(async () => {
-    if (!text) return;
+    if (!text || busy || streaming) return;
     setBusy(true);
+    setStreaming(true);
+    setResult('');
+    let unsubscribe: (() => void) | null = null;
     try {
-      // Use custom prompt stored in settings via main process (empty means server-side default)
-      const res = await window.ghostAI.analyzeCurrentScreen(text, '');
-
-      setResult(res.content ?? '');
+      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(text, '', {
+        onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
+        onDelta: ({ delta }: { requestId: string; delta: string }) =>
+          setResult((prev) => prev + (delta ?? '')),
+        onDone: ({ content }: { requestId: string; content: string }) => {
+          setResult(content ?? '');
+          setStreaming(false);
+          setRequestId(null);
+        },
+        onError: (_: { requestId?: string; error: string }) => {
+          setStreaming(false);
+          setRequestId(null);
+        },
+      });
+    } catch (e) {
+      // fallback to non-streaming
+      try {
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(text, '');
+        setResult(res?.content ?? '');
+      } catch {
+        // ignore
+      }
     } finally {
       setBusy(false);
     }
-  }, [text]);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [text, busy, streaming]);
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -347,50 +373,68 @@ function App() {
         )}
 
         {tab === 'ask' && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'rgba(28,28,28,0.94)',
-              color: 'white',
-              borderRadius: 12,
-              padding: 10,
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
-              width: 760,
-            }}
-          >
-            <input
-              id="ask-input"
-              placeholder="Ask about your screen..."
+          <div style={{ width: 760, display: 'grid', gap: 8 }}>
+            {result && (
+              <div
+                style={{
+                  background: 'rgba(20,20,20,0.92)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 12,
+                  padding: 12,
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.4,
+                }}
+              >
+                {result}
+              </div>
+            )}
+
+            <div
               style={{
-                flex: 1,
-                background: '#141414',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'rgba(28,28,28,0.94)',
                 color: 'white',
-                borderRadius: 10,
-                padding: '10px 12px',
-                border: '1px solid #2a2a2a',
-                outline: 'none',
+                borderRadius: 12,
+                padding: 10,
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
               }}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onCompositionEnd={() => setComposing(false)}
-              onCompositionStart={() => setComposing(true)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !composing) {
-                  e.preventDefault();
-                  if (!busy && text) void onSubmit();
-                }
-              }}
-            />
-            <button
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-              title="Close"
-              onClick={() => setTab(null)}
             >
-              <IconX />
-            </button>
+              <input
+                id="ask-input"
+                placeholder={busy || streaming ? 'Thinking…' : 'Ask about your screen...'}
+                style={{
+                  flex: 1,
+                  background: '#141414',
+                  color: 'white',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  border: '1px solid #2a2a2a',
+                  outline: 'none',
+                }}
+                value={text}
+                disabled={busy || streaming}
+                onChange={(e) => setText(e.target.value)}
+                onCompositionEnd={() => setComposing(false)}
+                onCompositionStart={() => setComposing(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !composing) {
+                    e.preventDefault();
+                    if (!busy && text) void onSubmit();
+                  }
+                }}
+              />
+              <button
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                title="Close"
+                onClick={() => setTab(null)}
+              >
+                <IconX />
+              </button>
+            </div>
           </div>
         )}
       </div>

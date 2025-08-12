@@ -1,3 +1,101 @@
+# Ghost AI - Developer Instructions (Copilot)
+
+This document describes important technical details for contributors. Update this whenever you change IPC channels, main/renderer contracts, or shared types.
+
+## Architecture Overview
+
+- Electron main process (`src/main/*`) handles:
+  - Global hotkeys, tray, window lifecycle
+  - OpenAI requests via `src/shared/openai-client.ts`
+  - Screenshot capture via `src/main/modules/screenshot-manager.ts`
+  - Settings persistence via `electron-store`
+- Renderer (`src/renderer/*`) is a lightweight HUD and settings UI built with React
+- Shared types and the OpenAI client are in `src/shared/*`
+
+## OpenAI Integration
+
+- Wrapper class: `src/shared/openai-client.ts`
+  - `initialize`, `updateConfig`, `validateConfig`, `listModels`
+  - Non-streaming: `analyzeImageWithText(...)`
+  - Streaming: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
+  - Chat helper: `chatCompletion(...)` (non-streaming)
+
+Notes:
+- The project pins neither OpenAI SDK version nor strict types (uses `@ts-ignore` at call-sites as the SDK frequently changes). Keep the mapping minimal and guarded.
+- Vision is implemented through `chat.completions.create` with a `content` array of `[text, image_url]`.
+
+## IPC Contracts
+
+Preload exposes `window.ghostAI` via `src/main/preload.ts`:
+
+```ts
+interface GhostAPI {
+  updateOpenAIConfig(cfg: Partial<OpenAIConfig>): Promise<boolean>;
+  getOpenAIConfig(): Promise<OpenAIConfig | null>;
+  validateOpenAIConfig(cfg: OpenAIConfig): Promise<boolean>;
+  listOpenAIModels(): Promise<string[]>;
+  analyzeCurrentScreen(textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
+  analyzeCurrentScreenStream(
+    textPrompt: string,
+    customPrompt: string,
+    handlers: {
+      onStart?: (p: { requestId: string }) => void;
+      onDelta?: (p: { requestId: string; delta: string }) => void;
+      onDone?: (p: AnalysisResult) => void;
+      onError?: (p: { requestId?: string; error: string }) => void;
+    },
+  ): () => void; // unsubscribe
+  transcribeAudio(audioBuffer: ArrayBuffer): Promise<{ text: string }>;
+  getUserSettings(): Promise<any>;
+  updateUserSettings(partial: Partial<any>): Promise<any>;
+  onTextInputShow(handler: () => void): void;
+  onAudioToggle(handler: () => void): void;
+}
+```
+
+Main-side handlers in `src/main/main.ts`:
+
+- Non-streaming: `ipcMain.handle('capture:analyze', ...)` returns `AnalysisResult`.
+- Streaming (added):
+  - `ipcMain.on('capture:analyze-stream', ...)`
+  - Emits to renderer:
+    - `capture:analyze-stream:start` with `{ requestId }`
+    - `capture:analyze-stream:delta` with `{ requestId, delta }`
+    - `capture:analyze-stream:done` with final `AnalysisResult`
+    - `capture:analyze-stream:error` with `{ requestId?, error }`
+
+Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
+
+## Renderer Flow (Ask UI)
+
+- Component: `src/renderer/main.tsx` maintains `text`, `result`, `busy`, `streaming` states.
+- On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
+  - Appends deltas to `result` in real time.
+  - Shows the streamed response bubble ABOVE the input field.
+  - Disables the input while streaming.
+  - Falls back to non-streaming `analyzeCurrentScreen(...)` if needed.
+
+## Screenshot Capture
+
+- Captured via `screenshot-desktop` with PNG buffers.
+- Uses `hideAllWindowsDuring(...)` to avoid self-capture.
+
+## Settings
+
+- Persisted with `electron-store` and `safeStorage` (encrypts the OpenAI config blob).
+- `Settings.tsx` reads and updates config via `window.ghostAI`.
+
+## Coding Guidelines
+
+- Keep all UI logic in renderer, system/IO in main.
+- Prefer strong typing but be pragmatic with SDK surface changes.
+- On streaming, always clean up listeners to avoid leaks.
+- When modifying IPC channels, update:
+  - `src/main/main.ts`
+  - `src/main/preload.ts`
+  - `src/renderer/global.d.ts`
+  - This document.
+
 # Ghost AI — Copilot Instructions (需求與計畫整合)
 
 本文件整合 `.kiro/specs/ghost-ai` 中的需求與實作計畫，作為 Copilot 與協作開發的工作指南。專案為純 Electron + TypeScript 跨平台桌面應用，直接整合 OpenAI API，核心能力包含：

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu } from 'electron';
+import crypto from 'node:crypto';
 import { openAIClient } from '@shared/openai-client';
 
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
@@ -227,6 +228,36 @@ ipcMain.handle(
     );
 
     return result;
+  },
+);
+
+// Streaming analyze (sends start/delta/done/error events)
+ipcMain.on(
+  'capture:analyze-stream',
+  async (evt, payload: { textPrompt: string; customPrompt: string }) => {
+    try {
+      ensureHiddenOnCapture();
+      const image = await hideAllWindowsDuring(async () => captureScreen());
+      const requestId = crypto.randomUUID();
+
+      evt.sender.send('capture:analyze-stream:start', { requestId });
+
+      const result = await openAIClient.analyzeImageWithTextStream(
+        image,
+        payload.textPrompt,
+        payload.customPrompt,
+        requestId,
+        (delta) => {
+          evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
+        },
+      );
+
+      evt.sender.send('capture:analyze-stream:done', result);
+    } catch (err) {
+      const error = String(err ?? 'analyze-stream failed');
+      // Best-effort request routing – if requestId isn't known yet, send without
+      evt.sender.send('capture:analyze-stream:error', { error });
+    }
   },
 );
 

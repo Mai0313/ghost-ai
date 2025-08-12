@@ -32,15 +32,16 @@ export class OpenAIClient {
     }
   }
 
-  private ensureClient(): asserts this is { client: OpenAI; config: OpenAIConfig } {
+  private ensureClient(): void {
     if (!this.client || !this.config) throw new Error('OpenAIClient not initialized');
   }
 
   async listModels(): Promise<string[]> {
     this.ensureClient();
+    const client = this.client!;
     try {
       // @ts-ignore
-      const list = await this.client.models.list();
+      const list = await client.models.list();
       // @ts-ignore
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
 
@@ -56,6 +57,8 @@ export class OpenAIClient {
     customPrompt: string,
   ): Promise<AnalysisResult> {
     this.ensureClient();
+    const config = this.config!;
+    const client = this.client!;
     const requestId = crypto.randomUUID();
     const base64 = imageBuffer.toString('base64');
     const content: ChatMessage['content'] = [
@@ -66,11 +69,11 @@ export class OpenAIClient {
     // Basic retry with backoff
     const attempt = async (_tryIndex: number) => {
       // @ts-ignore: SDK message types may differ by version
-      return this.client!.chat.completions.create({
-        model: this.config!.model,
+      return client.chat.completions.create({
+        model: config.model,
         messages: [{ role: 'user', content }],
-        temperature: this.config!.temperature,
-        max_tokens: this.config!.maxTokens,
+        temperature: config.temperature,
+        max_tokens: config.maxTokens,
       });
     };
 
@@ -93,27 +96,77 @@ export class OpenAIClient {
     return {
       requestId,
       content: contentText,
-      model: response.model ?? this.config.model,
+      model: response.model ?? config.model,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  async analyzeImageWithTextStream(
+    imageBuffer: Buffer,
+    textPrompt: string,
+    customPrompt: string,
+    requestId: string,
+    onDelta: (textDelta: string) => void,
+  ): Promise<AnalysisResult> {
+    this.ensureClient();
+    const config = this.config!;
+    const client = this.client!;
+    const base64 = imageBuffer.toString('base64');
+    const content: ChatMessage['content'] = [
+      { type: 'text', text: `${customPrompt}\n\n${textPrompt}`.trim() },
+      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
+    ];
+
+    // @ts-ignore: SDK message types may differ by version
+    const stream = await client.chat.completions.create({
+      model: config.model,
+      messages: [{ role: 'user', content }],
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+      stream: true,
+    });
+
+    let finalContent = '';
+    // @ts-ignore: streaming iterator typings vary across SDK versions
+    for await (const chunk of stream) {
+      try {
+        const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+        if (delta) {
+          finalContent += delta;
+          onDelta(delta);
+        }
+      } catch {
+        // ignore malformed chunks
+      }
+    }
+
+    return {
+      requestId,
+      content: finalContent,
+      model: config.model,
       timestamp: new Date().toISOString(),
     };
   }
 
   async chatCompletion(messages: ChatMessage[], model?: string): Promise<AnalysisResult> {
     this.ensureClient();
+    const config = this.config!;
+    const client = this.client!;
     const requestId = crypto.randomUUID();
     // @ts-ignore
-    const response = await this.client.chat.completions.create({
-      model: model ?? this.config.model,
-      messages,
-      temperature: this.config.temperature,
-      max_tokens: this.config.maxTokens,
+    const response = await client.chat.completions.create({
+      model: model ?? config.model,
+      // @ts-ignore - map app-level message type to SDK param
+      messages: messages as any,
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
     });
     const contentText = response.choices?.[0]?.message?.content ?? '';
 
     return {
       requestId,
       content: contentText,
-      model: response.model ?? model ?? this.config.model,
+      model: response.model ?? model ?? config.model,
       timestamp: new Date().toISOString(),
     };
   }

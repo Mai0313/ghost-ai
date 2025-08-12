@@ -10,6 +10,16 @@ declare global {
         textPrompt: string,
         customPrompt: string,
       ) => Promise<{ content: string }>;
+      analyzeCurrentScreenStream: (
+        textPrompt: string,
+        customPrompt: string,
+        handlers: {
+          onStart?: (payload: { requestId: string }) => void;
+          onDelta?: (payload: { requestId: string; delta: string }) => void;
+          onDone?: (payload: { requestId: string; content: string }) => void;
+          onError?: (payload: { requestId?: string; error: string }) => void;
+        },
+      ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
       transcribeAudio: (audioBuffer: ArrayBuffer) => Promise<{ text: string }>;
       getUserSettings: () => Promise<any>;

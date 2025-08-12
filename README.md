@@ -55,7 +55,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 ### 🎨 **User Experience**
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
-- **Minimal Ask Input**: A clean, single‑line input appears below the HUD only when needed; press Enter to submit (IME‑safe)
+- **Minimal Ask Input + Streaming**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
 - **Fixed hotkeys**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
@@ -204,7 +204,7 @@ npm run dist
 3. **Screenshot Capture**: System captures the current screen to memory
 4. **Prompt Input**: UI appears for you to enter analysis instructions
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API
-6. **Results Display**: Analysis results shown in a clean interface
+6. **Results Display**: Answer streams live above the input; you can keep typing new prompts right away
 7. **Memory Cleanup**: All traces automatically cleared from memory
 
 ### Privacy Protection
