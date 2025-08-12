@@ -57,6 +57,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Minimal Ask Input + Streaming**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
 - **Fixed hotkeys**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
+- **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
+- **Quick clear**: Press Cmd/Ctrl+R to clear the Ask bubble and conversation history (window is not reloaded)
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
@@ -110,10 +112,10 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    npm run dev
    ```
 
-2. **Set up your hotkeys** (configurable in settings)
-   - **Text Input + Screenshot**: `Ctrl+Shift+S` (default)
-   - **Voice Recording**: `Ctrl+Shift+V` (default)
-   - **Hide Interface**: `Ctrl+Shift+H` (default)
+2. **Fixed hotkeys**
+   - **Ask**: `Cmd/Ctrl+Enter`
+   - **Toggle Hide**: `Cmd/Ctrl+\\`
+   - **Clear Ask bubble/history**: `Cmd/Ctrl+R`
 
 3. **Build for production**
 
@@ -204,7 +206,7 @@ npm run dist
 3. **Screenshot Capture**: System captures the current screen to memory
 4. **Prompt Input**: UI appears for you to enter analysis instructions
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API
-6. **Results Display**: Answer streams live above the input; you can keep typing new prompts right away
+6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away
 7. **Memory Cleanup**: All traces automatically cleared from memory
 
 ### Privacy Protection

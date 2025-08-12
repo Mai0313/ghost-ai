@@ -184,9 +184,10 @@ function App() {
               { role: 'assistant', content: content ?? '' },
             ]);
           },
-          onError: (_: { requestId?: string; error: string }) => {
+          onError: ({ error }: { requestId?: string; error: string }) => {
             setStreaming(false);
             setRequestId(null);
+            setResult(`Error: ${error || 'Unknown error'}`);
           },
         },
         history,
@@ -205,8 +206,8 @@ function App() {
           { role: 'assistant', content: res?.content ?? '' },
         ]);
         setText('');
-      } catch {
-        // ignore
+      } catch (e) {
+        setResult(`Error: ${String((e as any)?.message ?? e ?? 'analyze failed')}`);
       }
     } finally {
       setBusy(false);

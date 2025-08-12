@@ -76,6 +76,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Shows the streamed response bubble ABOVE the input field.
   - Disables the input while streaming.
   - Falls back to non-streaming `analyzeCurrentScreen(...)` if needed.
+  - Error handling: when an error occurs (from streaming or fallback), the UI writes an inline message to the same bubble in the form `Error: <message>` and re-enables input so the user can retry immediately.
+  - Clear conversation (renderer only): `Cmd/Ctrl+R` clears `history` and `result` without navigating away or reloading the window.
 
 ## Screenshot Capture
 
@@ -277,6 +279,10 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - 不提供 UI 變更，僅在主程序註冊：
   - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask
   - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
+
+### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
+
+- `View` 選單的 Reload 改用 `F5` 作為加速鍵，避免覆蓋 Renderer 端的 `Cmd/Ctrl+R`（用於清除 Ask 對話內容）。
 
 - [ ] 2. 全域熱鍵系統
   - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`

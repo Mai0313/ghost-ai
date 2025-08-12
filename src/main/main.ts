@@ -146,7 +146,11 @@ app.whenReady().then(async () => {
     },
     {
       label: 'View',
-      submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }],
+      submenu: [
+        // Avoid conflicting with renderer Ctrl/Cmd+R (used to clear Ask history)
+        { role: 'reload', accelerator: 'F5' },
+        { role: 'toggleDevTools' },
+      ],
     },
   ];
   const appMenu = Menu.buildFromTemplate(template);
