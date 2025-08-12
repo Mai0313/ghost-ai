@@ -144,19 +144,33 @@
 
 ### UI 指南（Renderer 端）
 
-- 新的 UI 採用「頂部置中控制列 + 下方回應泡泡」設計，與原本的面板不同：
-  - 控制列位於螢幕頂部置中，包含 `Listen`、`Ask`、`Hide`、`Settings` 四個按鈕。
+- 新的 UI 採用「頂部置中控制列（HUD）為主，面板按需顯示」設計：
+  - 應用啟動後預設為隱藏（`visible=false`），不顯示任何面板。
+  - 透過熱鍵或托盤選單觸發 `text-input:show` 時，僅顯示頂部 HUD；此時不自動打開任何泡泡或設定面板（避免畫面雜訊）。
+  - HUD 包含 `Listen`、`Ask`、`Hide`、`Settings` 四個按鈕；`Ask`/`Settings` 皆為「切換顯示/隱藏」的行為（再次點擊可收合）。
   - 錄音中按鈕會切換成紅色並顯示 `mm:ss` 計時。
-  - 回應泡泡置於控制列下方，包含回應內容區、提示輸入框、自訂提示欄位、`Send` 與 `Copy response`。
+  - 需要輸入問題或查看設定時，才在 HUD 下方顯示對話泡泡/設定卡片。
   - 樣式使用內聯樣式，深色玻璃質感（半透明深色背景 + 邊框 + 陰影）。
   - 主要檔案：`src/renderer/main.tsx`、`src/renderer/components/Settings.tsx`、`src/renderer/components/Icons.tsx`。
 
 - 重要互動流程：
-  - `window.ghostAI.onTextInputShow` 觸發後顯示控制列與泡泡。
-  - `Ask` 分頁中點擊 `Send` 使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`。
-  - `Settings` 分頁沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`。
+  - `window.ghostAI.onTextInputShow` 僅顯示 HUD，`tab=null`（不顯示任何泡泡），必要時使用者自行點擊 `Ask`/`Settings` 顯示對應面板。
+  - `Ask` 面板中點擊 `Send` 使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`。
+  - `Settings` 面板沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`。
 
 - 型別補充：在 `tsconfig.json` 加入 `"types": ["vite/client"]` 以支援 `import.meta.env`。
+
+### 視窗與隱形屬性（Main 端）
+
+- `BrowserWindow` 採用絕對隱形覆蓋層設定，避免出現類似 Chrome 的標準視窗：
+  - `show: false`（啟動不顯示）
+  - `frame: false`
+  - `transparent: true`
+  - `backgroundColor: '#00000000'`
+  - `resizable: false`, `fullscreenable: false`, `hasShadow: false`, `skipTaskbar: true`, `alwaysOnTop: true`
+  - 關閉選單列：`mainWindow.setMenuBarVisibility(false)`
+- 只有在使用者透過熱鍵或托盤操作時才 `mainWindow.show()`，並由 Renderer 端控制 HUD/面板的顯示。
+- 截圖流程透過 `hideAllWindowsDuring` 暫時隱藏所有視窗，避免干擾截圖與留下雜訊。
 
 - [ ] 2. 全域熱鍵系統
   - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`

@@ -15,11 +15,12 @@ import {
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
 function App() {
+  // Show minimal HUD by default so the user can see/operate it
   const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState('');
   const [customPrompt, setCustomPrompt] = useState('Describe what you see.');
   const [result, setResult] = useState('');
-  const [tab, setTab] = useState<'ask' | 'settings'>('ask');
+  const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -30,7 +31,15 @@ function App() {
 
   useEffect(() => {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
-    (window as any).ghostAI?.onTextInputShow?.(() => setVisible(true));
+    (window as any).ghostAI?.onTextInputShow?.(() => {
+      setVisible(true);
+      setTab(null);
+      // Focus the prompt when opened via hotkey/menu for quick typing
+      setTimeout(() => {
+        const el = document.getElementById('ask-prompt') as HTMLTextAreaElement | null;
+        el?.focus();
+      }, 0);
+    });
   }, []);
 
   useEffect(() => {
@@ -188,7 +197,7 @@ function App() {
             {recording ? timeLabel : 'Listen'}
           </button>
 
-          {/* Ask */}
+          {/* Ask (toggle ask panel) */}
           <button
             style={{
               display: 'flex',
@@ -201,7 +210,7 @@ function App() {
               borderRadius: 999,
               cursor: 'pointer',
             }}
-            onClick={() => setTab('ask')}
+            onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
           >
             <IconText color={tab === 'ask' ? 'white' : '#BDBDBD'} />
             Ask
@@ -226,7 +235,7 @@ function App() {
             Hide
           </button>
 
-          {/* Separator dot menu for future actions */}
+          {/* Settings (toggle) */}
           <button
             style={{
               display: 'flex',
@@ -240,7 +249,7 @@ function App() {
               cursor: 'pointer',
             }}
             title="Settings"
-            onClick={() => setTab('settings')}
+            onClick={() => setTab((t) => (t === 'settings' ? null : 'settings'))}
           >
             <IconGear />
           </button>
@@ -269,12 +278,12 @@ function App() {
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontWeight: 700 }}>Settings</div>
             <button
               style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
               title="Close"
-              onClick={() => setTab('ask')}
+                onClick={() => setTab(null)}
             >
               <IconX />
             </button>
@@ -303,7 +312,10 @@ function App() {
             <button
               style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
               title="Hide"
-              onClick={() => setVisible(false)}
+              onClick={() => {
+                setVisible(false);
+                setTab(null);
+              }}
             >
               <IconX />
             </button>

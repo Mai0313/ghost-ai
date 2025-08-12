@@ -38,11 +38,17 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
     height: 640,
-    show: true,
-    frame: isDev,
-    transparent: !isDev,
-    backgroundColor: isDev ? '#121212' : undefined,
+    show: true, // start hidden; we only show when user invokes overlay
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
     icon: resolveAssetPath('ghost.ico'),
+    titleBarStyle: 'hidden',
+    hasShadow: false,
+    resizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
     webPreferences: {
       // Preload is bundled as CommonJS; use .cjs extension
       preload: path.join(__dirname, 'preload.cjs'),
@@ -63,13 +69,12 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // In dev or first run, automatically show the overlay input so users see UI
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (isDev) {
-      mainWindow?.show();
-      mainWindow?.webContents.send('text-input:show');
-    }
-  });
+  // Hide menu bar to keep the window minimal and overlay-like
+  mainWindow.setMenuBarVisibility(false);
+  // Prevent most screen-capture APIs from capturing this window
+  try {
+    mainWindow.setContentProtection(true);
+  } catch {}
 }
 
 function createTray() {
@@ -78,7 +83,14 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Ghost AI');
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Show Overlay', click: () => mainWindow?.webContents.send('text-input:show') },
+    {
+      label: 'Show Overlay',
+      click: () => {
+        if (!mainWindow) return;
+        mainWindow.show();
+        mainWindow.webContents.send('text-input:show');
+      },
+    },
     { label: 'Toggle Hide', click: () => toggleHidden(mainWindow) },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
