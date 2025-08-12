@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { Settings } from './components/Settings';
@@ -24,6 +24,22 @@ function App() {
   const [recording, setRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef<number | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const [barPos, setBarPos] = useState<{ x: number; y: number }>({ x: 0, y: 20 });
+  const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+
+  // Center the bar horizontally on first mount
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      setBarPos({ x: Math.max(10, Math.round((window.innerWidth - rect.width) / 2)), y: 20 });
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
@@ -151,13 +167,12 @@ function App() {
         fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
       }}
     >
-      {/* Top center control bar */}
+      {/* Draggable control bar */}
       <div
         style={{
           position: 'absolute',
-          top: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          top: barPos.y,
+          left: barPos.x,
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -165,6 +180,7 @@ function App() {
         }}
       >
         <div
+          ref={barRef}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -176,6 +192,36 @@ function App() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
           }}
         >
+          {/* Drag handle */}
+          <div
+            title="Drag"
+            onPointerDown={(e) => {
+              const rect = barRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              dragStateRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+              const onMove = (ev: PointerEvent) => {
+                const dx = ev.clientX - (dragStateRef.current?.offsetX ?? 0);
+                const dy = ev.clientY - (dragStateRef.current?.offsetY ?? 0);
+                const width = barRef.current?.offsetWidth ?? 320;
+                const height = barRef.current?.offsetHeight ?? 40;
+                const clampedX = Math.min(Math.max(10, dx), window.innerWidth - width - 10);
+                const clampedY = Math.min(Math.max(10, dy), window.innerHeight - height - 10);
+                setBarPos({ x: clampedX, y: clampedY });
+              };
+              const onUp = () => {
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+                dragStateRef.current = null;
+              };
+              window.addEventListener('pointermove', onMove);
+              window.addEventListener('pointerup', onUp, { once: true });
+            }}
+            style={{
+              width: 10,
+              cursor: 'move',
+              alignSelf: 'stretch',
+            }}
+          />
           {/* Left primary pill */}
           <button
             style={{
@@ -312,10 +358,7 @@ function App() {
             <button
               style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
               title="Hide"
-              onClick={() => {
-                setVisible(false);
-                setTab(null);
-              }}
+              onClick={() => setTab(null)}
             >
               <IconX />
             </button>
