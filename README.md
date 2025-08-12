@@ -56,7 +56,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Minimal Ask Input**: A clean, single‑line input appears below the HUD only when needed; press Enter to submit (IME‑safe)
- - **Fixed hotkeys**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
+- **Fixed hotkeys**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux

@@ -56,7 +56,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 - **浮動控制列**: 螢幕上方置中的現代 HUD（預設僅顯示控制列），含 Listen、Ask、Hide、Settings
 - **極簡 Ask 輸入**: 需要時在 HUD 下方顯示單行輸入框，按 Enter 送出（支援中文輸入法組字不誤送）
- - **固定熱鍵**: Ask = Cmd/Ctrl+Enter，切換隱藏 = Cmd/Ctrl+\\
+- **固定熱鍵**: Ask = Cmd/Ctrl+Enter，切換隱藏 = Cmd/Ctrl+\\
 - **低摩擦輸入**: 內建提示輸入框與自訂提示欄位，按 Send 即可分析
 - **可自訂設定**: 個人化熱鍵、預設提示和行為
 - **跨平台**: 在 Windows、macOS 和 Linux 上無縫運作

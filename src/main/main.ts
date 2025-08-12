@@ -30,6 +30,7 @@ function resolveAssetPath(assetRelativePath: string) {
   if (!isDev) {
     return path.join(process.resourcesPath, assetRelativePath);
   }
+
   // In dev, __dirname points to dist/, project root is one level up
   return path.join(__dirname, '..', assetRelativePath);
 }
@@ -80,6 +81,7 @@ function createWindow() {
 function createTray() {
   const trayIconPath = resolveAssetPath('ghost.ico');
   const icon = nativeImage.createFromPath(trayIconPath);
+
   tray = new Tray(icon);
   tray.setToolTip('Ghost AI');
   const contextMenu = Menu.buildFromTemplate([
@@ -175,6 +177,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
     saveUserSettings(partial);
+
     return loadUserSettings();
   });
 });

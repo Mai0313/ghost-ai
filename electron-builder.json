@@ -5,9 +5,7 @@
     "output": "release",
     "buildResources": "build"
   },
-  "extraResources": [
-    "ghost.ico"
-  ],
+  "extraResources": ["ghost.ico"],
   "files": ["dist/**/*"],
   "mac": {
     "target": ["dmg"],

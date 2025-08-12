@@ -6,7 +6,6 @@ import {
   IconEyeOff,
   IconGear,
   IconMicOff,
-  IconSend,
   IconText,
   IconWaveBars,
   IconX,
@@ -32,13 +31,17 @@ function App() {
   // Center the bar horizontally on first mount
   useLayoutEffect(() => {
     const el = barRef.current;
+
     if (!el) return;
     const update = () => {
       const rect = el.getBoundingClientRect();
+
       setBarPos({ x: Math.max(10, Math.round((window.innerWidth - rect.width) / 2)), y: 20 });
     };
+
     update();
     window.addEventListener('resize', update);
+
     return () => window.removeEventListener('resize', update);
   }, []);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -53,6 +56,7 @@ function App() {
       // Focus the prompt when opened via hotkey/menu for quick typing
       setTimeout(() => {
         const el = document.getElementById('ask-input') as HTMLInputElement | null;
+
         el?.focus();
       }, 0);
     });
@@ -189,118 +193,132 @@ function App() {
           pointerEvents: 'auto',
         }}
       >
-          {/* Drag handle */}
-          <div
-            title="Drag"
-            onPointerDown={(e) => {
-              const rect = barRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              dragStateRef.current = { offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
-              const onMove = (ev: PointerEvent) => {
-                const dx = ev.clientX - (dragStateRef.current?.offsetX ?? 0);
-                const dy = ev.clientY - (dragStateRef.current?.offsetY ?? 0);
-                const width = barRef.current?.offsetWidth ?? 320;
-                const height = barRef.current?.offsetHeight ?? 40;
-                const clampedX = Math.min(Math.max(0, dx), window.innerWidth - width);
-                const clampedY = Math.min(Math.max(0, dy), window.innerHeight - height);
-                setBarPos({ x: clampedX, y: clampedY });
-              };
-              const onUp = () => {
-                window.removeEventListener('pointermove', onMove);
-                window.removeEventListener('pointerup', onUp);
-                dragStateRef.current = null;
-              };
-              window.addEventListener('pointermove', onMove);
-              window.addEventListener('pointerup', onUp, { once: true });
-            }}
-            style={{
-              width: 12,
-              cursor: 'move',
-              alignSelf: 'stretch',
-              marginRight: 4,
-            }}
-          />
-          {/* Left primary pill */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              border: 'none',
-              borderRadius: 999,
-              padding: '9px 12px',
-              background: recording ? 'rgba(255,40,40,0.9)' : '#2B66F6',
-              color: 'white',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-            title={recording ? 'Stop recording' : 'Start recording'}
-            onClick={() => setRecording((r) => !r)}
-          >
-            {recording ? <IconMicOff color="white" /> : <IconWaveBars />}
-            {recording ? timeLabel : 'Listen'}
-          </button>
+        {/* Drag handle */}
+        <div
+          style={{
+            width: 12,
+            cursor: 'move',
+            alignSelf: 'stretch',
+            marginRight: 4,
+          }}
+          title="Drag"
+          onPointerDown={(e) => {
+            const rect = barRef.current?.getBoundingClientRect();
 
-          {/* Ask (toggle ask panel) */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'transparent',
-              color: tab === 'ask' ? 'white' : '#BDBDBD',
-              border: 'none',
-              padding: '9px 12px',
-              borderRadius: 999,
-              cursor: 'pointer',
-            }}
-            onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
-          >
-            <IconText color={tab === 'ask' ? 'white' : '#BDBDBD'} />
-            Ask
-          </button>
+            if (!rect) return;
+            dragStateRef.current = {
+              offsetX: e.clientX - rect.left,
+              offsetY: e.clientY - rect.top,
+            };
+            const onMove = (ev: PointerEvent) => {
+              const dx = ev.clientX - (dragStateRef.current?.offsetX ?? 0);
+              const dy = ev.clientY - (dragStateRef.current?.offsetY ?? 0);
+              const width = barRef.current?.offsetWidth ?? 320;
+              const height = barRef.current?.offsetHeight ?? 40;
+              const clampedX = Math.min(Math.max(0, dx), window.innerWidth - width);
+              const clampedY = Math.min(Math.max(0, dy), window.innerHeight - height);
 
-          {/* Hide */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'transparent',
-              color: '#BDBDBD',
-              border: 'none',
-              padding: '9px 10px',
-              borderRadius: 999,
-              cursor: 'pointer',
-            }}
-            onClick={() => setVisible(false)}
-          >
-            <IconEyeOff />
-            Hide
-          </button>
+              setBarPos({ x: clampedX, y: clampedY });
+            };
+            const onUp = () => {
+              window.removeEventListener('pointermove', onMove);
+              window.removeEventListener('pointerup', onUp);
+              dragStateRef.current = null;
+            };
 
-          {/* Settings (toggle) */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              color: '#BDBDBD',
-              border: 'none',
-              padding: '8px 8px',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-            title="Settings"
-            onClick={() => setTab((t) => (t === 'settings' ? null : 'settings'))}
-          >
-            <IconGear />
-          </button>
-        </div>
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp, { once: true });
+          }}
+        />
+        {/* Left primary pill */}
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            border: 'none',
+            borderRadius: 999,
+            padding: '9px 12px',
+            background: recording ? 'rgba(255,40,40,0.9)' : '#2B66F6',
+            color: 'white',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+          title={recording ? 'Stop recording' : 'Start recording'}
+          onClick={() => setRecording((r) => !r)}
+        >
+          {recording ? <IconMicOff color="white" /> : <IconWaveBars />}
+          {recording ? timeLabel : 'Listen'}
+        </button>
+
+        {/* Ask (toggle ask panel) */}
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'transparent',
+            color: tab === 'ask' ? 'white' : '#BDBDBD',
+            border: 'none',
+            padding: '9px 12px',
+            borderRadius: 999,
+            cursor: 'pointer',
+          }}
+          onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
+        >
+          <IconText color={tab === 'ask' ? 'white' : '#BDBDBD'} />
+          Ask
+        </button>
+
+        {/* Hide */}
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'transparent',
+            color: '#BDBDBD',
+            border: 'none',
+            padding: '9px 10px',
+            borderRadius: 999,
+            cursor: 'pointer',
+          }}
+          onClick={() => setVisible(false)}
+        >
+          <IconEyeOff />
+          Hide
+        </button>
+
+        {/* Settings (toggle) */}
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            color: '#BDBDBD',
+            border: 'none',
+            padding: '8px 8px',
+            borderRadius: 8,
+            cursor: 'pointer',
+          }}
+          title="Settings"
+          onClick={() => setTab((t) => (t === 'settings' ? null : 'settings'))}
+        >
+          <IconGear />
+        </button>
+      </div>
 
       {/* Bubble panel beneath (position follows bar horizontally) */}
-      <div style={{ position: 'absolute', top: bubbleTop, left: barPos.x, width: 760, pointerEvents: 'auto' }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: bubbleTop,
+          left: barPos.x,
+          width: 760,
+          pointerEvents: 'auto',
+        }}
+      >
         {tab === 'settings' && (
           <div
             style={{
@@ -314,7 +332,11 @@ function App() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 700 }}>Settings</div>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} title="Close" onClick={() => setTab(null)}>
+              <button
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                title="Close"
+                onClick={() => setTab(null)}
+              >
                 <IconX />
               </button>
             </div>
@@ -353,8 +375,8 @@ function App() {
               }}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onCompositionStart={() => setComposing(true)}
               onCompositionEnd={() => setComposing(false)}
+              onCompositionStart={() => setComposing(true)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && !composing) {
                   e.preventDefault();

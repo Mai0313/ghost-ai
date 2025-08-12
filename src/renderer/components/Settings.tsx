@@ -23,6 +23,7 @@ export function Settings() {
       }
       try {
         const list = await api.listOpenAIModels();
+
         if (Array.isArray(list) && list.length) setModels(list);
       } catch {}
     })();
@@ -157,7 +158,6 @@ export function Settings() {
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
           />
-          
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
