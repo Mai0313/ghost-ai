@@ -36,6 +36,20 @@ export class OpenAIClient {
     if (!this.client || !this.config) throw new Error('OpenAIClient not initialized');
   }
 
+  async listModels(): Promise<string[]> {
+    this.ensureClient();
+    try {
+      // @ts-ignore
+      const list = await this.client.models.list();
+      // @ts-ignore
+      const ids = (list?.data ?? []).map((m: any) => m.id as string);
+
+      return ids;
+    } catch {
+      return [];
+    }
+  }
+
   async analyzeImageWithText(
     imageBuffer: Buffer,
     textPrompt: string,
@@ -49,13 +63,29 @@ export class OpenAIClient {
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
-    // @ts-ignore: SDK message types may differ by version
-    const response = await this.client.chat.completions.create({
-      model: this.config.model,
-      messages: [{ role: 'user', content }],
-      temperature: this.config.temperature,
-      max_tokens: this.config.maxTokens,
-    });
+    // Basic retry with backoff
+    const attempt = async (tryIndex: number) => {
+      // @ts-ignore: SDK message types may differ by version
+      return this.client!.chat.completions.create({
+        model: this.config!.model,
+        messages: [{ role: 'user', content }],
+        temperature: this.config!.temperature,
+        max_tokens: this.config!.maxTokens,
+      });
+    };
+
+    let response: any;
+    let lastError: unknown;
+    for (let i = 0; i < 3; i += 1) {
+      try {
+        response = await attempt(i);
+        break;
+      } catch (err) {
+        lastError = err;
+        await new Promise((r) => setTimeout(r, 300 * Math.pow(2, i)));
+      }
+    }
+    if (!response) throw lastError ?? new Error('OpenAI analyzeImageWithText failed');
 
     const contentText = response.choices?.[0]?.message?.content ?? '';
 
@@ -91,11 +121,10 @@ export class OpenAIClient {
     this.ensureClient();
     const requestId = crypto.randomUUID();
 
-    // Whisper transcription (placeholder): SDKs often require FormData/file objects. Keep a stub for now.
-    // Return a basic stub to integrate the flow; implement real upload later.
+    // Placeholder implementation: integrate real transcription API when available.
     return {
       requestId,
-      text: '[Transcription pending implementation]',
+      text: '[Transcription pending implementation]'.trim(),
       timestamp: new Date().toISOString(),
     };
   }

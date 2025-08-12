@@ -8,8 +8,8 @@ import { openAIClient } from '@shared/openai-client';
 
 import { registerHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
-import { toggleHidden, ensureHiddenOnCapture } from './modules/hide-manager';
-import { loadOpenAIConfig, saveOpenAIConfig } from './modules/settings-manager';
+import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
+import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings, saveUserSettings } from './modules/settings-manager';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +29,8 @@ function createWindow() {
     transparent: !isDev,
     backgroundColor: isDev ? '#121212' : undefined,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      // Preload is bundled as CommonJS; use .cjs extension
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -112,6 +113,12 @@ app.whenReady().then(async () => {
   const appMenu = Menu.buildFromTemplate(template);
 
   Menu.setApplicationMenu(appMenu);
+  const userSettings = loadUserSettings();
+  const hotkeyConfig = {
+    textInput: userSettings.textInputHotkey,
+    audioRecord: userSettings.audioRecordHotkey,
+    hideToggle: userSettings.hideToggleHotkey,
+  };
   registerHotkeys({
     onTextInput: async () => {
       if (!mainWindow) return;
@@ -126,7 +133,7 @@ app.whenReady().then(async () => {
     onToggleHide: async () => {
       await toggleHidden(mainWindow);
     },
-  });
+  }, hotkeyConfig);
 
   // If no OpenAI config yet, guide user by showing the overlay
   try {
@@ -137,6 +144,37 @@ app.whenReady().then(async () => {
       mainWindow?.webContents.send('text-input:show');
     }
   } catch {}
+
+  // Handle dynamic hotkey updates from renderer
+  ipcMain.handle('hotkeys:update', async (_evt, next: Partial<{ textInput: string; audioRecord: string; hideToggle: string }>) => {
+    unregisterAllHotkeys();
+    const merged = {
+      textInput: next.textInput ?? hotkeyConfig.textInput ?? (process.platform === 'darwin' ? 'Command+Shift+S' : 'Control+Shift+S'),
+      audioRecord: next.audioRecord ?? hotkeyConfig.audioRecord ?? (process.platform === 'darwin' ? 'Command+Shift+V' : 'Control+Shift+V'),
+      hideToggle: next.hideToggle ?? hotkeyConfig.hideToggle ?? (process.platform === 'darwin' ? 'Command+Shift+H' : 'Control+Shift+H'),
+    };
+    const result = registerHotkeys({
+      onTextInput: async () => {
+        if (!mainWindow) return;
+        mainWindow.show();
+        mainWindow.webContents.send('text-input:show');
+      },
+      onAudioRecord: async () => {
+        if (!mainWindow) return;
+        mainWindow.show();
+        mainWindow.webContents.send('audio:toggle');
+      },
+      onToggleHide: async () => {
+        await toggleHidden(mainWindow);
+      },
+    }, merged);
+    saveUserSettings({
+      textInputHotkey: merged.textInput,
+      audioRecordHotkey: merged.audioRecord,
+      hideToggleHotkey: merged.hideToggle,
+    } as any);
+    return result;
+  });
 });
 
 app.on('window-all-closed', () => {
@@ -164,11 +202,19 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
 
 ipcMain.handle('openai:get-config', () => loadOpenAIConfig());
 
+ipcMain.handle('openai:list-models', async () => {
+  try {
+    return await openAIClient.listModels();
+  } catch {
+    return [];
+  }
+});
+
 ipcMain.handle(
   'capture:analyze',
   async (_, payload: { textPrompt: string; customPrompt: string }) => {
     ensureHiddenOnCapture();
-    const image = await captureScreen();
+    const image = await hideAllWindowsDuring(async () => captureScreen());
     const result = await openAIClient.analyzeImageWithText(
       image,
       payload.textPrompt,
@@ -181,4 +227,12 @@ ipcMain.handle(
 
 ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
   return openAIClient.validateConfig(cfg);
+});
+
+ipcMain.handle('audio:transcribe', async (_evt, audioBuffer: Buffer) => {
+  try {
+    return await openAIClient.transcribeAudio(audioBuffer);
+  } catch (err) {
+    return { text: '', error: String(err ?? 'transcribe failed') } as any;
+  }
 });

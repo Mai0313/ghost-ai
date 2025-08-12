@@ -15,7 +15,7 @@ import {
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
 function App() {
-  const [visible, setVisible] = useState<boolean>(import.meta.env.DEV);
+  const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState('');
   const [customPrompt, setCustomPrompt] = useState('Describe what you see.');
   const [result, setResult] = useState('');
@@ -24,13 +24,17 @@ function App() {
   const [recording, setRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
-    window.ghostAI.onTextInputShow(() => setVisible(true));
+    // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
+    (window as any).ghostAI?.onTextInputShow?.(() => setVisible(true));
   }, []);
 
   useEffect(() => {
-    window.ghostAI.onAudioToggle(() => setRecording((prev) => !prev));
+    (window as any).ghostAI?.onAudioToggle?.(() => setRecording((prev) => !prev));
   }, []);
 
   useEffect(() => {
@@ -39,6 +43,27 @@ function App() {
       timerRef.current = window.setInterval(() => {
         setElapsedMs((ms) => ms + 1000);
       }, 1000) as unknown as number;
+      (async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+          recordedChunksRef.current = [];
+          const mr = new MediaRecorder(stream, {
+            mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+              ? 'audio/webm;codecs=opus'
+              : 'audio/webm',
+          });
+          mediaRecorderRef.current = mr;
+          mr.ondataavailable = (ev) => {
+            if (ev.data && ev.data.size > 0) recordedChunksRef.current.push(ev.data);
+          };
+          mr.start();
+        } catch (err) {
+          console.error('Mic permission / recording error', err);
+          setRecording(false);
+          alert('Microphone permission denied or unavailable.');
+        }
+      })();
     } else if (timerRef.current) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
@@ -47,6 +72,37 @@ function App() {
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
+  }, [recording]);
+
+  useEffect(() => {
+    if (!recording) {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state !== 'inactive') {
+        mr.onstop = async () => {
+          try {
+            const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || 'audio/webm' });
+            const arrayBuffer = await blob.arrayBuffer();
+            setBusy(true);
+            const tr = await (window as any).ghostAI?.transcribeAudio?.(arrayBuffer);
+            if (tr?.text) {
+              // Place transcription into prompt for convenience
+              setText((prev) => (prev ? prev + '\n' + tr.text : tr.text));
+            }
+          } catch (e) {
+            console.error('Transcription failed', e);
+          } finally {
+            setBusy(false);
+          }
+        };
+        mr.stop();
+      }
+      if (mediaStreamRef.current) {
+        for (const track of mediaStreamRef.current.getTracks()) track.stop();
+        mediaStreamRef.current = null;
+      }
+      mediaRecorderRef.current = null;
+      recordedChunksRef.current = [];
+    }
   }, [recording]);
 
   const onSubmit = useCallback(async () => {

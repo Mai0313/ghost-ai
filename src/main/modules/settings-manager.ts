@@ -6,6 +6,7 @@ import { safeStorage } from 'electron';
 const store = new Store<{
   encryptedOpenAI?: string;
   userSettings?: Omit<UserSettings, 'openaiConfig'>;
+  hiddenState?: boolean;
 }>();
 
 export function saveOpenAIConfig(cfg: OpenAIConfig) {
@@ -41,4 +42,12 @@ export function saveUserSettings(partial: Partial<UserSettings>) {
 
 export function loadUserSettings(): Partial<UserSettings> {
   return store.get('userSettings') ?? {};
+}
+
+export function saveHiddenState(hidden: boolean) {
+  store.set('hiddenState', hidden);
+}
+
+export function loadHiddenState(): boolean {
+  return Boolean(store.get('hiddenState'));
 }

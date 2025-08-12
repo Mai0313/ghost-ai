@@ -179,17 +179,10 @@ npm install <package>                   # Add dependency
 npm install <package> --save-dev        # Add dev dependency
 ```
 
-### Platform-Specific Builds
+### Packaging
 
 ```bash
-# Windows
-npm run build:win                       # Build Windows executable (.exe)
-
-# macOS
-npm run build:mac                       # Build macOS application (.dmg)
-
-# Linux
-npm run build:linux                     # Build Linux packages (.AppImage, .deb)
+npm run dist   # Build and package for your platform
 ```
 
 ## 🎯 How It Works
@@ -209,7 +202,7 @@ npm run build:linux                     # Build Linux packages (.AppImage, .deb)
 - **No Disk Storage**: Screenshots never saved to disk
 - **Memory Processing**: All image data processed in RAM only
 - **Stealth Operation**: Invisible to screen recording and sharing
-- **Secure Communication**: Encrypted API calls with certificate pinning
+- **Secure Communication**: Encrypted API calls
 - **Process Hiding**: Disguised process names and window titles
 - **Automatic Cleanup**: Memory and network traces cleared on exit
 
@@ -263,7 +256,7 @@ interface PrivacySettings {
 }
 ```
 
-### Default Prompts
+### Default Prompts (example)
 
 Set up default analysis prompts:
 
