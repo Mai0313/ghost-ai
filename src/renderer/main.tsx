@@ -188,8 +188,13 @@ function App() {
     return `${minutes}:${seconds}`;
   }, [elapsedMs]);
 
-  // Position for the response bubble: below the bar
+  // Position for the response/input panel: centered under the bar
+  const bubbleWidth = 760;
+  const barWidth = barRef.current?.offsetWidth ?? 320;
   const bubbleTop = barPos.y + ((barRef.current && barRef.current.offsetHeight) || 50) + 10;
+  const barCenterX = barPos.x + barWidth / 2;
+  const unclampedLeft = Math.round(barCenterX - bubbleWidth / 2);
+  const bubbleLeft = Math.max(10, Math.min(unclampedLeft, window.innerWidth - bubbleWidth - 10));
 
   return (
     <div
@@ -340,8 +345,8 @@ function App() {
         style={{
           position: 'absolute',
           top: bubbleTop,
-          left: barPos.x,
-          width: 760,
+          left: bubbleLeft,
+          width: bubbleWidth,
           pointerEvents: 'auto',
         }}
       >
