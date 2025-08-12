@@ -195,6 +195,9 @@ function App() {
       // Clear input after sending
       setText('');
     } catch (e) {
+      // If streaming setup failed synchronously, stop streaming state before fallback
+      setStreaming(false);
+      setRequestId(null);
       // fallback to non-streaming
       try {
         const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, '');
