@@ -148,6 +148,60 @@ export class OpenAIClient {
     };
   }
 
+  async analyzeWithHistoryStream(
+    imageBuffer: Buffer,
+    history: ChatMessage[] | undefined,
+    textPrompt: string,
+    customPrompt: string,
+    requestId: string,
+    onDelta: (textDelta: string) => void,
+  ): Promise<AnalysisResult> {
+    this.ensureClient();
+    const config = this.config!;
+    const client = this.client!;
+    const base64 = imageBuffer.toString('base64');
+
+    // Build messages: include prior messages (as-is), then current user with text + image
+    const messages: ChatMessage[] = [];
+    if (Array.isArray(history) && history.length) messages.push(...history);
+    const userCombinedContent: ChatMessage['content'] = [
+      { type: 'text', text: `${customPrompt}\n\n${textPrompt}`.trim() },
+      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
+    ];
+    messages.push({ role: 'user', content: userCombinedContent } as ChatMessage);
+
+    // @ts-ignore Streaming create; SDK signatures vary
+    const stream = await client.chat.completions.create({
+      model: config.model,
+      // @ts-ignore - pass through our message type
+      messages: messages as any,
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+      stream: true,
+    });
+
+    let finalContent = '';
+    // @ts-ignore: streaming iterator typings vary across SDK versions
+    for await (const chunk of stream) {
+      try {
+        const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+        if (delta) {
+          finalContent += delta;
+          onDelta(delta);
+        }
+      } catch {
+        // ignore malformed chunks
+      }
+    }
+
+    return {
+      requestId,
+      content: finalContent,
+      model: config.model,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   async chatCompletion(messages: ChatMessage[], model?: string): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;

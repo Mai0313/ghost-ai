@@ -19,6 +19,7 @@ declare global {
           onDone?: (payload: { requestId: string; content: string }) => void;
           onError?: (payload: { requestId?: string; error: string }) => void;
         },
+        history?: any[],
       ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
       transcribeAudio: (audioBuffer: ArrayBuffer) => Promise<{ text: string }>;

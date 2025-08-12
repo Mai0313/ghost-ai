@@ -19,6 +19,7 @@ const api = {
       onDone?: (payload: AnalysisResult) => void;
       onError?: (payload: { requestId?: string; error: string }) => void;
     },
+    history?: any[],
   ) => {
     // Register one-time listeners per call; return unsubscribe function
     const unsubscribe = () => {
@@ -51,7 +52,7 @@ const api = {
     ipcRenderer.on('capture:analyze-stream:done', doneHandler);
     ipcRenderer.on('capture:analyze-stream:error', errorHandler);
 
-    ipcRenderer.send('capture:analyze-stream', { textPrompt, customPrompt });
+    ipcRenderer.send('capture:analyze-stream', { textPrompt, customPrompt, history });
 
     return unsubscribe;
   },

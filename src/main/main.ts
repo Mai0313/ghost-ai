@@ -234,7 +234,7 @@ ipcMain.handle(
 // Streaming analyze (sends start/delta/done/error events)
 ipcMain.on(
   'capture:analyze-stream',
-  async (evt, payload: { textPrompt: string; customPrompt: string }) => {
+  async (evt, payload: { textPrompt: string; customPrompt: string; history?: any[] }) => {
     try {
       ensureHiddenOnCapture();
       const image = await hideAllWindowsDuring(async () => captureScreen());
@@ -242,15 +242,25 @@ ipcMain.on(
 
       evt.sender.send('capture:analyze-stream:start', { requestId });
 
-      const result = await openAIClient.analyzeImageWithTextStream(
-        image,
-        payload.textPrompt,
-        payload.customPrompt,
-        requestId,
-        (delta) => {
-          evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
-        },
-      );
+      const result = await (openAIClient as any).analyzeWithHistoryStream
+        ? // Use history-aware streaming if available
+          (openAIClient as any).analyzeWithHistoryStream(
+            image,
+            payload.history,
+            payload.textPrompt,
+            payload.customPrompt,
+            requestId,
+            (delta: string) => evt.sender.send('capture:analyze-stream:delta', { requestId, delta }),
+          )
+        : openAIClient.analyzeImageWithTextStream(
+            image,
+            payload.textPrompt,
+            payload.customPrompt,
+            requestId,
+            (delta) => {
+              evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
+            },
+          );
 
       evt.sender.send('capture:analyze-stream:done', result);
     } catch (err) {
