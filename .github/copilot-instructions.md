@@ -155,7 +155,7 @@
 
 - 重要互動流程：
   - `window.ghostAI.onTextInputShow` 顯示 HUD 並直接打開 `Ask`，焦點移到單行輸入。
-  - `Ask` 僅有一個輸入框；送出時使用 `ghostAI.analyzeCurrentScreen(text, customPrompt)`，其中 `customPrompt` 來源改為設定頁的預設值。
+  - `Ask` 只有單行輸入框；Enter 送出（IME 組字時不送出）。
   - `Settings` 面板沿用 IPC：`openai:update-config`、`openai:get-config`、`openai:validate-config`，並新增 `settings:get`、`settings:update` 管理使用者偏好（例如預設 custom prompt）。
 
 - 型別補充：在 `tsconfig.json` 加入 `"types": ["vite/client"]` 以支援 `import.meta.env`。
