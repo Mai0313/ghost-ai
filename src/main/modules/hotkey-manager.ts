@@ -1,5 +1,6 @@
-import { globalShortcut } from 'electron';
 import type { HotkeyConfig } from '@shared/types';
+
+import { globalShortcut } from 'electron';
 
 export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;

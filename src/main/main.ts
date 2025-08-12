@@ -9,7 +9,12 @@ import { openAIClient } from '@shared/openai-client';
 import { registerHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
-import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings, saveUserSettings } from './modules/settings-manager';
+import {
+  loadOpenAIConfig,
+  saveOpenAIConfig,
+  loadUserSettings,
+  saveUserSettings,
+} from './modules/settings-manager';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -119,41 +124,9 @@ app.whenReady().then(async () => {
     audioRecord: userSettings.audioRecordHotkey,
     hideToggle: userSettings.hideToggleHotkey,
   };
-  registerHotkeys({
-    onTextInput: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send('text-input:show');
-    },
-    onAudioRecord: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send('audio:toggle');
-    },
-    onToggleHide: async () => {
-      await toggleHidden(mainWindow);
-    },
-  }, hotkeyConfig);
 
-  // If no OpenAI config yet, guide user by showing the overlay
-  try {
-    const cfg = loadOpenAIConfig();
-
-    if (!cfg) {
-      mainWindow?.show();
-      mainWindow?.webContents.send('text-input:show');
-    }
-  } catch {}
-
-  // Handle dynamic hotkey updates from renderer
-  ipcMain.handle('hotkeys:update', async (_evt, next: Partial<{ textInput: string; audioRecord: string; hideToggle: string }>) => {
-    unregisterAllHotkeys();
-    const merged = {
-      textInput: next.textInput ?? hotkeyConfig.textInput ?? (process.platform === 'darwin' ? 'Command+Shift+S' : 'Control+Shift+S'),
-      audioRecord: next.audioRecord ?? hotkeyConfig.audioRecord ?? (process.platform === 'darwin' ? 'Command+Shift+V' : 'Control+Shift+V'),
-      hideToggle: next.hideToggle ?? hotkeyConfig.hideToggle ?? (process.platform === 'darwin' ? 'Command+Shift+H' : 'Control+Shift+H'),
-    };
-    const result = registerHotkeys({
+  registerHotkeys(
+    {
       onTextInput: async () => {
         if (!mainWindow) return;
         mainWindow.show();
@@ -167,14 +140,67 @@ app.whenReady().then(async () => {
       onToggleHide: async () => {
         await toggleHidden(mainWindow);
       },
-    }, merged);
-    saveUserSettings({
-      textInputHotkey: merged.textInput,
-      audioRecordHotkey: merged.audioRecord,
-      hideToggleHotkey: merged.hideToggle,
-    } as any);
-    return result;
-  });
+    },
+    hotkeyConfig,
+  );
+
+  // If no OpenAI config yet, guide user by showing the overlay
+  try {
+    const cfg = loadOpenAIConfig();
+
+    if (!cfg) {
+      mainWindow?.show();
+      mainWindow?.webContents.send('text-input:show');
+    }
+  } catch {}
+
+  // Handle dynamic hotkey updates from renderer
+  ipcMain.handle(
+    'hotkeys:update',
+    async (_evt, next: Partial<{ textInput: string; audioRecord: string; hideToggle: string }>) => {
+      unregisterAllHotkeys();
+      const merged = {
+        textInput:
+          next.textInput ??
+          hotkeyConfig.textInput ??
+          (process.platform === 'darwin' ? 'Command+Shift+S' : 'Control+Shift+S'),
+        audioRecord:
+          next.audioRecord ??
+          hotkeyConfig.audioRecord ??
+          (process.platform === 'darwin' ? 'Command+Shift+V' : 'Control+Shift+V'),
+        hideToggle:
+          next.hideToggle ??
+          hotkeyConfig.hideToggle ??
+          (process.platform === 'darwin' ? 'Command+Shift+H' : 'Control+Shift+H'),
+      };
+      const result = registerHotkeys(
+        {
+          onTextInput: async () => {
+            if (!mainWindow) return;
+            mainWindow.show();
+            mainWindow.webContents.send('text-input:show');
+          },
+          onAudioRecord: async () => {
+            if (!mainWindow) return;
+            mainWindow.show();
+            mainWindow.webContents.send('audio:toggle');
+          },
+          onToggleHide: async () => {
+            await toggleHidden(mainWindow);
+          },
+        },
+        merged,
+      );
+
+      saveUserSettings({
+        textInputHotkey: merged.textInput,
+        audioRecordHotkey: merged.audioRecord,
+        hideToggleHotkey: merged.hideToggle,
+      } as any);
+
+      return result;
+    },
+  );
 });
 
 app.on('window-all-closed', () => {

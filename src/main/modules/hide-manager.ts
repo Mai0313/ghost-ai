@@ -1,5 +1,7 @@
-import { BrowserWindow } from 'electron';
 import type { BrowserWindow as BrowserWindowType } from 'electron';
+
+import { BrowserWindow } from 'electron';
+
 import { loadHiddenState, saveHiddenState } from './settings-manager';
 
 let isHidden = loadHiddenState();
@@ -24,10 +26,12 @@ export function ensureHiddenOnCapture() {
 export async function hideAllWindowsDuring<T>(fn: () => Promise<T> | T): Promise<T> {
   const windows = BrowserWindow.getAllWindows();
   const wasVisible = windows.map((w) => ({ w, visible: w.isVisible() }));
+
   try {
     windows.forEach((w) => {
       if (w.isVisible()) w.hide();
     });
+
     return await fn();
   } finally {
     for (const { w, visible } of wasVisible) {

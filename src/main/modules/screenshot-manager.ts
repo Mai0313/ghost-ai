@@ -2,11 +2,13 @@ import screenshot from 'screenshot-desktop';
 
 async function tryCapture(): Promise<Buffer> {
   const img = await screenshot({ format: 'png' });
+
   return Buffer.isBuffer(img) ? img : Buffer.from(img);
 }
 
 export async function captureScreen(): Promise<Buffer> {
   let lastError: unknown;
+
   for (let i = 0; i < 3; i += 1) {
     try {
       return await tryCapture();

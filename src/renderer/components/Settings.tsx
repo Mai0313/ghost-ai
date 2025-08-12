@@ -15,6 +15,7 @@ export function Settings() {
   useEffect(() => {
     (async () => {
       const api: any = (window as any).ghostAI;
+
       if (!api) return;
       const cfg = await api.getOpenAIConfig();
 
@@ -25,6 +26,7 @@ export function Settings() {
       }
       try {
         const list = await api.listOpenAIModels();
+
         if (Array.isArray(list) && list.length) setModels(list);
       } catch {}
     })();
@@ -32,6 +34,7 @@ export function Settings() {
 
   const onSave = async () => {
     const api: any = (window as any).ghostAI;
+
     if (!api) return alert('Preload not ready. Please restart the app.');
     await api.updateOpenAIConfig({ apiKey, baseURL, model });
     alert('Saved OpenAI settings');
@@ -42,6 +45,7 @@ export function Settings() {
     setOk(null);
     try {
       const api: any = (window as any).ghostAI;
+
       if (!api) throw new Error('Preload not ready');
       const success = await api.validateOpenAIConfig({
         apiKey,
@@ -115,7 +119,7 @@ export function Settings() {
             onChange={(e) => setModel(e.target.value)}
           >
             {models.map((m) => (
-              <option key={m} value={m} style={{ background: '#141414' }}>
+              <option key={m} style={{ background: '#141414' }} value={m}>
                 {m}
               </option>
             ))}
@@ -144,6 +148,7 @@ export function Settings() {
           </label>
           <input
             id="hk-text"
+            placeholder="Default platform hotkey"
             style={{
               background: '#141414',
               border: '1px solid #2a2a2a',
@@ -152,7 +157,6 @@ export function Settings() {
               borderRadius: 10,
               outline: 'none',
             }}
-            placeholder="Default platform hotkey"
             value={textHotkey}
             onChange={(e) => setTextHotkey(e.target.value)}
           />
@@ -161,6 +165,7 @@ export function Settings() {
           </label>
           <input
             id="hk-audio"
+            placeholder="Default platform hotkey"
             style={{
               background: '#141414',
               border: '1px solid #2a2a2a',
@@ -169,7 +174,6 @@ export function Settings() {
               borderRadius: 10,
               outline: 'none',
             }}
-            placeholder="Default platform hotkey"
             value={audioHotkey}
             onChange={(e) => setAudioHotkey(e.target.value)}
           />
@@ -178,6 +182,7 @@ export function Settings() {
           </label>
           <input
             id="hk-hide"
+            placeholder="Default platform hotkey"
             style={{
               background: '#141414',
               border: '1px solid #2a2a2a',
@@ -186,7 +191,6 @@ export function Settings() {
               borderRadius: 10,
               outline: 'none',
             }}
-            placeholder="Default platform hotkey"
             value={hideHotkey}
             onChange={(e) => setHideHotkey(e.target.value)}
           />
@@ -203,19 +207,21 @@ export function Settings() {
               }}
               onClick={async () => {
                 const payload: any = {};
+
                 if (textHotkey) payload.textInput = textHotkey;
                 if (audioHotkey) payload.audioRecord = audioHotkey;
                 if (hideHotkey) payload.hideToggle = hideHotkey;
-            const api: any = (window as any).ghostAI;
-            if (!api) {
-              setHotkeyUpdateMsg('Preload not ready. Please restart the app.');
-              return;
-            }
-            const res = await api.updateHotkeys(payload);
+                const api: any = (window as any).ghostAI;
+
+                if (!api) {
+                  setHotkeyUpdateMsg('Preload not ready. Please restart the app.');
+
+                  return;
+                }
+                const res = await api.updateHotkeys(payload);
+
                 setHotkeyUpdateMsg(
-                  res.ok
-                    ? 'Hotkeys updated.'
-                    : `Some hotkeys failed: ${res.failed.join(', ')}`,
+                  res.ok ? 'Hotkeys updated.' : `Some hotkeys failed: ${res.failed.join(', ')}`,
                 );
               }}
             >

@@ -76,6 +76,7 @@ export class OpenAIClient {
 
     let response: any;
     let lastError: unknown;
+
     for (let i = 0; i < 3; i += 1) {
       try {
         response = await attempt(i);

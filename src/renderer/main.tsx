@@ -46,6 +46,7 @@ function App() {
       (async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
           mediaStreamRef.current = stream;
           recordedChunksRef.current = [];
           const mr = new MediaRecorder(stream, {
@@ -53,6 +54,7 @@ function App() {
               ? 'audio/webm;codecs=opus'
               : 'audio/webm',
           });
+
           mediaRecorderRef.current = mr;
           mr.ondataavailable = (ev) => {
             if (ev.data && ev.data.size > 0) recordedChunksRef.current.push(ev.data);
@@ -77,13 +79,16 @@ function App() {
   useEffect(() => {
     if (!recording) {
       const mr = mediaRecorderRef.current;
+
       if (mr && mr.state !== 'inactive') {
         mr.onstop = async () => {
           try {
             const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || 'audio/webm' });
             const arrayBuffer = await blob.arrayBuffer();
+
             setBusy(true);
             const tr = await (window as any).ghostAI?.transcribeAudio?.(arrayBuffer);
+
             if (tr?.text) {
               // Place transcription into prompt for convenience
               setText((prev) => (prev ? prev + '\n' + tr.text : tr.text));
