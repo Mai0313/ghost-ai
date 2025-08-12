@@ -192,6 +192,18 @@ function App() {
         },
         history,
       );
+      // If streaming API is unavailable (optional chained call didn't execute), fallback
+      if (typeof unsubscribe !== 'function') {
+        setStreaming(false);
+        setRequestId(null);
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, '');
+        setResult(res?.content ?? '');
+        setHistory((prev) => [
+          ...prev,
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: res?.content ?? '' },
+        ]);
+      }
       // Clear input after sending
       setText('');
     } catch (e) {
