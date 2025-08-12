@@ -107,7 +107,7 @@ async function initializeOpenAI() {
   const defaultConfig: OpenAIConfig = {
     apiKey: '',
     baseURL: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     timeout: 60000,
     maxTokens: 1000,
     temperature: 0.7,

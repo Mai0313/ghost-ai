@@ -23,6 +23,7 @@ This document describes important technical details for contributors. Update thi
 Notes:
 - The project pins neither OpenAI SDK version nor strict types (uses `@ts-ignore` at call-sites as the SDK frequently changes). Keep the mapping minimal and guarded.
 - Vision is implemented through `chat.completions.create` with a `content` array of `[text, image_url]`.
+- To maximize model compatibility, we DO NOT set `temperature` or `max_tokens`/`max_completion_tokens` in API calls. Let the model defaults apply. If you re-introduce these, guard per-model support.
 
 ## IPC Contracts
 

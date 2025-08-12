@@ -247,8 +247,7 @@ Configure your OpenAI API settings through the application's settings interface:
 - **API Key**: Your OpenAI API key (stored securely using Electron's safeStorage)
 - **Base URL**: Custom API endpoint (defaults to https://api.openai.com/v1)
 - **Model**: Choose from available models (dynamically fetched from OpenAI)
-- **Max Tokens**: Maximum tokens per request (default: 1000)
-- **Temperature**: Response creativity (default: 0.7)
+ - Note: The app does not set temperature or max tokens by default to maximize compatibility across models. If your selected model supports these, you can customize behavior by changing models or your prompts.
 
 All settings are encrypted and stored locally - no external services required.
 

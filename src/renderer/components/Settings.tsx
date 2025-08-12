@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 export function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [baseURL, setBaseURL] = useState('https://api.openai.com/v1');
-  const [model, setModel] = useState('gpt-4o-mini');
+  const [model, setModel] = useState('gpt-5-mini');
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
@@ -19,7 +19,7 @@ export function Settings() {
       if (cfg) {
         setApiKey(cfg.apiKey || '');
         setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
-        setModel(cfg.model || 'gpt-4o-mini');
+        setModel(cfg.model || 'gpt-5-mini');
       }
       try {
         const list = await api.listOpenAIModels();
@@ -49,8 +49,6 @@ export function Settings() {
         baseURL,
         model,
         timeout: 60000,
-        maxTokens: 1000,
-        temperature: 0.7,
       } as any);
 
       setOk(success);

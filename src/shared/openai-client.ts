@@ -72,8 +72,6 @@ export class OpenAIClient {
       return client.chat.completions.create({
         model: config.model,
         messages: [{ role: 'user', content }],
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
       });
     };
 
@@ -121,8 +119,6 @@ export class OpenAIClient {
     const stream = await client.chat.completions.create({
       model: config.model,
       messages: [{ role: 'user', content }],
-      temperature: config.temperature,
-      max_tokens: config.maxTokens,
       stream: true,
     });
 
@@ -175,8 +171,6 @@ export class OpenAIClient {
       model: config.model,
       // @ts-ignore - pass through our message type
       messages: messages as any,
-      temperature: config.temperature,
-      max_tokens: config.maxTokens,
       stream: true,
     });
 
@@ -212,8 +206,6 @@ export class OpenAIClient {
       model: model ?? config.model,
       // @ts-ignore - map app-level message type to SDK param
       messages: messages as any,
-      temperature: config.temperature,
-      max_tokens: config.maxTokens,
     });
     const contentText = response.choices?.[0]?.message?.content ?? '';
 

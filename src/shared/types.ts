@@ -15,8 +15,8 @@ export interface OpenAIConfig {
   baseURL: string;
   model: string;
   timeout: number;
-  maxTokens: number;
-  temperature: number;
+  maxTokens?: number;
+  temperature?: number;
 }
 
 export interface AnalysisResult {
