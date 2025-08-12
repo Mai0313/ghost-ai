@@ -54,13 +54,19 @@ function App() {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
     (window as any).ghostAI?.onTextInputShow?.(() => {
       setVisible(true);
-      setTab('ask');
+      let willOpen = false;
+      setTab((t) => {
+        if (t === 'ask') return null; // toggle off if already open
+        willOpen = true;
+        return 'ask';
+      });
       // Focus the prompt when opened via hotkey/menu for quick typing
-      setTimeout(() => {
-        const el = document.getElementById('ask-input') as HTMLInputElement | null;
-
-        el?.focus();
-      }, 0);
+      if (willOpen) {
+        setTimeout(() => {
+          const el = document.getElementById('ask-input') as HTMLInputElement | null;
+          el?.focus();
+        }, 0);
+      }
     });
   }, []);
 
@@ -432,13 +438,7 @@ function App() {
                   }
                 }}
               />
-              <button
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                title="Close"
-                onClick={() => setTab(null)}
-              >
-                <IconX />
-              </button>
+              {/* Removed close button; Ask panel toggles via Ctrl/Cmd+Enter or the Ask pill */}
             </div>
           </div>
         )}
