@@ -328,98 +328,47 @@ function App() {
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
+              alignItems: 'center',
+              gap: 8,
               background: 'rgba(28,28,28,0.94)',
               color: 'white',
-              borderRadius: 16,
-              padding: 14,
+              borderRadius: 12,
+              padding: 10,
               border: '1px solid rgba(255,255,255,0.08)',
               boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+              width: 760,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ opacity: 0.8, fontSize: 12 }}>AI Response</div>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer' }} title="Hide" onClick={() => setTab(null)}>
-                <IconX />
-              </button>
-            </div>
-
-            {!!result && (
-              <div
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 12,
-                  padding: 12,
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.6,
-                }}
-              >
-                {result}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                id="ask-input"
-                placeholder="Ask about your screen..."
-                style={{
-                  flex: 1,
-                  background: '#141414',
-                  color: 'white',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  border: '1px solid #2a2a2a',
-                  outline: 'none',
-                }}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onCompositionStart={() => setComposing(true)}
-                onCompositionEnd={() => setComposing(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !composing) {
-                    e.preventDefault();
-                    if (!busy && text) void onSubmit();
-                  }
-                }}
-              />
-              <button
-                disabled={busy || !text}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  background: busy || !text ? '#2b66f666' : '#2B66F6',
-                  color: 'white',
-                  cursor: busy || !text ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                }}
-                onClick={onSubmit}
-              >
-                {busy ? 'Analyzing…' : 'Submit'}
-                {!busy && <IconSend />}
-              </button>
-              <button
-                disabled={!result}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'transparent',
-                  color: '#E6E6E6',
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  cursor: result ? 'pointer' : 'not-allowed',
-                  whiteSpace: 'nowrap',
-                }}
-                onClick={() => navigator.clipboard.writeText(result || '')}
-              >
-                Copy
-              </button>
-            </div>
+            <input
+              id="ask-input"
+              placeholder="Ask about your screen..."
+              style={{
+                flex: 1,
+                background: '#141414',
+                color: 'white',
+                borderRadius: 10,
+                padding: '10px 12px',
+                border: '1px solid #2a2a2a',
+                outline: 'none',
+              }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onCompositionStart={() => setComposing(true)}
+              onCompositionEnd={() => setComposing(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !composing) {
+                  e.preventDefault();
+                  if (!busy && text) void onSubmit();
+                }
+              }}
+            />
+            <button
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+              title="Close"
+              onClick={() => setTab(null)}
+            >
+              <IconX />
+            </button>
           </div>
         )}
       </div>

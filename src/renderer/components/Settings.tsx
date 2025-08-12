@@ -157,9 +157,7 @@ export function Settings() {
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
           />
-          <div style={{ color: '#BDBDBD', fontSize: 12 }}>
-            Hotkeys are fixed: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\
-          </div>
+          
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
