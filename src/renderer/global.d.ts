@@ -6,10 +6,6 @@ declare global {
       updateOpenAIConfig: (cfg: Partial<any>) => Promise<boolean>;
       getOpenAIConfig: () => Promise<any>;
       validateOpenAIConfig?: (cfg: any) => Promise<boolean>;
-      analyzeCurrentScreen: (
-        textPrompt: string,
-        customPrompt: string,
-      ) => Promise<{ content: string }>;
       analyzeCurrentScreenStream: (
         textPrompt: string,
         customPrompt: string,

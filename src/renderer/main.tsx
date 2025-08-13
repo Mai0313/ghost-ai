@@ -277,40 +277,16 @@ function App() {
         },
         history,
       );
-      // If streaming API is unavailable (optional chained call didn't execute), fallback
-      if (typeof unsubscribe !== 'function') {
-        setStreaming(false);
-        setRequestId(null);
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, effectiveCustomPrompt);
-        setResult(res?.content ?? '');
-        setHistory((prev) => [
-          ...prev,
-          { role: 'user', content: userMessage },
-          { role: 'assistant', content: res?.content ?? '' },
-        ]);
-      } else {
-        activeUnsubRef.current = unsubscribe;
-      }
+      // Streaming is mandatory now; if wrapper didn't return a function, treat as error
+      if (typeof unsubscribe !== 'function') throw new Error('Streaming unavailable');
+      activeUnsubRef.current = unsubscribe;
       // Clear input after sending
       setText('');
     } catch (e) {
       // If streaming setup failed synchronously, stop streaming state before fallback
       setStreaming(false);
       setRequestId(null);
-      // fallback to non-streaming
-      try {
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, effectiveCustomPrompt);
-
-        setResult(res?.content ?? '');
-        setHistory((prev) => [
-          ...prev,
-          { role: 'user', content: userMessage },
-          { role: 'assistant', content: res?.content ?? '' },
-        ]);
-        setText('');
-      } catch (e) {
-        setResult(`Error: ${String((e as any)?.message ?? e ?? 'analyze failed')}`);
-      }
+      setResult(`Error: ${String((e as any)?.message ?? e ?? 'analyze failed')}`);
     } finally {
       setBusy(false);
     }

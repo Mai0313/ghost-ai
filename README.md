@@ -55,7 +55,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 ### 🎨 **User Experience**
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
-- **Minimal Ask Input + Streaming**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
+- **Minimal Ask Input + Streaming (only)**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R, Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear**: Press Cmd/Ctrl+R to clear the Ask bubble and conversation history (window is not reloaded)
@@ -208,8 +208,8 @@ npm run dist
 2. **Invisible Mode**: Application immediately hides all windows
 3. **Screenshot Capture**: System captures the current screen to memory
 4. **Prompt Input**: UI appears for you to enter analysis instructions
-5. **AI Analysis**: Image and prompt sent to OpenAI Vision API
-6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away
+5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
+6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away (no non‑stream fallback)
 7. **Memory Cleanup**: All traces automatically cleared from memory
 
 ### Privacy Protection

@@ -52,59 +52,7 @@ export class OpenAIClient {
     }
   }
 
-  async analyzeImageWithText(
-    imageBuffer: Buffer,
-    textPrompt: string,
-    customPrompt: string,
-  ): Promise<AnalysisResult> {
-    this.ensureClient();
-    const config = this.config!;
-    const client = this.client!;
-    const requestId = crypto.randomUUID();
-    const base64 = imageBuffer.toString('base64');
-    const messages: ChatMessage[] = [];
-    if (customPrompt?.trim()) {
-      messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
-    }
-    const content: ChatMessage['content'] = [
-      { type: 'text', text: textPrompt?.trim() ?? '' },
-      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
-    ];
-    messages.push({ role: 'user', content } as ChatMessage);
-
-    // Basic retry with backoff
-    const attempt = async (_tryIndex: number) => {
-      // @ts-ignore: SDK message types may differ by version
-      return client.chat.completions.create({
-        model: config.model,
-        // @ts-ignore allow system role
-        messages: messages as any,
-      });
-    };
-
-    let response: any;
-    let lastError: unknown;
-
-    for (let i = 0; i < 3; i += 1) {
-      try {
-        response = await attempt(i);
-        break;
-      } catch (err) {
-        lastError = err;
-        await new Promise((r) => setTimeout(r, 300 * Math.pow(2, i)));
-      }
-    }
-    if (!response) throw lastError ?? new Error('OpenAI analyzeImageWithText failed');
-
-    const contentText = response.choices?.[0]?.message?.content ?? '';
-
-    return {
-      requestId,
-      content: contentText,
-      model: response.model ?? config.model,
-      timestamp: new Date().toISOString(),
-    };
-  }
+  // Non-streaming image analysis has been removed in favor of streaming-only flow
 
   async analyzeImageWithTextStream(
     imageBuffer: Buffer,

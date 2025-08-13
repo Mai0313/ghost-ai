@@ -16,8 +16,7 @@ This document describes important technical details for contributors. Update thi
 
 - Wrapper class: `src/shared/openai-client.ts`
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
-  - Non-streaming: `analyzeImageWithText(...)`
-  - Streaming: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
+  - Streaming only: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
   - Chat helper: `chatCompletion(...)` (non-streaming)
 
 Notes:
@@ -36,7 +35,6 @@ interface GhostAPI {
   getOpenAIConfig(): Promise<OpenAIConfig | null>;
   validateOpenAIConfig(cfg: OpenAIConfig): Promise<boolean>;
   listOpenAIModels(): Promise<string[]>;
-  analyzeCurrentScreen(textPrompt: string, customPrompt: string): Promise<AnalysisResult>;
   analyzeCurrentScreenStream(
     textPrompt: string,
     customPrompt: string,
@@ -57,10 +55,7 @@ interface GhostAPI {
 }
 ```
 
-Main-side handlers in `src/main/main.ts`:
-
-- Non-streaming: `ipcMain.handle('capture:analyze', ...)` returns `AnalysisResult`.
-- Streaming (added):
+Main-side handlers in `src/main/main.ts` (streaming only):
   - `ipcMain.on('capture:analyze-stream', ...)`
   - Emits to renderer:
     - `capture:analyze-stream:start` with `{ requestId }`
@@ -79,11 +74,11 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 ## Renderer Flow (Ask UI)
 
 - Component: `src/renderer/main.tsx` maintains `text`, `result`, `busy`, `streaming` states.
-- On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
+  - On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
   - Appends deltas to `result` in real time.
   - Shows the streamed response bubble ABOVE the input field.
   - Disables the input while streaming.
-  - Falls back to non-streaming `analyzeCurrentScreen(...)` if needed.
+  - No non-streaming fallback; errors are surfaced inline and user can retry immediately.
   - Error handling: when an error occurs (from streaming or fallback), the UI writes an inline message to the same bubble in the form `Error: <message>` and re-enables input so the user can retry immediately.
   - Clear conversation (renderer only): `Cmd/Ctrl+R` clears `history` and `result` without navigating away or reloading the window.
 - Ask input placeholder: shows `Thinking…` while busy/streaming; otherwise `Type your question…`.

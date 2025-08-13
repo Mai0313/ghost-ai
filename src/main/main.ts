@@ -244,20 +244,7 @@ ipcMain.handle('openai:list-models', async () => {
   }
 });
 
-ipcMain.handle(
-  'capture:analyze',
-  async (_, payload: { textPrompt: string; customPrompt: string }) => {
-    ensureHiddenOnCapture();
-    const image = await hideAllWindowsDuring(async () => captureScreen());
-    const result = await openAIClient.analyzeImageWithText(
-      image,
-      payload.textPrompt,
-      payload.customPrompt,
-    );
-
-    return result;
-  },
-);
+// Non-streaming analyze IPC removed; use 'capture:analyze-stream' instead
 
 // Streaming analyze (sends start/delta/done/error events)
 ipcMain.on(

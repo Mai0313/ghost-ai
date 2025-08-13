@@ -8,8 +8,7 @@ const api = {
   getOpenAIConfig: (): Promise<OpenAIConfig | null> => ipcRenderer.invoke('openai:get-config'),
   validateOpenAIConfig: (cfg: OpenAIConfig): Promise<boolean> =>
     ipcRenderer.invoke('openai:validate-config', cfg),
-  analyzeCurrentScreen: (textPrompt: string, customPrompt: string): Promise<AnalysisResult> =>
-    ipcRenderer.invoke('capture:analyze', { textPrompt, customPrompt }),
+  // Non-streaming analyze endpoint removed; use analyzeCurrentScreenStream instead
   analyzeCurrentScreenStream: (
     textPrompt: string,
     customPrompt: string,
