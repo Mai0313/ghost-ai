@@ -175,7 +175,7 @@ app.whenReady().then(async () => {
     onTextInput: async () => {
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('text-input:show');
+      mainWindow.webContents.send('text-input:toggle');
     },
     onToggleHide: async () => {
       await toggleHidden(mainWindow);

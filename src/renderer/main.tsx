@@ -88,6 +88,19 @@ function App() {
       // Always focus when invoked via hotkey/menu
       setTimeout(() => askInputRef.current?.focus(), 0);
     });
+    api?.onTextInputToggle?.(() => {
+      setVisible(true);
+      if (tabRef.current === 'ask') {
+        // Collapse Ask panel
+        setTab(null);
+      } else {
+        // Expand Ask panel and focus input
+        setTab('ask');
+        setBusy(false);
+        setStreaming(false);
+        setTimeout(() => askInputRef.current?.focus(), 0);
+      }
+    });
     api?.onHUDShow?.(() => {
       setVisible(true);
       // Ensure Ask input is ready if Ask tab is active

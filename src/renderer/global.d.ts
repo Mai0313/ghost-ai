@@ -22,6 +22,7 @@ declare global {
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;
+      onTextInputToggle: (handler: () => void) => void;
       onHUDShow: (handler: () => void) => void;
       toggleHide: () => Promise<any>;
       onAskClear: (handler: () => void) => void;

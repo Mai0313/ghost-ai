@@ -70,6 +70,7 @@ const api = {
   getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
   updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),
   onTextInputShow: (handler: () => void) => ipcRenderer.on('text-input:show', () => handler()),
+  onTextInputToggle: (handler: () => void) => ipcRenderer.on('text-input:toggle', () => handler()),
   onHUDShow: (handler: () => void) => ipcRenderer.on('hud:show', () => handler()),
   toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
   onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),

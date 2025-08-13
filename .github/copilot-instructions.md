@@ -51,6 +51,7 @@ interface GhostAPI {
   getUserSettings(): Promise<any>;
   updateUserSettings(partial: Partial<any>): Promise<any>;
   onTextInputShow(handler: () => void): void;
+  onTextInputToggle(handler: () => void): void; // toggles Ask panel open/closed
   onHUDShow(handler: () => void): void; // Emitted when HUD should become visible again (e.g., after toggling hide)
   toggleHide(): Promise<true>; // IPC to toggle main-process hidden state
   onAudioToggle(handler: () => void): void;
@@ -63,6 +64,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
 
 - `ipcMain.on('capture:analyze-stream', ...)`
 - `ipcMain.handle('hud:set-mouse-ignore', (evt, ignore) => mainWindow.setIgnoreMouseEvents(ignore, { forward: true }))`
+- Hotkey handler emits `text-input:toggle` to renderer on `Cmd/Ctrl+Enter` to toggle Ask panel
 - Emits to renderer:
   - `capture:analyze-stream:start` with `{ requestId }`
   - `capture:analyze-stream:delta` with `{ requestId, delta }`

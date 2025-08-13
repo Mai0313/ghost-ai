@@ -121,7 +121,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
    ```
 
 2. **固定熱鍵（全域）**
-   - **Ask**: `Cmd/Ctrl+Enter`
+   - **Ask（切換 Ask 面板）**: `Cmd/Ctrl+Enter`（再按一次收合）
    - **切換隱藏**: `Cmd/Ctrl+\\`（即使先用 HUD 的 Hide 隱藏，也可用此熱鍵再顯示）
    - **清除對話**: `Cmd/Ctrl+R`
    - **上一則回答**: `Cmd/Ctrl+Up`
