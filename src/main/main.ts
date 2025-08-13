@@ -259,6 +259,16 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
   return true;
 });
 
+// Update config in-memory without persisting to disk (used to fetch models after user types API key)
+ipcMain.handle('openai:update-config-volatile', async (_evt, config: Partial<OpenAIConfig>) => {
+  try {
+    openAIClient.updateConfig(config);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
 ipcMain.handle('openai:get-config', () => loadOpenAIConfig());
 
 ipcMain.handle('openai:list-models', async () => {

@@ -18,6 +18,7 @@ declare global {
         history?: any[],
       ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
+      updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
       transcribeAudio: (audioBuffer: ArrayBuffer) => Promise<{ text: string }>;
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;

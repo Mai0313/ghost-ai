@@ -64,6 +64,8 @@ const api = {
     return unsubscribe;
   },
   listOpenAIModels: (): Promise<string[]> => ipcRenderer.invoke('openai:list-models'),
+  updateOpenAIConfigVolatile: (config: Partial<OpenAIConfig>) =>
+    ipcRenderer.invoke('openai:update-config-volatile', config),
   transcribeAudio: (audioBuffer: ArrayBuffer): Promise<{ text: string }> =>
     ipcRenderer.invoke('audio:transcribe', Buffer.from(new Uint8Array(audioBuffer))),
   // Settings (user preferences)

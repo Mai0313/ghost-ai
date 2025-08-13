@@ -48,6 +48,27 @@ export function Settings() {
     alert('Saved OpenAI settings');
   };
 
+  // When API key or base URL changes, try to refresh models automatically
+  useEffect(() => {
+    (async () => {
+      const api: any = (window as any).ghostAI;
+      if (!api) return;
+      if (!apiKey || !baseURL) return;
+      try {
+        // Update in-memory client without persisting to disk yet
+        await api.updateOpenAIConfigVolatile({ apiKey, baseURL } as any);
+        const list = await api.listOpenAIModels();
+        if (Array.isArray(list) && list.length) {
+          setModels(list);
+          // If current model is empty or not in list, auto-pick first
+          if (!model || !list.includes(model)) {
+            setModel(list[0] ?? '');
+          }
+        }
+      } catch {}
+    })();
+  }, [apiKey, baseURL]);
+
   const onTest = async () => {
     setTesting(true);
     setOk(null);
