@@ -215,9 +215,8 @@ app.whenReady().then(async () => {
   // Dynamic hotkey updates are disabled by design (fixed hotkeys)
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
-    saveUserSettings(partial);
-
-    return loadUserSettings();
+    // No-op persistence (we do not store arbitrary userSettings anymore)
+    return { ...loadUserSettings(), ...partial };
   });
 
   // HUD IPC
