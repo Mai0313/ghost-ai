@@ -10,6 +10,8 @@ import {
   IconWaveBars,
   IconX,
 } from './components/Icons';
+import { appRootStyle, askCard, askFooter, askInput, askResultArea, barStyle, ghostButton, iconButton, pillButton, settingsCard } from './styles/styles';
+import { theme } from './styles/theme';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
@@ -355,18 +357,7 @@ function App() {
   const bubbleLeft = Math.max(10, Math.min(unclampedLeft, window.innerWidth - bubbleWidth - 10));
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: visible ? 'block' : 'none',
-        // Let clicks pass through by default; we will enable pointer events
-        // only over interactive elements and also toggle native window
-        // click-through accordingly.
-        pointerEvents: 'none',
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
-      }}
-    >
+    <div style={{ ...appRootStyle, display: visible ? 'block' : 'none' }}>
       {/* Draggable control bar (no extra container to avoid blocking clicks) */}
       <div
         ref={barRef}
@@ -374,15 +365,7 @@ function App() {
           position: 'absolute',
           top: barPos.y,
           left: barPos.x,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(30,30,30,0.92)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: 12,
-          padding: 6,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-          pointerEvents: 'auto',
+          ...barStyle,
         }}
         onPointerEnter={() => (window as any).ghostAI?.setMouseIgnore?.(false)}
         onPointerLeave={() => (window as any).ghostAI?.setMouseIgnore?.(true)}
@@ -437,57 +420,26 @@ function App() {
         />
         {/* Left primary pill */}
         <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            border: 'none',
-            borderRadius: 999,
-            padding: '9px 12px',
-            background: recording ? 'rgba(255,40,40,0.9)' : '#2B66F6',
-            color: 'white',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
+          style={pillButton({ primary: !recording, danger: recording })}
           title={recording ? 'Stop recording' : 'Start recording'}
           onClick={() => setRecording((r) => !r)}
         >
-          {recording ? <IconMicOff color="white" /> : <IconWaveBars />}
+          {recording ? <IconMicOff color={theme.color.text()} /> : <IconWaveBars />}
           {recording ? timeLabel : 'Listen'}
         </button>
 
         {/* Ask (toggle ask panel) */}
         <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'transparent',
-            color: tab === 'ask' ? 'white' : '#BDBDBD',
-            border: 'none',
-            padding: '9px 12px',
-            borderRadius: 999,
-            cursor: 'pointer',
-          }}
+          style={{ ...ghostButton, color: tab === 'ask' ? theme.color.text() : theme.color.muted() }}
           onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
         >
-          <IconText color={tab === 'ask' ? 'white' : '#BDBDBD'} />
+          <IconText color={tab === 'ask' ? theme.color.text() : theme.color.muted()} />
           Ask
         </button>
 
         {/* Hide */}
         <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'transparent',
-            color: '#BDBDBD',
-            border: 'none',
-            padding: '9px 10px',
-            borderRadius: 999,
-            cursor: 'pointer',
-          }}
+          style={ghostButton}
           onClick={() => {
             (window as any).ghostAI?.toggleHide?.();
           }}
@@ -498,17 +450,7 @@ function App() {
 
         {/* Settings (toggle) */}
         <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'transparent',
-            color: '#BDBDBD',
-            border: 'none',
-            padding: '8px 8px',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
+          style={iconButton}
           title="Settings"
           onClick={() => setTab((t) => (t === 'settings' ? null : 'settings'))}
         >
@@ -528,16 +470,7 @@ function App() {
         ref={bubbleRef}
       >
         {tab === 'settings' && (
-          <div
-            style={{
-              background: 'rgba(20,20,20,0.92)',
-              color: 'white',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 16,
-              padding: 16,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            }}
-          >
+          <div style={settingsCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 700 }}>Settings</div>
               <button
@@ -555,36 +488,9 @@ function App() {
         )}
 
         {tab === 'ask' && (
-          <div style={{ width: 760, display: 'grid', gap: 8 }}>
-            {result && (
-              <div
-                style={{
-                  background: 'rgba(20,20,20,0.92)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 12,
-                  padding: 12,
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.4,
-                }}
-              >
-                {result}
-              </div>
-            )}
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'rgba(28,28,28,0.94)',
-                color: 'white',
-                borderRadius: 12,
-                padding: 10,
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
-              }}
-            >
+          <div style={askCard}>
+            <div style={{ ...askResultArea, display: result ? 'block' : 'none' }}>{result}</div>
+            <div style={askFooter}>
               <input
                 ref={askInputRef}
                 disabled={busy || streaming}
@@ -592,15 +498,7 @@ function App() {
                 placeholder={
                   busy || streaming ? 'Thinking…' : 'Press Enter to ask with default prompt…'
                 }
-                style={{
-                  flex: 1,
-                  background: '#141414',
-                  color: 'white',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  border: '1px solid #2a2a2a',
-                  outline: 'none',
-                }}
+                style={askInput}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onCompositionEnd={() => setComposing(false)}
@@ -612,7 +510,6 @@ function App() {
                   }
                 }}
               />
-              {/* Removed close button; Ask panel toggles via Ctrl/Cmd+Enter or the Ask pill */}
             </div>
           </div>
         )}

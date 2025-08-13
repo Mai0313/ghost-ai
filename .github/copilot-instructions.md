@@ -105,6 +105,15 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - The renderer toggles click-through dynamically via `window.ghostAI.setMouseIgnore(false/true)` when the pointer is over the HUD bar or bubbles, and during drag.
 - The root container uses `pointer-events: none` while interactive elements use `pointer-events: auto`, ensuring only visible UI captures input. This also allows dragging the HUD to the very top/bottom edges without invisible blockers.
 
+## UI Theming and Styles
+
+- Centralized theme and styles live under `src/renderer/styles/`.
+  - `theme.ts`: exports `theme` and `makeTheme(opacity?: number)`; the single `opacity` value synchronizes text/background transparency across the UI.
+    - Change default opacity at the export site: `export const theme = makeTheme(0.85)`.
+    - Edit base colors in `palette` (RGB tuples) to adjust text/background/primary/danger etc.
+  - `styles.ts`: component styles (bar, settings card, ask card, buttons) consume `theme.color.*()` so most customization is done via `theme.ts`.
+  - Prefer per-component tweaks via multipliers (e.g., `theme.color.panelBg(0.9)`) rather than hard-coded rgba.
+
 ## Screenshot Capture
 
 - Captured via `screenshot-desktop` with PNG buffers.

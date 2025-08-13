@@ -56,7 +56,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 ### 🎨 **User Experience**
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
-- **Minimal Ask Input + Streaming (only)**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
+- **Unified Ask card (streaming‑only)**: The AI response and the input are combined into one card; the streamed answer appears above, and the input sits in the same card footer (IME‑safe)
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R, Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
@@ -264,6 +264,32 @@ Configure your OpenAI API settings through the application's settings interface:
 - Note: The app does not set temperature or max tokens by default to maximize compatibility across models. If your selected model supports these, you can customize behavior by changing models or your prompts.
 
 All settings are encrypted and stored locally - no external services required.
+
+### UI customization (opacity and colors)
+
+- To adjust overall opacity (both background and text), change the theme opacity in `src/renderer/styles/theme.ts`:
+```96:96:src/renderer/styles/theme.ts
+export const theme = makeTheme();
+```
+For example, `makeTheme(0.75)` makes the UI more transparent; values are 0–1.
+
+- To change colors, edit the `palette` in the same file:
+```54:65:src/renderer/styles/theme.ts
+const palette = {
+  text: [255, 255, 255],
+  mutedText: [189, 189, 189],
+  barBg: [30, 30, 30],
+  settingsBg: [20, 20, 20],
+  panelBg: [22, 22, 22],
+  panelFooterBg: [24, 24, 24],
+  inputBg: [22, 22, 22],
+  border: [255, 255, 255],
+  shadow: [0, 0, 0],
+  primary: [43, 102, 246],
+  danger: [255, 40, 40],
+};
+```
+- Component styles are centralized in `src/renderer/styles/styles.ts` and consume the theme, so most tweaks should only require the edits above.
 
 ### Privacy Settings
 

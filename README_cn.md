@@ -56,7 +56,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 ### 🎨 **使用者體驗**
 
 - **浮動控制列**: 螢幕上方置中的現代 HUD（預設僅顯示控制列），含 Listen、Ask、Hide、Settings
-- **極簡 Ask 輸入 + 串流回應（唯一模式）**: HUD 下方顯示單行輸入框；送出後，AI 回答會以串流方式顯示在輸入框上方的泡泡中，與問題緊密相連（支援中文輸入法組字不誤送）
+- **統一 Ask 卡片（僅串流）**：AI 回應與輸入框整合在同一張卡片中；回應顯示於上方、輸入框位於卡片底部（支援中文輸入法組字不誤送）
 - **固定熱鍵（全部為全域）**: Ask = Cmd/Ctrl+Enter，切換隱藏 = Cmd/Ctrl+\\，清除對話 = Cmd/Ctrl+R，上一則回答 = Cmd/Ctrl+Up，下一則回答 = Cmd/Ctrl+Down（無論透過 HUD 的 Hide 按鈕或熱鍵隱藏，都可以再按熱鍵重新顯示）
 - **內嵌錯誤提示**: 發生錯誤時，會在原本顯示 AI 回答的泡泡中顯示 `Error: ...`，可立即重試
 - **快速清除**: 透過 Cmd/Ctrl+R 清除 Ask 泡泡與對話紀錄（不重新整理視窗）
@@ -264,6 +264,32 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
   注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
 
 所有設定都經過加密並本地儲存 - 無需外部服務。
+
+### UI 客製化（透明度與顏色）
+
+- 要同時調整「字體與背景的深淺」，修改 `src/renderer/styles/theme.ts` 的主題透明度：
+```96:96:src/renderer/styles/theme.ts
+export const theme = makeTheme();
+```
+例如改成 `makeTheme(0.75)` 會更透明（0–1 之間，越小越透明）。
+
+- 要更改顏色，編輯同檔案內的 `palette`：
+```54:65:src/renderer/styles/theme.ts
+const palette = {
+  text: [255, 255, 255],
+  mutedText: [189, 189, 189],
+  barBg: [30, 30, 30],
+  settingsBg: [20, 20, 20],
+  panelBg: [22, 22, 22],
+  panelFooterBg: [24, 24, 24],
+  inputBg: [22, 22, 22],
+  border: [255, 255, 255],
+  shadow: [0, 0, 0],
+  primary: [43, 102, 246],
+  danger: [255, 40, 40],
+};
+```
+- 元件樣式集中於 `src/renderer/styles/styles.ts` 並使用主題色，通常只需調整上述兩處即可完成外觀客製化。
 
 ## 🔧 開發
 
