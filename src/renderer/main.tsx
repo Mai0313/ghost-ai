@@ -94,6 +94,15 @@ function App() {
     }
   }, [visible, tab]);
 
+  // When navigating answers, keep Ask tab visible and focused
+  useEffect(() => {
+    if (historyIndex !== null && visible) {
+      if (tab !== 'ask') setTab('ask');
+      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+      return () => window.clearTimeout(id);
+    }
+  }, [historyIndex, visible, tab]);
+
   // After completing a response (not busy/streaming), keep the caret ready for the next question
   useEffect(() => {
     if (visible && tab === 'ask' && !busy && !streaming) {
@@ -111,32 +120,25 @@ function App() {
       setHistoryIndex(null);
     });
     api?.onAskPrev?.(() => {
-      setHistory((prev) => {
-        const answers = prev.filter((m) => m.role === 'assistant');
-        if (!answers.length) return prev;
-        setHistoryIndex((idx) => {
-          const current = idx === null ? answers.length - 1 : Math.max(0, idx - 1);
-          setResult(answers[current]?.content ?? '');
-          return current;
-        });
-        return prev;
+      const answers = history.filter((m) => m.role === 'assistant');
+      if (!answers.length) return;
+      setHistoryIndex((idx) => {
+        const current = idx === null ? answers.length - 1 : Math.max(0, idx - 1);
+        setResult(answers[current]?.content ?? '');
+        return current;
       });
     });
     api?.onAskNext?.(() => {
-      setHistory((prev) => {
-        const answers = prev.filter((m) => m.role === 'assistant');
-        if (!answers.length) return prev;
-        setHistoryIndex((idx) => {
-          if (idx === null) return null;
-          const next = idx + 1;
-          if (next >= answers.length) {
-            // At latest — stay on latest and keep showing last answer
-            return answers.length - 1;
-          }
-          setResult(answers[next]?.content ?? '');
-          return next;
-        });
-        return prev;
+      const answers = history.filter((m) => m.role === 'assistant');
+      if (!answers.length) return;
+      setHistoryIndex((idx) => {
+        if (idx === null) return null;
+        const next = idx + 1;
+        if (next >= answers.length) {
+          return answers.length - 1;
+        }
+        setResult(answers[next]?.content ?? '');
+        return next;
       });
     });
   }, []);

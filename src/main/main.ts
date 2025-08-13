@@ -175,11 +175,13 @@ app.whenReady().then(async () => {
     onPrevAnswer: async () => {
       if (!mainWindow) return;
       mainWindow.show();
+      mainWindow.webContents.send('text-input:show');
       mainWindow.webContents.send('ask:prev');
     },
     onNextAnswer: async () => {
       if (!mainWindow) return;
       mainWindow.show();
+      mainWindow.webContents.send('text-input:show');
       mainWindow.webContents.send('ask:next');
     },
   });
