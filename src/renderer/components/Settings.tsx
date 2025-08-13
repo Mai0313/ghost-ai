@@ -7,7 +7,7 @@ export function Settings() {
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
-  const [customPrompt, setCustomPrompt] = useState('Describe what you see.');
+  const [customPrompt, setCustomPrompt] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -24,7 +24,7 @@ export function Settings() {
         if (cfg) {
           setApiKey(cfg.apiKey || '');
           setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
-          setCustomPrompt(cfg.customPrompt || 'Describe what you see.');
+          setCustomPrompt(cfg.customPrompt || '');
         }
 
         if (Array.isArray(list) && list.length) setModels(list);

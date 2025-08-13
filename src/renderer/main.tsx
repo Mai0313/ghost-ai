@@ -284,7 +284,7 @@ function App() {
     setStreaming(true);
     const userMessage = text; // may be empty; we'll rely on customPrompt
     const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
-    const basePrompt = (cfg as any)?.customPrompt || '';
+    const basePrompt = (cfg as any)?.customPrompt ?? '';
     const effectiveCustomPrompt = basePrompt; // send as system once; textPrompt carries the actual question
 
     setResult('');
