@@ -10,12 +10,7 @@ import { openAIClient } from '@shared/openai-client';
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
-import {
-  loadOpenAIConfig,
-  saveOpenAIConfig,
-  loadUserSettings,
-  saveUserSettings,
-} from './modules/settings-manager';
+import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings } from './modules/settings-manager';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -263,6 +258,7 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
 ipcMain.handle('openai:update-config-volatile', async (_evt, config: Partial<OpenAIConfig>) => {
   try {
     openAIClient.updateConfig(config);
+
     return true;
   } catch {
     return false;

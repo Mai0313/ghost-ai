@@ -16,10 +16,7 @@ export function Settings() {
       if (!api) return;
 
       try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig(),
-          api.listOpenAIModels(),
-        ]);
+        const [cfg, list] = await Promise.all([api.getOpenAIConfig(), api.listOpenAIModels()]);
 
         if (cfg) {
           setApiKey(cfg.apiKey || '');
@@ -31,6 +28,7 @@ export function Settings() {
 
         // Only set model after models are loaded; if cfg.model isn't in list, leave empty
         const cfgModel = (cfg && cfg.model) || '';
+
         if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) {
           setModel(cfgModel);
         } else {
@@ -52,12 +50,14 @@ export function Settings() {
   useEffect(() => {
     (async () => {
       const api: any = (window as any).ghostAI;
+
       if (!api) return;
       if (!apiKey || !baseURL) return;
       try {
         // Update in-memory client without persisting to disk yet
         await api.updateOpenAIConfigVolatile({ apiKey, baseURL } as any);
         const list = await api.listOpenAIModels();
+
         if (Array.isArray(list) && list.length) {
           setModels(list);
           // If current model is empty or not in list, auto-pick first
@@ -132,8 +132,8 @@ export function Settings() {
           Model
         </label>
         <select
-          id="openai-model"
           disabled={!models.length}
+          id="openai-model"
           style={{
             background: '#141414',
             border: '1px solid #2a2a2a',
@@ -146,7 +146,7 @@ export function Settings() {
           onChange={(e) => setModel(e.target.value)}
         >
           {(!models.length || !model) && (
-            <option value="" disabled>
+            <option disabled value="">
               {models.length ? 'Select a model' : 'Loading models…'}
             </option>
           )}

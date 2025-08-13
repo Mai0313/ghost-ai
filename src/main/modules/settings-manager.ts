@@ -1,14 +1,16 @@
 import type { OpenAIConfig, UserSettings } from '@shared/types';
 
-import Store from 'electron-store';
-import { safeStorage } from 'electron';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { safeStorage } from 'electron';
+import Store from 'electron-store';
+
 // Persist to ~/.ghost_ai/config.json across platforms
 const homeDir = os.homedir();
 const configDir = path.join(homeDir, '.ghost_ai');
+
 try {
   fs.mkdirSync(configDir, { recursive: true });
 } catch {}
