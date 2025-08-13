@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 export function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [baseURL, setBaseURL] = useState('https://api.openai.com/v1');
-  const [model, setModel] = useState('gpt-5-mini');
+  const [model, setModel] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
@@ -14,17 +14,28 @@ export function Settings() {
       const api: any = (window as any).ghostAI;
 
       if (!api) return;
-      const cfg = await api.getOpenAIConfig();
 
-      if (cfg) {
-        setApiKey(cfg.apiKey || '');
-        setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
-        setModel(cfg.model || 'gpt-5-mini');
-      }
       try {
-        const list = await api.listOpenAIModels();
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig(),
+          api.listOpenAIModels(),
+        ]);
+
+        if (cfg) {
+          setApiKey(cfg.apiKey || '');
+          setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
+          setCustomPrompt(cfg.customPrompt || 'Describe what you see.');
+        }
 
         if (Array.isArray(list) && list.length) setModels(list);
+
+        // Only set model after models are loaded; if cfg.model isn't in list, leave empty
+        const cfgModel = (cfg && cfg.model) || '';
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) {
+          setModel(cfgModel);
+        } else {
+          setModel('');
+        }
       } catch {}
     })();
   }, []);
@@ -99,41 +110,31 @@ export function Settings() {
         <label htmlFor="openai-model" style={{ fontSize: 12, color: '#BDBDBD' }}>
           Model
         </label>
-        {models.length ? (
-          <select
-            id="openai-model"
-            style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              outline: 'none',
-            }}
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-          >
-            {models.map((m) => (
-              <option key={m} style={{ background: '#141414' }} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            id="openai-model"
-            style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              outline: 'none',
-            }}
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-          />
-        )}
+        <select
+          id="openai-model"
+          disabled={!models.length}
+          style={{
+            background: '#141414',
+            border: '1px solid #2a2a2a',
+            color: 'white',
+            padding: '10px 12px',
+            borderRadius: 10,
+            outline: 'none',
+          }}
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+        >
+          {(!models.length || !model) && (
+            <option value="" disabled>
+              {models.length ? 'Select a model' : 'Loading models…'}
+            </option>
+          )}
+          {models.map((m) => (
+            <option key={m} style={{ background: '#141414' }} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Custom Prompt</div>
