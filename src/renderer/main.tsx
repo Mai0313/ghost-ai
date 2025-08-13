@@ -192,7 +192,10 @@ function App() {
     setStreaming(true);
     const userMessage = text; // may be empty; we'll rely on customPrompt
     const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
-    const customPrompt = (cfg as any)?.customPrompt || '';
+    const basePrompt = (cfg as any)?.customPrompt || 'Describe what you see.';
+    const effectiveCustomPrompt = userMessage?.trim()
+      ? `${basePrompt}\n\nUser question: ${userMessage.trim()}`
+      : basePrompt;
 
     setResult('');
     let unsubscribe: (() => void) | null = null;
@@ -200,7 +203,7 @@ function App() {
     try {
       unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
         userMessage,
-        customPrompt,
+        effectiveCustomPrompt,
         {
           onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
           onDelta: ({ delta }: { requestId: string; delta: string }) => {
@@ -241,7 +244,7 @@ function App() {
       if (typeof unsubscribe !== 'function') {
         setStreaming(false);
         setRequestId(null);
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, customPrompt);
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, effectiveCustomPrompt);
         setResult(res?.content ?? '');
         setHistory((prev) => [
           ...prev,
@@ -259,7 +262,7 @@ function App() {
       setRequestId(null);
       // fallback to non-streaming
       try {
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, customPrompt);
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, effectiveCustomPrompt);
 
         setResult(res?.content ?? '');
         setHistory((prev) => [
