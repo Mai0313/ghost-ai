@@ -22,6 +22,7 @@ function App() {
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
+  const tabRef = useRef<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -31,6 +32,8 @@ function App() {
   const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
   const askInputRef = useRef<HTMLInputElement | null>(null);
   const [composing, setComposing] = useState(false);
+  const activeUnsubRef = useRef<null | (() => void)>(null);
+  const lastDeltaRef = useRef<string | null>(null);
 
   // Center the bar horizontally on first mount
   useLayoutEffect(() => {
@@ -53,32 +56,50 @@ function App() {
   const recordedChunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
+    tabRef.current = tab;
+  }, [tab]);
+
+  useEffect(() => {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
-    (window as any).ghostAI?.onTextInputShow?.(() => {
+    const api = (window as any).ghostAI;
+    api?.onTextInputShow?.(() => {
       setVisible(true);
-      let willOpen = false;
-
-      setTab((t) => {
-        if (t === 'ask') return null; // toggle off if already open
-        willOpen = true;
-
-        return 'ask';
-      });
-      // Focus the prompt when opened via hotkey/menu for quick typing
-      if (willOpen) {
+      setTab('ask');
+      // Reset transient flags to allow new input
+      setBusy(false);
+      setStreaming(false);
+      // Always focus when invoked via hotkey/menu
+      setTimeout(() => askInputRef.current?.focus(), 0);
+    });
+    api?.onHUDShow?.(() => {
+      setVisible(true);
+      // Ensure Ask input is ready if Ask tab is active
+      if (tabRef.current === 'ask') {
+        setBusy(false);
+        setStreaming(false);
         setTimeout(() => askInputRef.current?.focus(), 0);
       }
     });
   }, []);
 
-  // Auto-focus whenever Ask is shown
+  // Auto-focus whenever Ask is shown and ensure input is enabled
   useEffect(() => {
     if (visible && tab === 'ask') {
+      setBusy(false);
+      setStreaming(false);
       const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
 
       return () => window.clearTimeout(id);
     }
   }, [visible, tab]);
+
+  // After completing a response (not busy/streaming), keep the caret ready for the next question
+  useEffect(() => {
+    if (visible && tab === 'ask' && !busy && !streaming) {
+      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+      return () => window.clearTimeout(id);
+    }
+  }, [visible, tab, busy, streaming]);
 
   useEffect(() => {
     (window as any).ghostAI?.onAudioToggle?.(() => setRecording((prev) => !prev));
@@ -159,6 +180,14 @@ function App() {
 
   const onSubmit = useCallback(async () => {
     if (!text || busy || streaming) return;
+    // Ensure previous stream listeners are removed before starting a new one
+    if (activeUnsubRef.current) {
+      try {
+        activeUnsubRef.current();
+      } catch {}
+      activeUnsubRef.current = null;
+    }
+    lastDeltaRef.current = null;
     setBusy(true);
     setStreaming(true);
     const userMessage = text;
@@ -172,22 +201,36 @@ function App() {
         '',
         {
           onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
-          onDelta: ({ delta }: { requestId: string; delta: string }) =>
-            setResult((prev) => prev + (delta ?? '')),
+          onDelta: ({ delta }: { requestId: string; delta: string }) => {
+            if (!delta) return;
+            if (lastDeltaRef.current === delta) return; // de-dup identical consecutive chunks
+            lastDeltaRef.current = delta;
+            setResult((prev) => prev + delta);
+          },
           onDone: ({ content }: { requestId: string; content: string }) => {
             setResult(content ?? '');
             setStreaming(false);
             setRequestId(null);
+            lastDeltaRef.current = null;
             setHistory((prev) => [
               ...prev,
               { role: 'user', content: userMessage },
               { role: 'assistant', content: content ?? '' },
             ]);
+            if (activeUnsubRef.current) {
+              try { activeUnsubRef.current(); } catch {}
+              activeUnsubRef.current = null;
+            }
           },
           onError: ({ error }: { requestId?: string; error: string }) => {
             setStreaming(false);
             setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
+            lastDeltaRef.current = null;
+            if (activeUnsubRef.current) {
+              try { activeUnsubRef.current(); } catch {}
+              activeUnsubRef.current = null;
+            }
           },
         },
         history,
@@ -203,6 +246,8 @@ function App() {
           { role: 'user', content: userMessage },
           { role: 'assistant', content: res?.content ?? '' },
         ]);
+      } else {
+        activeUnsubRef.current = unsubscribe;
       }
       // Clear input after sending
       setText('');
@@ -232,6 +277,15 @@ function App() {
       if (unsubscribe) unsubscribe();
     };
   }, [text, busy, streaming]);
+
+  useEffect(() => {
+    return () => {
+      if (activeUnsubRef.current) {
+        try { activeUnsubRef.current(); } catch {}
+        activeUnsubRef.current = null;
+      }
+    };
+  }, []);
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -384,7 +438,9 @@ function App() {
             borderRadius: 999,
             cursor: 'pointer',
           }}
-          onClick={() => setVisible(false)}
+          onClick={() => {
+            (window as any).ghostAI?.toggleHide?.();
+          }}
         >
           <IconEyeOff />
           Hide
@@ -482,7 +538,7 @@ function App() {
                 ref={askInputRef}
                 disabled={busy || streaming}
                 id="ask-input"
-                placeholder={busy || streaming ? 'Thinking…' : 'Ask about your screen...'}
+                placeholder={busy || streaming ? 'Thinking…' : 'Type your question…'}
                 style={{
                   flex: 1,
                   background: '#141414',

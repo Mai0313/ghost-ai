@@ -56,7 +56,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 - **浮動控制列**: 螢幕上方置中的現代 HUD（預設僅顯示控制列），含 Listen、Ask、Hide、Settings
 - **極簡 Ask 輸入 + 串流回應**: HUD 下方顯示單行輸入框；送出後，AI 回答會以串流方式顯示在輸入框上方的泡泡中，與問題緊密相連（支援中文輸入法組字不誤送）
-- **固定熱鍵**: Ask = Cmd/Ctrl+Enter，切換隱藏 = Cmd/Ctrl+\\
+- **固定熱鍵**: Ask = Cmd/Ctrl+Enter，切換隱藏 = Cmd/Ctrl+\\（無論透過 HUD 的 Hide 按鈕或熱鍵隱藏，都可以再按熱鍵重新顯示）
 - **內嵌錯誤提示**: 發生錯誤時，會在原本顯示 AI 回答的泡泡中顯示 `Error: ...`，可立即重試
 - **快速清除**: 透過 Cmd/Ctrl+R 清除 Ask 泡泡與對話紀錄（不重新整理視窗）
 - **低摩擦輸入**: 內建提示輸入框與自訂提示欄位，按 Send 即可分析
@@ -114,7 +114,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 2. **固定熱鍵**
    - **Ask**: `Cmd/Ctrl+Enter`
-   - **切換隱藏**: `Cmd/Ctrl+\\`
+    - **切換隱藏**: `Cmd/Ctrl+\\`（即使先用 HUD 的 Hide 隱藏，也可用此熱鍵再顯示）
    - **清除 Ask 泡泡/對話**: `Cmd/Ctrl+R`
 
 3. **建置生產版本**

@@ -51,6 +51,8 @@ interface GhostAPI {
   getUserSettings(): Promise<any>;
   updateUserSettings(partial: Partial<any>): Promise<any>;
   onTextInputShow(handler: () => void): void;
+  onHUDShow(handler: () => void): void; // Emitted when HUD should become visible again (e.g., after toggling hide)
+  toggleHide(): Promise<true>; // IPC to toggle main-process hidden state
   onAudioToggle(handler: () => void): void;
 }
 ```
@@ -66,6 +68,12 @@ Main-side handlers in `src/main/main.ts`:
     - `capture:analyze-stream:done` with final `AnalysisResult`
     - `capture:analyze-stream:error` with `{ requestId?, error }`
 
+HUD / Hide integration:
+
+- `ipcMain.handle('hud:toggle-hide')` toggles visibility via `toggleHidden(mainWindow)`.
+- When re-showing, main sends `hud:show` so the renderer can set `visible=true` and re-enable input.
+- Renderer’s Hide button calls `window.ghostAI.toggleHide()` instead of only local `visible=false`.
+
 Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 ## Renderer Flow (Ask UI)
@@ -78,6 +86,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Falls back to non-streaming `analyzeCurrentScreen(...)` if needed.
   - Error handling: when an error occurs (from streaming or fallback), the UI writes an inline message to the same bubble in the form `Error: <message>` and re-enables input so the user can retry immediately.
   - Clear conversation (renderer only): `Cmd/Ctrl+R` clears `history` and `result` without navigating away or reloading the window.
+- Ask input placeholder: shows `Thinking…` while busy/streaming; otherwise `Type your question…`.
 
 ## Screenshot Capture
 

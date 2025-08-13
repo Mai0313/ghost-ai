@@ -185,6 +185,12 @@ app.whenReady().then(async () => {
 
     return loadUserSettings();
   });
+
+  // HUD IPC
+  ipcMain.handle('hud:toggle-hide', async () => {
+    await toggleHidden(mainWindow);
+    return true;
+  });
 });
 
 app.on('window-all-closed', () => {

@@ -22,6 +22,7 @@ const api = {
     history?: any[],
   ) => {
     // Register one-time listeners per call; return unsubscribe function
+    let activeRequestId: string | null = null;
     const unsubscribe = () => {
       ipcRenderer.off('capture:analyze-stream:start', startHandler);
       ipcRenderer.off('capture:analyze-stream:delta', deltaHandler);
@@ -29,10 +30,16 @@ const api = {
       ipcRenderer.off('capture:analyze-stream:error', errorHandler);
     };
 
-    const startHandler = (_: any, data: { requestId: string }) => handlers.onStart?.(data);
-    const deltaHandler = (_: any, data: { requestId: string; delta: string }) =>
+    const startHandler = (_: any, data: { requestId: string }) => {
+      activeRequestId = data.requestId;
+      handlers.onStart?.(data);
+    };
+    const deltaHandler = (_: any, data: { requestId: string; delta: string }) => {
+      if (activeRequestId && data.requestId !== activeRequestId) return;
       handlers.onDelta?.(data);
+    };
     const doneHandler = (_: any, data: AnalysisResult) => {
+      if (activeRequestId && (data as any)?.requestId !== activeRequestId) return;
       try {
         handlers.onDone?.(data);
       } finally {
@@ -40,6 +47,7 @@ const api = {
       }
     };
     const errorHandler = (_: any, data: { requestId?: string; error: string }) => {
+      if (activeRequestId && data.requestId && data.requestId !== activeRequestId) return;
       try {
         handlers.onError?.(data);
       } finally {
@@ -63,6 +71,8 @@ const api = {
   getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
   updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),
   onTextInputShow: (handler: () => void) => ipcRenderer.on('text-input:show', () => handler()),
+  onHUDShow: (handler: () => void) => ipcRenderer.on('hud:show', () => handler()),
+  toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
 };
 

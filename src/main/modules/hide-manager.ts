@@ -10,6 +10,9 @@ export async function toggleHidden(win: BrowserWindowType | null) {
   if (!win) return;
   if (isHidden) {
     win.showInactive();
+    try {
+      win.webContents.send('hud:show');
+    } catch {}
     isHidden = false;
     saveHiddenState(false);
   } else {
