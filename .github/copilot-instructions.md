@@ -54,12 +54,15 @@ interface GhostAPI {
   onHUDShow(handler: () => void): void; // Emitted when HUD should become visible again (e.g., after toggling hide)
   toggleHide(): Promise<true>; // IPC to toggle main-process hidden state
   onAudioToggle(handler: () => void): void;
+  // Toggle native click-through for the transparent overlay window
+  setMouseIgnore(ignore: boolean): Promise<true>;
 }
 ```
 
 Main-side handlers in `src/main/main.ts` (streaming only):
 
 - `ipcMain.on('capture:analyze-stream', ...)`
+- `ipcMain.handle('hud:set-mouse-ignore', (evt, ignore) => mainWindow.setIgnoreMouseEvents(ignore, { forward: true }))`
 - Emits to renderer:
   - `capture:analyze-stream:start` with `{ requestId }`
   - `capture:analyze-stream:delta` with `{ requestId, delta }`
@@ -94,6 +97,13 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Clear conversation: `Cmd/Ctrl+R` clears renderer `history` + `result` and also clears main-process conversation context.
   - Renderer `history` is for UI navigation only; model memory/context is managed in main.
 - Ask input placeholder: shows `Thinking…` while busy/streaming; otherwise `Type your question…`.
+
+### Overlay click-through policy
+
+- The main window is a full-screen, transparent overlay (no frame, no shadow) positioned over the primary display.
+- By default it is click-through: `setIgnoreMouseEvents(true, { forward: true })` is enabled so underlying apps remain interactive.
+- The renderer toggles click-through dynamically via `window.ghostAI.setMouseIgnore(false/true)` when the pointer is over the HUD bar or bubbles, and during drag.
+- The root container uses `pointer-events: none` while interactive elements use `pointer-events: auto`, ensuring only visible UI captures input. This also allows dragging the HUD to the very top/bottom edges without invisible blockers.
 
 ## Screenshot Capture
 

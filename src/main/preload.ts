@@ -76,6 +76,8 @@ const api = {
   onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
   onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
+  // Control whether the overlay window ignores mouse events (click-through)
+  setMouseIgnore: (ignore: boolean) => ipcRenderer.invoke('hud:set-mouse-ignore', ignore),
 };
 
 declare global {

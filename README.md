@@ -58,6 +58,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Minimal Ask Input + Streaming (only)**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R, Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
+- **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear**: Press Cmd/Ctrl+R to clear the Ask bubble and conversation history (window is not reloaded)
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
@@ -72,6 +73,12 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Frontend Configuration**: All API settings configurable through the user interface
 - **Type Safety**: Full TypeScript type annotations throughout the codebase
 - **Memory-First**: All processing happens in memory without disk persistence
+
+### Overlay click‑through behavior
+
+- The main window is a transparent, full‑screen overlay with no frame/shadow.
+- It starts in click‑through mode so your desktop/apps remain interactive.
+- When your cursor enters the HUD or bubbles, the app temporarily disables click‑through so you can click/drag; it re‑enables click‑through when you move away.
 
 ## 🚀 Quick Start
 

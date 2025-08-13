@@ -28,6 +28,8 @@ declare global {
       onAskPrev: (handler: () => void) => void;
       onAskNext: (handler: () => void) => void;
       onAudioToggle: (handler: () => void) => void;
+      // Control whether the overlay window ignores mouse events
+      setMouseIgnore: (ignore: boolean) => Promise<true>;
     };
   }
 }

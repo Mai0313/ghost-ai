@@ -29,6 +29,7 @@ function App() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef<number | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [barPos, setBarPos] = useState<{ x: number; y: number }>({ x: 0, y: 20 });
   const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
   const askInputRef = useRef<HTMLInputElement | null>(null);
@@ -59,6 +60,18 @@ function App() {
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
+  // Global hover detection to toggle native click-through dynamically
+  useEffect(() => {
+    const onMove = (ev: MouseEvent) => {
+      if (!visible) return (window as any).ghostAI?.setMouseIgnore?.(true);
+      const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+      const overUI = !!el && ((barRef.current && barRef.current.contains(el)) || (bubbleRef.current && bubbleRef.current.contains(el)));
+      (window as any).ghostAI?.setMouseIgnore?.(!overUI);
+    };
+    window.addEventListener('mousemove', onMove, true);
+    return () => window.removeEventListener('mousemove', onMove, true);
+  }, [visible]);
+
 
   useEffect(() => {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
@@ -347,6 +360,9 @@ function App() {
         position: 'fixed',
         inset: 0,
         display: visible ? 'block' : 'none',
+        // Let clicks pass through by default; we will enable pointer events
+        // only over interactive elements and also toggle native window
+        // click-through accordingly.
         pointerEvents: 'none',
         fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
       }}
@@ -368,6 +384,8 @@ function App() {
           boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
           pointerEvents: 'auto',
         }}
+        onPointerEnter={() => (window as any).ghostAI?.setMouseIgnore?.(false)}
+        onPointerLeave={() => (window as any).ghostAI?.setMouseIgnore?.(true)}
       >
         {/* Drag handle */}
         <div
@@ -382,6 +400,8 @@ function App() {
             const rect = barRef.current?.getBoundingClientRect();
 
             if (!rect) return;
+            // Ensure the window captures mouse during drag
+            (window as any).ghostAI?.setMouseIgnore?.(false);
             dragStateRef.current = {
               offsetX: e.clientX - rect.left,
               offsetY: e.clientY - rect.top,
@@ -400,6 +420,15 @@ function App() {
               window.removeEventListener('pointermove', onMove);
               window.removeEventListener('pointerup', onUp);
               dragStateRef.current = null;
+              // Return to click-through after drag ends unless pointer stays over UI
+              const el = barRef.current;
+              const leaveToIgnore = () => (window as any).ghostAI?.setMouseIgnore?.(true);
+              // If element is still hovered, keep interactive
+              if (el && el.matches(':hover')) {
+                (window as any).ghostAI?.setMouseIgnore?.(false);
+              } else {
+                leaveToIgnore();
+              }
             };
 
             window.addEventListener('pointermove', onMove);
@@ -496,6 +525,7 @@ function App() {
           width: bubbleWidth,
           pointerEvents: 'auto',
         }}
+        ref={bubbleRef}
       >
         {tab === 'settings' && (
           <div

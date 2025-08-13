@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 
-import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, screen } from 'electron';
 import { openAIClient } from '@shared/openai-client';
 
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
@@ -40,9 +40,14 @@ function resolveAssetPath(assetRelativePath: string) {
 }
 
 function createWindow() {
+  const primary = screen.getPrimaryDisplay();
+  const bounds = primary.bounds;
+
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 640,
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
     show: true, // start hidden; we only show when user invokes overlay
     frame: false,
     transparent: true,
@@ -79,6 +84,12 @@ function createWindow() {
   // Prevent most screen-capture APIs from capturing this window
   try {
     mainWindow.setContentProtection(true);
+  } catch {}
+
+  // Make overlay click-through by default; renderer will temporarily disable
+  // passthrough when the cursor is over interactive UI.
+  try {
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
   } catch {}
 }
 
@@ -212,6 +223,15 @@ app.whenReady().then(async () => {
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {
     await toggleHidden(mainWindow);
+
+    return true;
+  });
+
+  // Allow renderer to toggle click-through dynamically
+  ipcMain.handle('hud:set-mouse-ignore', (_evt, ignore: boolean) => {
+    try {
+      mainWindow?.setIgnoreMouseEvents(!!ignore, { forward: true });
+    } catch {}
 
     return true;
   });
