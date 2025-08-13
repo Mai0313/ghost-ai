@@ -19,6 +19,7 @@ function App() {
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null); // null = latest
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
@@ -107,6 +108,36 @@ function App() {
     api?.onAskClear?.(() => {
       setHistory([]);
       setResult('');
+      setHistoryIndex(null);
+    });
+    api?.onAskPrev?.(() => {
+      setHistory((prev) => {
+        const answers = prev.filter((m) => m.role === 'assistant');
+        if (!answers.length) return prev;
+        setHistoryIndex((idx) => {
+          const current = idx === null ? answers.length - 1 : Math.max(0, idx - 1);
+          setResult(answers[current]?.content ?? '');
+          return current;
+        });
+        return prev;
+      });
+    });
+    api?.onAskNext?.(() => {
+      setHistory((prev) => {
+        const answers = prev.filter((m) => m.role === 'assistant');
+        if (!answers.length) return prev;
+        setHistoryIndex((idx) => {
+          if (idx === null) return null;
+          const next = idx + 1;
+          if (next >= answers.length) {
+            // At latest — stay on latest and keep showing last answer
+            return answers.length - 1;
+          }
+          setResult(answers[next]?.content ?? '');
+          return next;
+        });
+        return prev;
+      });
     });
   }, []);
 
@@ -197,10 +228,8 @@ function App() {
     setStreaming(true);
     const userMessage = text; // may be empty; we'll rely on customPrompt
     const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
-    const basePrompt = (cfg as any)?.customPrompt || 'Describe what you see.';
-    const effectiveCustomPrompt = userMessage?.trim()
-      ? `${basePrompt}\n\nUser question: ${userMessage.trim()}`
-      : basePrompt;
+    const basePrompt = (cfg as any)?.customPrompt || '';
+    const effectiveCustomPrompt = basePrompt; // send as system once; textPrompt carries the actual question
 
     setResult('');
     let unsubscribe: (() => void) | null = null;
@@ -227,6 +256,7 @@ function App() {
               { role: 'user', content: userMessage },
               { role: 'assistant', content: content ?? '' },
             ]);
+            setHistoryIndex(null);
             if (activeUnsubRef.current) {
               try { activeUnsubRef.current(); } catch {}
               activeUnsubRef.current = null;

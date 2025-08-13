@@ -4,12 +4,16 @@ export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;
   onToggleHide: () => void | Promise<void>;
   onClearAsk: () => void | Promise<void>;
+  onPrevAnswer: () => void | Promise<void>;
+  onNextAnswer: () => void | Promise<void>;
 }
 
 // Fixed hotkeys (Cmd on macOS, Ctrl on others)
 const ASK_HOTKEY = 'CommandOrControl+Enter';
 const HIDE_HOTKEY = 'CommandOrControl+\\';
 const CLEAR_HOTKEY = 'CommandOrControl+R';
+const PREV_ANSWER_HOTKEY = 'CommandOrControl+Up';
+const NEXT_ANSWER_HOTKEY = 'CommandOrControl+Down';
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   ok: boolean;
@@ -33,6 +37,18 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(CLEAR_HOTKEY, () => void handlers.onClearAsk());
   } catch {
     failures.push(CLEAR_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(PREV_ANSWER_HOTKEY, () => void handlers.onPrevAnswer());
+  } catch {
+    failures.push(PREV_ANSWER_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(NEXT_ANSWER_HOTKEY, () => void handlers.onNextAnswer());
+  } catch {
+    failures.push(NEXT_ANSWER_HOTKEY);
   }
 
   return { ok: failures.length === 0, failed: failures };

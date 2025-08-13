@@ -289,6 +289,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask（且自動聚焦）
   - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
   - `Cmd/Ctrl+R`：清除 Ask 對話與結果
+  - `Cmd/Ctrl+Up`：查看上一則回答
+  - `Cmd/Ctrl+Down`：查看下一則回答
 
 ### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
 

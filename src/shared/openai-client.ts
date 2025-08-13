@@ -62,17 +62,23 @@ export class OpenAIClient {
     const client = this.client!;
     const requestId = crypto.randomUUID();
     const base64 = imageBuffer.toString('base64');
+    const messages: ChatMessage[] = [];
+    if (customPrompt?.trim()) {
+      messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
+    }
     const content: ChatMessage['content'] = [
-      { type: 'text', text: `${customPrompt}\n\n${textPrompt}` },
+      { type: 'text', text: textPrompt?.trim() ?? '' },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
+    messages.push({ role: 'user', content } as ChatMessage);
 
     // Basic retry with backoff
     const attempt = async (_tryIndex: number) => {
       // @ts-ignore: SDK message types may differ by version
       return client.chat.completions.create({
         model: config.model,
-        messages: [{ role: 'user', content }],
+        // @ts-ignore allow system role
+        messages: messages as any,
       });
     };
 
@@ -111,15 +117,21 @@ export class OpenAIClient {
     const config = this.config!;
     const client = this.client!;
     const base64 = imageBuffer.toString('base64');
+    const messages: ChatMessage[] = [];
+    if (customPrompt?.trim()) {
+      messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
+    }
     const content: ChatMessage['content'] = [
-      { type: 'text', text: `${customPrompt}\n\n${textPrompt}`.trim() },
+      { type: 'text', text: textPrompt?.trim() ?? '' },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
+    messages.push({ role: 'user', content } as ChatMessage);
 
     // @ts-ignore: SDK message types may differ by version
     const stream = await client.chat.completions.create({
       model: config.model,
-      messages: [{ role: 'user', content }],
+      // @ts-ignore allow system role
+      messages: messages as any,
       stream: true,
     });
 
@@ -160,15 +172,16 @@ export class OpenAIClient {
     const client = this.client!;
     const base64 = imageBuffer.toString('base64');
 
-    // Build messages: include prior messages (as-is), then current user with text + image
+    // Build messages: optional system prompt once, then prior messages, then current user with text + image
     const messages: ChatMessage[] = [];
-
+    if (customPrompt?.trim()) {
+      messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
+    }
     if (Array.isArray(history) && history.length) messages.push(...history);
     const userCombinedContent: ChatMessage['content'] = [
-      { type: 'text', text: `${customPrompt}\n\n${textPrompt}`.trim() },
+      { type: 'text', text: textPrompt?.trim() ?? '' },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
-
     messages.push({ role: 'user', content: userCombinedContent } as ChatMessage);
 
     // @ts-ignore Streaming create; SDK signatures vary

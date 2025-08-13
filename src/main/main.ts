@@ -172,6 +172,16 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send('ask:clear');
     },
+    onPrevAnswer: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:prev');
+    },
+    onNextAnswer: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:next');
+    },
   });
 
   // If no OpenAI config yet, guide user by showing the overlay

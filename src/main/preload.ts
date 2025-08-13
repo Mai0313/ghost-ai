@@ -74,6 +74,8 @@ const api = {
   onHUDShow: (handler: () => void) => ipcRenderer.on('hud:show', () => handler()),
   toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
   onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),
+  onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
+  onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
 };
 
