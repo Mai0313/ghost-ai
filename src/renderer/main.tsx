@@ -179,7 +179,7 @@ function App() {
   }, [recording]);
 
   const onSubmit = useCallback(async () => {
-    if (!text || busy || streaming) return;
+    if (busy || streaming) return;
     // Ensure previous stream listeners are removed before starting a new one
     if (activeUnsubRef.current) {
       try {
@@ -190,7 +190,9 @@ function App() {
     lastDeltaRef.current = null;
     setBusy(true);
     setStreaming(true);
-    const userMessage = text;
+    const userMessage = text; // may be empty; we'll rely on customPrompt
+    const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
+    const customPrompt = (cfg as any)?.customPrompt || '';
 
     setResult('');
     let unsubscribe: (() => void) | null = null;
@@ -198,7 +200,7 @@ function App() {
     try {
       unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
         userMessage,
-        '',
+        customPrompt,
         {
           onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
           onDelta: ({ delta }: { requestId: string; delta: string }) => {
@@ -239,7 +241,7 @@ function App() {
       if (typeof unsubscribe !== 'function') {
         setStreaming(false);
         setRequestId(null);
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, '');
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, customPrompt);
         setResult(res?.content ?? '');
         setHistory((prev) => [
           ...prev,
@@ -257,7 +259,7 @@ function App() {
       setRequestId(null);
       // fallback to non-streaming
       try {
-        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, '');
+        const res = await (window as any).ghostAI?.analyzeCurrentScreen?.(userMessage, customPrompt);
 
         setResult(res?.content ?? '');
         setHistory((prev) => [
@@ -538,7 +540,7 @@ function App() {
                 ref={askInputRef}
                 disabled={busy || streaming}
                 id="ask-input"
-                placeholder={busy || streaming ? 'Thinking…' : 'Type your question…'}
+                placeholder={busy || streaming ? 'Thinking…' : 'Press Enter to ask with default prompt…'}
                 style={{
                   flex: 1,
                   background: '#141414',
@@ -555,7 +557,7 @@ function App() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey && !composing) {
                     e.preventDefault();
-                    if (!busy && text) void onSubmit();
+                    if (!busy) void onSubmit();
                   }
                 }}
               />
