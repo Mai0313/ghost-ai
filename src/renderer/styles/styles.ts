@@ -1,5 +1,6 @@
-import { theme } from './theme';
 import type { CSSProperties } from 'react';
+
+import { theme } from './theme';
 
 export const appRootStyle: CSSProperties = {
   position: 'fixed',
@@ -33,8 +34,8 @@ export const pillButton = (
   background: options.primary
     ? theme.color.primary(1, 1)
     : options.danger
-    ? theme.color.danger(1, 1)
-    : 'transparent',
+      ? theme.color.danger(1, 1)
+      : 'transparent',
   color: theme.color.text(1),
   fontWeight: 600,
   cursor: 'pointer',
@@ -111,5 +112,3 @@ export const askInput: CSSProperties = {
   border: '1px solid #2a2a2a',
   outline: 'none',
 };
-
-

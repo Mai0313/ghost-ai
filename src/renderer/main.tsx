@@ -10,7 +10,18 @@ import {
   IconWaveBars,
   IconX,
 } from './components/Icons';
-import { appRootStyle, askCard, askFooter, askInput, askResultArea, barStyle, ghostButton, iconButton, pillButton, settingsCard } from './styles/styles';
+import {
+  appRootStyle,
+  askCard,
+  askFooter,
+  askInput,
+  askResultArea,
+  barStyle,
+  ghostButton,
+  iconButton,
+  pillButton,
+  settingsCard,
+} from './styles/styles';
 import { theme } from './styles/theme';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
@@ -67,13 +78,18 @@ function App() {
     const onMove = (ev: MouseEvent) => {
       if (!visible) return (window as any).ghostAI?.setMouseIgnore?.(true);
       const el = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
-      const overUI = !!el && ((barRef.current && barRef.current.contains(el)) || (bubbleRef.current && bubbleRef.current.contains(el)));
+      const overUI =
+        !!el &&
+        ((barRef.current && barRef.current.contains(el)) ||
+          (bubbleRef.current && bubbleRef.current.contains(el)));
+
       (window as any).ghostAI?.setMouseIgnore?.(!overUI);
     };
+
     window.addEventListener('mousemove', onMove, true);
+
     return () => window.removeEventListener('mousemove', onMove, true);
   }, [visible]);
-
 
   useEffect(() => {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
@@ -419,6 +435,7 @@ function App() {
               // Return to click-through after drag ends unless pointer stays over UI
               const el = barRef.current;
               const leaveToIgnore = () => (window as any).ghostAI?.setMouseIgnore?.(true);
+
               // If element is still hovered, keep interactive
               if (el && el.matches(':hover')) {
                 (window as any).ghostAI?.setMouseIgnore?.(false);
@@ -443,7 +460,10 @@ function App() {
 
         {/* Ask (toggle ask panel) */}
         <button
-          style={{ ...ghostButton, color: tab === 'ask' ? theme.color.text() : theme.color.muted() }}
+          style={{
+            ...ghostButton,
+            color: tab === 'ask' ? theme.color.text() : theme.color.muted(),
+          }}
           onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
         >
           <IconText color={tab === 'ask' ? theme.color.text() : theme.color.muted()} />
@@ -473,6 +493,7 @@ function App() {
 
       {/* Bubble panel beneath (position follows bar horizontally) */}
       <div
+        ref={bubbleRef}
         style={{
           position: 'absolute',
           top: bubbleTop,
@@ -480,7 +501,6 @@ function App() {
           width: bubbleWidth,
           pointerEvents: 'auto',
         }}
-        ref={bubbleRef}
       >
         {tab === 'settings' && (
           <div style={settingsCard}>

@@ -268,12 +268,15 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
 ### UI 客製化（透明度與顏色）
 
 - 要同時調整「字體與背景的深淺」，修改 `src/renderer/styles/theme.ts` 的主題透明度：
+
 ```96:96:src/renderer/styles/theme.ts
 export const theme = makeTheme();
 ```
+
 例如改成 `makeTheme(0.75)` 會更透明（0–1 之間，越小越透明）。
 
 - 要更改顏色，編輯同檔案內的 `palette`：
+
 ```54:65:src/renderer/styles/theme.ts
 const palette = {
   text: [255, 255, 255],
@@ -289,6 +292,7 @@ const palette = {
   danger: [255, 40, 40],
 };
 ```
+
 - 元件樣式集中於 `src/renderer/styles/styles.ts` 並使用主題色，通常只需調整上述兩處即可完成外觀客製化。
 
 ## 🔧 開發

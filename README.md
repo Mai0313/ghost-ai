@@ -268,12 +268,15 @@ All settings are encrypted and stored locally - no external services required.
 ### UI customization (opacity and colors)
 
 - To adjust overall opacity (both background and text), change the theme opacity in `src/renderer/styles/theme.ts`:
+
 ```96:96:src/renderer/styles/theme.ts
 export const theme = makeTheme();
 ```
+
 For example, `makeTheme(0.75)` makes the UI more transparent; values are 0–1.
 
 - To change colors, edit the `palette` in the same file:
+
 ```54:65:src/renderer/styles/theme.ts
 const palette = {
   text: [255, 255, 255],
@@ -289,6 +292,7 @@ const palette = {
   danger: [255, 40, 40],
 };
 ```
+
 - Component styles are centralized in `src/renderer/styles/styles.ts` and consume the theme, so most tweaks should only require the edits above.
 
 ### Privacy Settings

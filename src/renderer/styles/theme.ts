@@ -4,11 +4,13 @@ function clamp01(value: number): number {
   if (Number.isNaN(value)) return 0;
   if (value < 0) return 0;
   if (value > 1) return 1;
+
   return value;
 }
 
 export function rgba(rgb: RGB, alpha: number): string {
   const [r, g, b] = rgb;
+
   return `rgba(${r},${g},${b},${clamp01(alpha)})`;
 }
 
@@ -76,13 +78,13 @@ export function makeTheme(opacity = 0.85): ThemeSpec {
     primary: (multiplier = 1, base = 1) => rgba(palette.primary, base * opacity * multiplier),
     danger: (multiplier = 1, base = 0.9) => rgba(palette.danger, base * opacity * multiplier),
     shadow: (multiplier = 1, base = 0.35) => rgba(palette.shadow, base * opacity * multiplier),
-    shadowStrong: (multiplier = 1, base = 0.45) => rgba(palette.shadow, base * opacity * multiplier),
+    shadowStrong: (multiplier = 1, base = 0.45) =>
+      rgba(palette.shadow, base * opacity * multiplier),
   };
 
   return {
     opacity,
-    fontFamily:
-      'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
+    fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
     palette,
     color,
     shadow: {
@@ -94,5 +96,3 @@ export function makeTheme(opacity = 0.85): ThemeSpec {
 }
 
 export const theme = makeTheme();
-
-
