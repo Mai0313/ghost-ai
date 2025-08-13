@@ -73,6 +73,7 @@ const api = {
   onTextInputShow: (handler: () => void) => ipcRenderer.on('text-input:show', () => handler()),
   onHUDShow: (handler: () => void) => ipcRenderer.on('hud:show', () => handler()),
   toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
+  onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
 };
 

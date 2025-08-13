@@ -283,15 +283,16 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - 只有在使用者透過熱鍵或托盤操作時才 `mainWindow.show()`，並由 Renderer 端控制 HUD/面板的顯示。
 - 截圖流程透過 `hideAllWindowsDuring` 暫時隱藏所有視窗，避免干擾截圖與留下雜訊。
 
-### 熱鍵（固定）
+### 熱鍵（固定，全部全局）
 
-- 不提供 UI 變更，僅在主程序註冊：
-  - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask
+- 所有熱鍵均採用 Main 端 `globalShortcut` 註冊，Renderer 不再自行處理鍵盤事件：
+  - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask（且自動聚焦）
   - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
+  - `Cmd/Ctrl+R`：清除 Ask 對話與結果
 
 ### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
 
-- `View` 選單的 Reload 改用 `F5` 作為加速鍵，避免覆蓋 Renderer 端的 `Cmd/Ctrl+R`（用於清除 Ask 對話內容）。
+- `View` 選單的 Reload 改用 `F5` 作為加速鍵，避免覆蓋全局 `Cmd/Ctrl+R`（清除 Ask 對話）。
 
 - [ ] 2. 全域熱鍵系統
   - [ ] 2.1 `./src/main/hotkey-manager.ts`：註冊文字/錄音/隱藏熱鍵，跨平台與衝突檢測；型別放 `./src/shared/types.ts`

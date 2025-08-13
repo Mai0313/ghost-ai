@@ -28,6 +28,7 @@ declare global {
       onTextInputShow: (handler: () => void) => void;
       onHUDShow: (handler: () => void) => void;
       toggleHide: () => Promise<any>;
+      onAskClear: (handler: () => void) => void;
       onAudioToggle: (handler: () => void) => void;
     };
   }

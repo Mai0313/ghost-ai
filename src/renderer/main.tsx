@@ -102,7 +102,12 @@ function App() {
   }, [visible, tab, busy, streaming]);
 
   useEffect(() => {
-    (window as any).ghostAI?.onAudioToggle?.(() => setRecording((prev) => !prev));
+    const api = (window as any).ghostAI;
+    api?.onAudioToggle?.(() => setRecording((prev) => !prev));
+    api?.onAskClear?.(() => {
+      setHistory([]);
+      setResult('');
+    });
   }, []);
 
   useEffect(() => {
@@ -302,20 +307,7 @@ function App() {
     return `${minutes}:${seconds}`;
   }, [elapsedMs]);
 
-  // Global hotkey: Ctrl + R to clear conversation history (renderer level)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) {
-        e.preventDefault();
-        setHistory([]);
-        setResult('');
-      }
-    };
-
-    window.addEventListener('keydown', handler, { capture: true });
-
-    return () => window.removeEventListener('keydown', handler, { capture: true } as any);
-  }, []);
+  // Removed renderer-level Ctrl/Cmd+R handler. Clear is handled by global hotkey in main.
 
   // Position for the response/input panel: centered under the bar
   const bubbleWidth = 760;

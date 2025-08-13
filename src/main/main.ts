@@ -166,6 +166,12 @@ app.whenReady().then(async () => {
     onToggleHide: async () => {
       await toggleHidden(mainWindow);
     },
+    onClearAsk: async () => {
+      if (!mainWindow) return;
+      // Ensure window is visible so user sees the clear effect
+      mainWindow.show();
+      mainWindow.webContents.send('ask:clear');
+    },
   });
 
   // If no OpenAI config yet, guide user by showing the overlay

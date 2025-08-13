@@ -56,7 +56,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Minimal Ask Input + Streaming**: A clean, single‑line input appears below the HUD; when you submit, the AI answer streams live in a bubble directly above the input, staying visually connected to your question (IME‑safe)
-- **Fixed hotkeys**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\ (Hide works both from the HUD button and the hotkey; if you hide via HUD, press the hotkey again to show)
+- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear**: Press Cmd/Ctrl+R to clear the Ask bubble and conversation history (window is not reloaded)
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
@@ -112,9 +112,10 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    npm run dev
    ```
 
-2. **Fixed hotkeys**
-   - **Ask**: `Cmd/Ctrl+Enter`
+2. **Fixed hotkeys (global)**
+    - **Ask**: `Cmd/Ctrl+Enter`
     - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
+    - **Clear Ask**: `Cmd/Ctrl+R`
    - **Clear Ask bubble/history**: `Cmd/Ctrl+R`
 
 3. **Build for production**

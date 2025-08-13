@@ -3,11 +3,13 @@ import { globalShortcut } from 'electron';
 export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;
   onToggleHide: () => void | Promise<void>;
+  onClearAsk: () => void | Promise<void>;
 }
 
 // Fixed hotkeys (Cmd on macOS, Ctrl on others)
 const ASK_HOTKEY = 'CommandOrControl+Enter';
 const HIDE_HOTKEY = 'CommandOrControl+\\';
+const CLEAR_HOTKEY = 'CommandOrControl+R';
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   ok: boolean;
@@ -25,6 +27,12 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(HIDE_HOTKEY, () => void handlers.onToggleHide());
   } catch {
     failures.push(HIDE_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(CLEAR_HOTKEY, () => void handlers.onClearAsk());
+  } catch {
+    failures.push(CLEAR_HOTKEY);
   }
 
   return { ok: failures.length === 0, failed: failures };
