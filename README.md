@@ -114,11 +114,11 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    ```
 
 2. **Fixed hotkeys (global)**
-    - **Ask**: `Cmd/Ctrl+Enter`
-    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
-    - **Clear Ask**: `Cmd/Ctrl+R`
-    - **Previous Answer**: `Cmd/Ctrl+Up`
-    - **Next Answer**: `Cmd/Ctrl+Down`
+   - **Ask**: `Cmd/Ctrl+Enter`
+   - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
+   - **Clear Ask**: `Cmd/Ctrl+R`
+   - **Previous Answer**: `Cmd/Ctrl+Up`
+   - **Next Answer**: `Cmd/Ctrl+Down`
    - **Clear Ask bubble/history**: `Cmd/Ctrl+R`
 
 3. **Build for production**

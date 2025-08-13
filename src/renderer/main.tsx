@@ -63,6 +63,7 @@ function App() {
   useEffect(() => {
     // Guard in case preload failed; avoid crashing when window.ghostAI is undefined
     const api = (window as any).ghostAI;
+
     api?.onTextInputShow?.(() => {
       setVisible(true);
       setTab('ask');
@@ -99,6 +100,7 @@ function App() {
     if (historyIndex !== null && visible) {
       if (tab !== 'ask') setTab('ask');
       const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+
       return () => window.clearTimeout(id);
     }
   }, [historyIndex, visible, tab]);
@@ -107,12 +109,14 @@ function App() {
   useEffect(() => {
     if (visible && tab === 'ask' && !busy && !streaming) {
       const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+
       return () => window.clearTimeout(id);
     }
   }, [visible, tab, busy, streaming]);
 
   useEffect(() => {
     const api = (window as any).ghostAI;
+
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
     api?.onAskClear?.(() => {
       setHistory([]);
@@ -121,23 +125,29 @@ function App() {
     });
     api?.onAskPrev?.(() => {
       const answers = history.filter((m) => m.role === 'assistant');
+
       if (!answers.length) return;
       setHistoryIndex((idx) => {
         const current = idx === null ? answers.length - 1 : Math.max(0, idx - 1);
+
         setResult(answers[current]?.content ?? '');
+
         return current;
       });
     });
     api?.onAskNext?.(() => {
       const answers = history.filter((m) => m.role === 'assistant');
+
       if (!answers.length) return;
       setHistoryIndex((idx) => {
         if (idx === null) return null;
         const next = idx + 1;
+
         if (next >= answers.length) {
           return answers.length - 1;
         }
         setResult(answers[next]?.content ?? '');
+
         return next;
       });
     });
@@ -260,7 +270,9 @@ function App() {
             ]);
             setHistoryIndex(null);
             if (activeUnsubRef.current) {
-              try { activeUnsubRef.current(); } catch {}
+              try {
+                activeUnsubRef.current();
+              } catch {}
               activeUnsubRef.current = null;
             }
           },
@@ -270,7 +282,9 @@ function App() {
             setResult(`Error: ${error || 'Unknown error'}`);
             lastDeltaRef.current = null;
             if (activeUnsubRef.current) {
-              try { activeUnsubRef.current(); } catch {}
+              try {
+                activeUnsubRef.current();
+              } catch {}
               activeUnsubRef.current = null;
             }
           },
@@ -299,7 +313,9 @@ function App() {
   useEffect(() => {
     return () => {
       if (activeUnsubRef.current) {
-        try { activeUnsubRef.current(); } catch {}
+        try {
+          activeUnsubRef.current();
+        } catch {}
         activeUnsubRef.current = null;
       }
     };
@@ -543,7 +559,9 @@ function App() {
                 ref={askInputRef}
                 disabled={busy || streaming}
                 id="ask-input"
-                placeholder={busy || streaming ? 'Thinking…' : 'Press Enter to ask with default prompt…'}
+                placeholder={
+                  busy || streaming ? 'Thinking…' : 'Press Enter to ask with default prompt…'
+                }
                 style={{
                   flex: 1,
                   background: '#141414',

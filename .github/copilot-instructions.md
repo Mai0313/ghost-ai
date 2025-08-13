@@ -58,12 +58,13 @@ interface GhostAPI {
 ```
 
 Main-side handlers in `src/main/main.ts` (streaming only):
-  - `ipcMain.on('capture:analyze-stream', ...)`
-  - Emits to renderer:
-    - `capture:analyze-stream:start` with `{ requestId }`
-    - `capture:analyze-stream:delta` with `{ requestId, delta }`
-    - `capture:analyze-stream:done` with final `AnalysisResult`
-    - `capture:analyze-stream:error` with `{ requestId?, error }`
+
+- `ipcMain.on('capture:analyze-stream', ...)`
+- Emits to renderer:
+  - `capture:analyze-stream:start` with `{ requestId }`
+  - `capture:analyze-stream:delta` with `{ requestId, delta }`
+  - `capture:analyze-stream:done` with final `AnalysisResult`
+  - `capture:analyze-stream:error` with `{ requestId?, error }`
 
 Conversation history (main-managed):
 

@@ -212,6 +212,7 @@ app.whenReady().then(async () => {
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {
     await toggleHidden(mainWindow);
+
     return true;
   });
 });
@@ -283,6 +284,7 @@ ipcMain.on(
       // Append to plain-text conversation history
       const question = (payload.textPrompt ?? '').trim();
       const answer = (result?.content ?? '').trim();
+
       if (question || answer) {
         conversationHistoryText += `Q: ${question}\nA: ${answer}\n\n`;
       }

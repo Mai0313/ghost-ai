@@ -66,6 +66,7 @@ export class OpenAIClient {
     const client = this.client!;
     const base64 = imageBuffer.toString('base64');
     const messages: ChatMessage[] = [];
+
     if (customPrompt?.trim()) {
       messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
     }
@@ -73,6 +74,7 @@ export class OpenAIClient {
       { type: 'text', text: textPrompt?.trim() ?? '' },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
+
     messages.push({ role: 'user', content } as ChatMessage);
 
     // @ts-ignore: SDK message types may differ by version
@@ -122,6 +124,7 @@ export class OpenAIClient {
 
     // Build messages: optional system prompt once, then prior messages, then current user with text + image
     const messages: ChatMessage[] = [];
+
     if (customPrompt?.trim()) {
       messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
     }
@@ -130,6 +133,7 @@ export class OpenAIClient {
       { type: 'text', text: textPrompt?.trim() ?? '' },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
+
     messages.push({ role: 'user', content: userCombinedContent } as ChatMessage);
 
     // @ts-ignore Streaming create; SDK signatures vary
