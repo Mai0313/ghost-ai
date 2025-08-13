@@ -199,6 +199,13 @@ npm install <package> --save-dev        # 添加開發依賴
 npm run dist   # 建置並打包當前平台
 ```
 
+#### 各作業系統打包說明
+
+- Windows：執行 `npm run dist:win`，會在 `release/` 產出 NSIS 安裝程式（例如 `Ghost AI Setup <version>.exe`）。
+- macOS：執行 `npm run dist:mac`（需在 macOS 上執行；DMG 與簽章步驟需 macOS）。
+- Linux：執行 `npm run dist:linux`（建議在 Linux 環境執行，會產出 AppImage 與 deb）。在 Windows 上可考慮使用 WSL2。
+- 所有產物會輸出到 `release/` 目錄。腳本使用 `--publish never` 以避免意外上傳。
+
 ### 應用程式圖示
 
 - Windows 安裝程式與應用圖示使用專案根目錄的 `ghost.ico`。

@@ -199,6 +199,13 @@ npm install <package> --save-dev        # Add dev dependency
 npm run dist   # Build and package for your platform
 ```
 
+#### OS-specific packaging notes
+
+- Windows: `npm run dist:win` produces an NSIS installer under `release/` (e.g., `Ghost AI Setup <version>.exe`).
+- macOS: `npm run dist:mac` must be run on macOS (DMG creation and code signing require macOS).
+- Linux: `npm run dist:linux` must be run on a Linux environment for best results (AppImage/deb). On Windows, use WSL2 or a Linux machine.
+- All artifacts are written to the `release/` directory. Use `--publish never` (default in scripts) to avoid accidental uploads.
+
 ### Application Icon
 
 - Windows installer and app icon use `ghost.ico` in the project root.

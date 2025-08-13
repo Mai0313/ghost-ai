@@ -433,6 +433,23 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - API設定使用 Electron safeStorage 進行本地加密儲存
   - 封裝使用 `electron-builder`：Windows（NSIS .exe）、macOS（.dmg）、Linux（AppImage/deb）
 
+### Packaging scripts
+
+- `npm run dist` — Build + package for current platform using `electron-builder`.
+- `npm run dist:win` — Build + package Windows (`--win --publish never`). Outputs NSIS installer under `release/`.
+- `npm run dist:mac` — Build + package macOS (`--mac --publish never`). Must run on macOS for DMG and signing.
+- `npm run dist:linux` — Build + package Linux (`--linux --publish never`). Recommend running on Linux (or WSL2) for AppImage/deb.
+
+Packaging targets are defined in `electron-builder.json`:
+
+```json
+{
+  "mac": { "target": ["dmg"], "category": "public.app-category.productivity" },
+  "win": { "target": ["nsis"], "icon": "ghost.ico" },
+  "linux": { "target": ["AppImage", "deb"] }
+}
+```
+
 ### Packaging assets
 
 - Windows icon is set to `ghost.ico` at the repository root via `electron-builder.json` (`win.icon`).
