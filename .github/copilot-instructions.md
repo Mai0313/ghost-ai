@@ -18,6 +18,7 @@ This document describes important technical details for contributors. Update thi
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
   - Streaming only: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
   - Chat helper: `chatCompletion(...)` (non-streaming)
+  - Note: `analyzeWithHistoryStream(...)` exists but is not used; the main process now manages plain-text conversation history and injects it into `textPrompt`.
 
 Notes:
 
@@ -44,6 +45,7 @@ interface GhostAPI {
       onDone?: (p: AnalysisResult) => void;
       onError?: (p: { requestId?: string; error: string }) => void;
     },
+    history?: any[], // deprecated: ignored by main; history is managed in main as plain text
   ): () => void; // unsubscribe
   transcribeAudio(audioBuffer: ArrayBuffer): Promise<{ text: string }>;
   getUserSettings(): Promise<any>;
@@ -63,6 +65,14 @@ Main-side handlers in `src/main/main.ts` (streaming only):
     - `capture:analyze-stream:done` with final `AnalysisResult`
     - `capture:analyze-stream:error` with `{ requestId?, error }`
 
+Conversation history (main-managed):
+
+- The main process keeps a simple in-memory string `conversationHistoryText` formatted as:
+  - `Q: <question>\nA: <answer>\n\n` appended per turn
+- On each new request, main composes the prompt as:
+  - `Previous conversation (plain text):\n<conversationHistoryText>\n\nNew question:\n<current question>`
+- On `Cmd/Ctrl+R` (clear), renderer emits `ask:clear`, and main resets `conversationHistoryText` to empty.
+
 HUD / Hide integration:
 
 - `ipcMain.handle('hud:toggle-hide')` toggles visibility via `toggleHidden(mainWindow)`.
@@ -80,7 +90,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Disables the input while streaming.
   - No non-streaming fallback; errors are surfaced inline and user can retry immediately.
   - Error handling: when an error occurs (from streaming or fallback), the UI writes an inline message to the same bubble in the form `Error: <message>` and re-enables input so the user can retry immediately.
-  - Clear conversation (renderer only): `Cmd/Ctrl+R` clears `history` and `result` without navigating away or reloading the window.
+  - Clear conversation: `Cmd/Ctrl+R` clears renderer `history` + `result` and also clears main-process conversation context.
+  - Renderer `history` is for UI navigation only; model memory/context is managed in main.
 - Ask input placeholder: shows `Thinking…` while busy/streaming; otherwise `Type your question…`.
 
 ## Screenshot Capture

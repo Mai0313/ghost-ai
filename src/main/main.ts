@@ -23,6 +23,9 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+// Simple in-memory Q/A history as plain text. Format:
+// Q: <question>\nA: <answer>\n\n ...
+let conversationHistoryText: string = '';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -171,6 +174,8 @@ app.whenReady().then(async () => {
       // Ensure window is visible so user sees the clear effect
       mainWindow.show();
       mainWindow.webContents.send('ask:clear');
+      // Also clear main-process conversation history
+      conversationHistoryText = '';
     },
     onPrevAnswer: async () => {
       if (!mainWindow) return;
@@ -257,28 +262,30 @@ ipcMain.on(
 
       evt.sender.send('capture:analyze-stream:start', { requestId });
 
-      const result = (await (openAIClient as any).analyzeWithHistoryStream)
-        ? // Use history-aware streaming if available
-          (openAIClient as any).analyzeWithHistoryStream(
-            image,
-            payload.history,
-            payload.textPrompt,
-            payload.customPrompt,
-            requestId,
-            (delta: string) =>
-              evt.sender.send('capture:analyze-stream:delta', { requestId, delta }),
-          )
-        : openAIClient.analyzeImageWithTextStream(
-            image,
-            payload.textPrompt,
-            payload.customPrompt,
-            requestId,
-            (delta) => {
-              evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
-            },
-          );
+      // Inject prior plain-text history into the text prompt for simple continuity.
+      // We keep renderer history for UI navigation only; model context is driven here.
+      const combinedTextPrompt = conversationHistoryText
+        ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+        : (payload.textPrompt ?? '').trim();
+
+      const result = await openAIClient.analyzeImageWithTextStream(
+        image,
+        combinedTextPrompt,
+        payload.customPrompt,
+        requestId,
+        (delta) => {
+          evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
+        },
+      );
 
       evt.sender.send('capture:analyze-stream:done', result);
+
+      // Append to plain-text conversation history
+      const question = (payload.textPrompt ?? '').trim();
+      const answer = (result?.content ?? '').trim();
+      if (question || answer) {
+        conversationHistoryText += `Q: ${question}\nA: ${answer}\n\n`;
+      }
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
 

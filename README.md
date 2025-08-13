@@ -44,6 +44,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
+- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory only; subsequent asks include prior Q/A text for continuity.
 
 ### 🔒 **Privacy & Security**
 
@@ -211,6 +212,7 @@ npm run dist
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away (no non‑stream fallback)
 7. **Memory Cleanup**: All traces automatically cleared from memory
+8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question.
 
 ### Privacy Protection
 
