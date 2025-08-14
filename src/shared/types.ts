@@ -26,14 +26,6 @@ export interface AnalysisResult {
   timestamp: string;
 }
 
-export interface TranscriptionResult {
-  requestId: string;
-  text: string;
-  confidence?: number;
-  language?: string;
-  duration?: number;
-  timestamp: string;
-}
 
 export interface HotkeyConfig {
   textInput: string;

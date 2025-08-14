@@ -1,6 +1,4 @@
-import type { AnalysisResult, ChatMessage, OpenAIConfig, TranscriptionResult } from './types';
-
-import crypto from 'node:crypto';
+import type { AnalysisResult, ChatMessage, OpenAIConfig } from './types';
 
 import OpenAI from 'openai';
 
@@ -112,17 +110,6 @@ export class OpenAIClient {
     };
   }
 
-  async transcribeAudio(_audioBuffer: Buffer): Promise<TranscriptionResult> {
-    this.ensureClient();
-    const requestId = crypto.randomUUID();
-
-    // Placeholder implementation: integrate real transcription API when available.
-    return {
-      requestId,
-      text: '[Transcription pending implementation]'.trim(),
-      timestamp: new Date().toISOString(),
-    };
-  }
 }
 
 export const openAIClient = new OpenAIClient();

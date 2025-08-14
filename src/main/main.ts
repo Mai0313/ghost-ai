@@ -331,10 +331,3 @@ ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
   return openAIClient.validateConfig(cfg);
 });
 
-ipcMain.handle('audio:transcribe', async (_evt, audioBuffer: Buffer) => {
-  try {
-    return await openAIClient.transcribeAudio(audioBuffer);
-  } catch (err) {
-    return { text: '', error: String(err ?? 'transcribe failed') } as any;
-  }
-});

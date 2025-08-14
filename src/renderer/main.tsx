@@ -250,25 +250,7 @@ function App() {
 
       if (mr && mr.state !== 'inactive') {
         mr.onstop = async () => {
-          try {
-            if (!skipTranscribeRef.current) {
-              const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || 'audio/webm' });
-              const arrayBuffer = await blob.arrayBuffer();
-
-              setBusy(true);
-              const tr = await (window as any).ghostAI?.transcribeAudio?.(arrayBuffer);
-
-              if (tr?.text) {
-                // Place transcription into prompt for convenience
-                setText((prev) => (prev ? prev + '\n' + tr.text : tr.text));
-              }
-            }
-          } catch (e) {
-            console.error('Transcription failed', e);
-          } finally {
-            setBusy(false);
-            skipTranscribeRef.current = false;
-          }
+          skipTranscribeRef.current = false;
         };
         mr.stop();
       }
