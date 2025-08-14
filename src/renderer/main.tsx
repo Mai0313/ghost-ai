@@ -77,6 +77,7 @@ function App() {
   const chunkFloatLenRef = useRef<number>(0);
   const transcribeUnsubsRef = useRef<(() => void)[]>([]);
   const transcriptModeRef = useRef<boolean>(false);
+  const transcriptBufferRef = useRef<string>('');
 
   useEffect(() => {
     tabRef.current = tab;
@@ -179,6 +180,7 @@ function App() {
       // Reset audio state: stop recording
       if (recording) setRecording(false);
       setElapsedMs(0);
+      transcriptBufferRef.current = '';
     });
     api?.onAskPrev?.(() => {
       const answers = history.filter((m) => m.role === 'assistant');
@@ -258,6 +260,7 @@ function App() {
       setVisible(true);
       transcriptModeRef.current = true;
       setResult('');
+      transcriptBufferRef.current = '';
 
       try {
         await (window as any).ghostAI?.startTranscription?.({ model: 'gpt-4o-mini-transcribe' });
@@ -273,12 +276,14 @@ function App() {
         const u1 = (window as any).ghostAI?.onTranscribeDelta?.(({ delta }: { delta: string }) => {
           if (!delta) return;
           setResult((prev) => prev + delta);
+          transcriptBufferRef.current += delta;
         });
         if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
 
         const u2 = (window as any).ghostAI?.onTranscribeDone?.(({ content }: { content: string }) => {
           if (!content) return;
           setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
+          if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
         });
         if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
 
@@ -457,7 +462,9 @@ function App() {
     lastDeltaRef.current = null;
     setBusy(true);
     setStreaming(true);
-    const userMessage = text; // may be empty; we'll rely on customPrompt
+    // Merge Ask input with any transcript captured so far
+    const transcript = transcriptBufferRef.current || '';
+    const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
     const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
     const basePrompt = (cfg as any)?.customPrompt ?? '';
     const effectiveCustomPrompt = basePrompt; // send as system once; textPrompt carries the actual question
@@ -513,8 +520,9 @@ function App() {
       // Streaming is mandatory now; if wrapper didn't return a function, treat as error
       if (typeof unsubscribe !== 'function') throw new Error('Streaming unavailable');
       activeUnsubRef.current = unsubscribe;
-      // Clear input after sending
+      // Clear input and transcript buffer after sending
       setText('');
+      transcriptBufferRef.current = '';
     } catch (e) {
       // If streaming setup failed synchronously, stop streaming state before fallback
       setStreaming(false);
