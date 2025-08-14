@@ -69,6 +69,7 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
+  const skipTranscribeRef = useRef<boolean>(false);
 
   useEffect(() => {
     tabRef.current = tab;
@@ -163,9 +164,16 @@ function App() {
 
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
     api?.onAskClear?.(() => {
+      // Reset conversation UI state
       setHistory([]);
       setResult('');
       setHistoryIndex(null);
+      // Reset audio state: stop recording and skip any pending transcription
+      if (recording) {
+        skipTranscribeRef.current = true;
+        setRecording(false);
+      }
+      setElapsedMs(0);
     });
     api?.onAskPrev?.(() => {
       const answers = history.filter((m) => m.role === 'assistant');
@@ -243,20 +251,23 @@ function App() {
       if (mr && mr.state !== 'inactive') {
         mr.onstop = async () => {
           try {
-            const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || 'audio/webm' });
-            const arrayBuffer = await blob.arrayBuffer();
+            if (!skipTranscribeRef.current) {
+              const blob = new Blob(recordedChunksRef.current, { type: mr.mimeType || 'audio/webm' });
+              const arrayBuffer = await blob.arrayBuffer();
 
-            setBusy(true);
-            const tr = await (window as any).ghostAI?.transcribeAudio?.(arrayBuffer);
+              setBusy(true);
+              const tr = await (window as any).ghostAI?.transcribeAudio?.(arrayBuffer);
 
-            if (tr?.text) {
-              // Place transcription into prompt for convenience
-              setText((prev) => (prev ? prev + '\n' + tr.text : tr.text));
+              if (tr?.text) {
+                // Place transcription into prompt for convenience
+                setText((prev) => (prev ? prev + '\n' + tr.text : tr.text));
+              }
             }
           } catch (e) {
             console.error('Transcription failed', e);
           } finally {
             setBusy(false);
+            skipTranscribeRef.current = false;
           }
         };
         mr.stop();

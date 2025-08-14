@@ -312,10 +312,11 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 ### 熱鍵（固定，全部全局）
 
-- 所有熱鍵均採用 Main 端 `globalShortcut` 註冊，Renderer 不再自行處理鍵盤事件：
+-- 所有熱鍵均採用 Main 端 `globalShortcut` 註冊，Renderer 不再自行處理鍵盤事件：
   - `Cmd/Ctrl+Enter`：顯示 HUD 並打開 Ask（且自動聚焦）
+  - `Cmd/Ctrl+Shift+Enter`：切換語音錄音（開始/停止）
   - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
-  - `Cmd/Ctrl+R`：清除 Ask 對話與結果
+  - `Cmd/Ctrl+R`：清除 Ask 對話與結果，並重置語音狀態（停止錄音並丟棄暫存音訊）
   - `Cmd/Ctrl+Up`：查看上一則回答
   - `Cmd/Ctrl+Down`：查看下一則回答
 

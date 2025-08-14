@@ -183,6 +183,11 @@ app.whenReady().then(async () => {
       // Also clear main-process conversation history
       conversationHistoryText = '';
     },
+    onAudioToggle: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('audio:toggle');
+    },
     onPrevAnswer: async () => {
       if (!mainWindow) return;
       mainWindow.show();

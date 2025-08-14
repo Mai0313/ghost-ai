@@ -57,7 +57,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card (streaming‑only)**: The AI response and the input are combined into one card; the streamed answer appears above, and the input sits in the same card footer (IME‑safe)
-- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R, Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
+ - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter, Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear**: Press Cmd/Ctrl+R to clear the Ask bubble and conversation history (window is not reloaded)
@@ -122,11 +122,11 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 2. **Fixed hotkeys (global)**
    - **Ask (toggle Ask panel)**: `Cmd/Ctrl+Enter` (press again to collapse)
+   - **Voice (toggle recording)**: `Cmd/Ctrl+Shift+Enter`
    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
-   - **Clear Ask**: `Cmd/Ctrl+R`
+   - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and discards pending audio)
    - **Previous Answer**: `Cmd/Ctrl+Up`
    - **Next Answer**: `Cmd/Ctrl+Down`
-   - **Clear Ask bubble/history**: `Cmd/Ctrl+R`
 
 3. **Build for production**
 

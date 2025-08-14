@@ -4,6 +4,7 @@ export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;
   onToggleHide: () => void | Promise<void>;
   onClearAsk: () => void | Promise<void>;
+  onAudioToggle: () => void | Promise<void>;
   onPrevAnswer: () => void | Promise<void>;
   onNextAnswer: () => void | Promise<void>;
 }
@@ -12,6 +13,7 @@ export interface HotkeyHandlers {
 const ASK_HOTKEY = 'CommandOrControl+Enter';
 const HIDE_HOTKEY = 'CommandOrControl+\\';
 const CLEAR_HOTKEY = 'CommandOrControl+R';
+const AUDIO_TOGGLE_HOTKEY = 'CommandOrControl+Shift+Enter';
 const PREV_ANSWER_HOTKEY = 'CommandOrControl+Up';
 const NEXT_ANSWER_HOTKEY = 'CommandOrControl+Down';
 
@@ -37,6 +39,12 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(CLEAR_HOTKEY, () => void handlers.onClearAsk());
   } catch {
     failures.push(CLEAR_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(AUDIO_TOGGLE_HOTKEY, () => void handlers.onAudioToggle());
+  } catch {
+    failures.push(AUDIO_TOGGLE_HOTKEY);
   }
 
   try {
