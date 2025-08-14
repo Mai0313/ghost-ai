@@ -17,8 +17,7 @@ This document describes important technical details for contributors. Update thi
 - Wrapper class: `src/shared/openai-client.ts`
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
   - Streaming only: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
-  - Chat helper: `chatCompletion(...)` (non-streaming)
-  - Note: `analyzeWithHistoryStream(...)` exists but is not used; the main process now manages plain-text conversation history and injects it into `textPrompt`.
+  - Removed legacy helpers: `chatCompletion(...)` and `analyzeWithHistoryStream(...)` were deleted. The main process manages plain‑text conversation history and injects it into `textPrompt` when composing each request.
 
 Notes:
 
