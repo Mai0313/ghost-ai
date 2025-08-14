@@ -61,11 +61,13 @@
     "wait-on": "^8.0.4"
   },
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "electron-store": "*",
     "electron-window-state": "*",
     "openai": "*",
     "react": "*",
     "react-dom": "*",
-    "screenshot-desktop": "*"
+    "screenshot-desktop": "*",
+    "ws": "^8.18.3"
   }
 }
