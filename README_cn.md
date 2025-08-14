@@ -57,7 +57,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 - **浮動控制列**: 螢幕上方置中的現代 HUD（預設僅顯示控制列），含 Listen、Ask、Hide、Settings
 - **統一 Ask 卡片（僅串流）**：AI 回應與輸入框整合在同一張卡片中；回應顯示於上方、輸入框位於卡片底部（支援中文輸入法組字不誤送）
- - **固定熱鍵（全部為全域）**: Ask = Cmd/Ctrl+Enter，語音切換 = Cmd/Ctrl+Shift+Enter（僅切換 UI；暫無轉錄），切換隱藏 = Cmd/Ctrl+\\，清除對話 = Cmd/Ctrl+R（同時重置語音狀態），上一則回答 = Cmd/Ctrl+Up，下一則回答 = Cmd/Ctrl+Down（無論透過 HUD 的 Hide 按鈕或熱鍵隱藏，都可以再按熱鍵重新顯示）
+  - **固定熱鍵（全部為全域）**: Ask = Cmd/Ctrl+Enter，語音切換 = Cmd/Ctrl+Shift+Enter（即時文字轉錄），切換隱藏 = Cmd/Ctrl+\\，清除對話 = Cmd/Ctrl+R（同時重置語音狀態），上一則回答 = Cmd/Ctrl+Up，下一則回答 = Cmd/Ctrl+Down（無論透過 HUD 的 Hide 按鈕或熱鍵隱藏，都可以再按熱鍵重新顯示）
 - **內嵌錯誤提示**: 發生錯誤時，會在原本顯示 AI 回答的泡泡中顯示 `Error: ...`，可立即重試
 - **快速清除**: 透過 Cmd/Ctrl+R 清除 Ask 泡泡與對話紀錄（不重新整理視窗）
 - **低摩擦輸入**: 內建提示輸入框與自訂提示欄位，按 Send 即可分析
@@ -122,7 +122,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 2. **固定熱鍵（全域）**
    - **Ask（切換 Ask 面板）**: `Cmd/Ctrl+Enter`（再按一次收合）
-   - **語音（開始/停止錄音）**: `Cmd/Ctrl+Shift+Enter`（僅 UI；暫無轉錄）
+   - **語音（即時轉錄）**: `Cmd/Ctrl+Shift+Enter` — 捕獲麥克風與（作業系統允許時）系統音訊，並以 `gpt-4o-mini-transcribe` 在控制列下方串流顯示逐字稿。
    - **切換隱藏**: `Cmd/Ctrl+\\`（即使先用 HUD 的 Hide 隱藏，也可用此熱鍵再顯示）
    - **清除對話**: `Cmd/Ctrl+R`（同時停止錄音並丟棄暫存音訊）
    - **上一則回答**: `Cmd/Ctrl+Up`

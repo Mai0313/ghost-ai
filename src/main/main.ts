@@ -11,6 +11,7 @@ import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-man
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
 import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings } from './modules/settings-manager';
+import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -21,6 +22,8 @@ let tray: Tray | null = null;
 // Simple in-memory Q/A history as plain text. Format:
 // Q: <question>\nA: <answer>\n\n ...
 let conversationHistoryText: string = '';
+// Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
+let lastAudioToggleAt = 0;
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -168,6 +171,11 @@ app.whenReady().then(async () => {
   // Fixed hotkeys only: Ask and Hide
   registerFixedHotkeys({
     onTextInput: async () => {
+      // Suppress Ask toggle if audio toggle fired very recently (key overlap)
+      if (Date.now() - lastAudioToggleAt < 400) {
+        console.log('[Hotkey] Suppress Ask toggle due to recent Audio toggle');
+        return;
+      }
       if (!mainWindow) return;
       mainWindow.show();
       mainWindow.webContents.send('text-input:toggle');
@@ -184,6 +192,7 @@ app.whenReady().then(async () => {
       conversationHistoryText = '';
     },
     onAudioToggle: async () => {
+      lastAudioToggleAt = Date.now();
       if (!mainWindow) return;
       mainWindow.show();
       mainWindow.webContents.send('audio:toggle');
@@ -308,7 +317,6 @@ ipcMain.on(
           evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
         },
       );
-
       evt.sender.send('capture:analyze-stream:done', result);
 
       // Append to plain-text conversation history
@@ -329,5 +337,23 @@ ipcMain.on(
 
 ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
   return openAIClient.validateConfig(cfg);
+});
+
+// Realtime transcription IPC (global handlers)
+ipcMain.handle('transcribe:start', async (evt, options: { model?: string }) => {
+  const cfg = loadOpenAIConfig();
+  if (!cfg?.apiKey) throw new Error('Missing OpenAI API key');
+  realtimeTranscribeManager.start(evt.sender, { apiKey: cfg.apiKey, model: options?.model });
+  return { ok: true };
+});
+ipcMain.on('transcribe:append', (evt, data: { audio: string }) => {
+  if (!data?.audio) return;
+  realtimeTranscribeManager.append(evt.sender, data.audio);
+});
+ipcMain.on('transcribe:end', (evt) => {
+  realtimeTranscribeManager.end(evt.sender);
+});
+ipcMain.on('transcribe:stop', (evt) => {
+  realtimeTranscribeManager.stop(evt.sender);
 });
 

@@ -46,7 +46,16 @@ interface GhostAPI {
     },
     history?: any[], // deprecated: ignored by main; history is managed in main as plain text
   ): () => void; // unsubscribe
-  transcribeAudio(audioBuffer: ArrayBuffer): Promise<{ text: string }>;
+  // Realtime transcription (WS)
+  startTranscription(options: { model?: string }): Promise<{ ok: boolean }>;
+  appendTranscriptionAudio(base64Pcm16: string): void;
+  endTranscription(): void;
+  stopTranscription(): void;
+  onTranscribeStart(handler: (p: { ok: boolean }) => void): () => void;
+  onTranscribeDelta(handler: (p: { delta: string }) => void): () => void;
+  onTranscribeDone(handler: (p: { content: string }) => void): () => void;
+  onTranscribeError(handler: (p: { error: string }) => void): () => void;
+  onTranscribeClosed(handler: () => void): () => void;
   getUserSettings(): Promise<any>;
   updateUserSettings(partial: Partial<any>): Promise<any>;
   onTextInputShow(handler: () => void): void;
@@ -64,6 +73,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
 - `ipcMain.on('capture:analyze-stream', ...)`
 - `ipcMain.handle('hud:set-mouse-ignore', (evt, ignore) => mainWindow.setIgnoreMouseEvents(ignore, { forward: true }))`
 - Hotkey handler emits `text-input:toggle` to renderer on `Cmd/Ctrl+Enter` to toggle Ask panel
+  - To avoid overlap with `Cmd/Ctrl+Shift+Enter` (voice), the main process suppresses Ask toggles within ~400ms after a voice toggle.
 - Emits to renderer:
   - `capture:analyze-stream:start` with `{ requestId }`
   - `capture:analyze-stream:delta` with `{ requestId, delta }`
@@ -85,6 +95,25 @@ HUD / Hide integration:
 - Renderer’s Hide button calls `window.ghostAI.toggleHide()` instead of only local `visible=false`.
 
 Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
+
+### Realtime Transcription
+
+- Main module: `src/main/modules/realtime-transcribe.ts`
+  - Opens `wss://api.openai.com/v1/realtime?intent=transcription`
+  - Sends `transcription_session.update` with `input_audio_format: "pcm16"`, `turn_detection: { type: "server_vad", threshold: 0.5 }`, and `input_audio_transcription.model: "gpt-4o-mini-transcribe"`
+  - Accepts `input_audio_buffer.append` events with base64 PCM16 mono @ 24kHz
+  - Emits to renderer:
+    - `transcribe:start`, `transcribe:delta` (streaming deltas), `transcribe:done` (sentence completed), `transcribe:error`, `transcribe:closed`
+  - IPC channels: `transcribe:start` (handle), `transcribe:append`, `transcribe:end`, `transcribe:stop`
+  - Logs: WS connect/open/close/error, message type hints, appended bytes per chunk, input buffer end
+
+- Renderer (`src/renderer/main.tsx`):
+  - Captures microphone via `getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } })`
+  - Attempts to capture system audio via `getDisplayMedia({ audio:true })` and discards video tracks
+  - Mixes sources in `AudioContext`, downsamples to 24 kHz mono, converts to 16‑bit PCM, base64‑encodes, and batches by ~128 ms (3072 samples)
+  - Streams chunks via `appendTranscriptionAudio` and shows deltas live in the Ask bubble (same area used for AI answers)
+  - On stop: sends `endTranscription` and `stopTranscription`, closes audio graph, stops tracks, and clears timers
+  - Logs: microphone/system audio permission results and audio processing errors
 
 ## Renderer Flow (Ask UI)
 

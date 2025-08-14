@@ -31,6 +31,16 @@ declare global {
       onAudioToggle: (handler: () => void) => void;
       // Control whether the overlay window ignores mouse events
       setMouseIgnore: (ignore: boolean) => Promise<true>;
+      // Realtime transcription bridge
+      startTranscription: (options: { model?: string }) => Promise<any>;
+      appendTranscriptionAudio: (base64Pcm16: string) => void;
+      endTranscription: () => void;
+      stopTranscription: () => void;
+      onTranscribeStart: (handler: (data: { ok: boolean }) => void) => () => void;
+      onTranscribeDelta: (handler: (data: { delta: string }) => void) => () => void;
+      onTranscribeDone: (handler: (data: { content: string }) => void) => () => void;
+      onTranscribeError: (handler: (data: { error: string }) => void) => () => void;
+      onTranscribeClosed: (handler: () => void) => () => void;
     };
   }
 }

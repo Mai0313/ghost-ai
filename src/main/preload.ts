@@ -77,6 +77,38 @@ const api = {
   onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
   onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
+  // Realtime transcription IPC wrappers
+  startTranscription: (options: { model?: string }) =>
+    ipcRenderer.invoke('transcribe:start', options),
+  appendTranscriptionAudio: (base64Pcm16: string) =>
+    ipcRenderer.send('transcribe:append', { audio: base64Pcm16 }),
+  endTranscription: () => ipcRenderer.send('transcribe:end'),
+  stopTranscription: () => ipcRenderer.send('transcribe:stop'),
+  onTranscribeStart: (handler: (data: { ok: boolean }) => void) => {
+    const fn = (_e: any, data: { ok: boolean }) => handler(data);
+    ipcRenderer.on('transcribe:start', fn);
+    return () => ipcRenderer.off('transcribe:start', fn);
+  },
+  onTranscribeDelta: (handler: (data: { delta: string }) => void) => {
+    const fn = (_e: any, data: { delta: string }) => handler(data);
+    ipcRenderer.on('transcribe:delta', fn);
+    return () => ipcRenderer.off('transcribe:delta', fn);
+  },
+  onTranscribeDone: (handler: (data: { content: string }) => void) => {
+    const fn = (_e: any, data: { content: string }) => handler(data);
+    ipcRenderer.on('transcribe:done', fn);
+    return () => ipcRenderer.off('transcribe:done', fn);
+  },
+  onTranscribeError: (handler: (data: { error: string }) => void) => {
+    const fn = (_e: any, data: { error: string }) => handler(data);
+    ipcRenderer.on('transcribe:error', fn);
+    return () => ipcRenderer.off('transcribe:error', fn);
+  },
+  onTranscribeClosed: (handler: () => void) => {
+    const fn = () => handler();
+    ipcRenderer.on('transcribe:closed', fn);
+    return () => ipcRenderer.off('transcribe:closed', fn);
+  },
   // Control whether the overlay window ignores mouse events (click-through)
   setMouseIgnore: (ignore: boolean) => ipcRenderer.invoke('hud:set-mouse-ignore', ignore),
 };

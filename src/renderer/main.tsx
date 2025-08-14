@@ -66,10 +66,17 @@ function App() {
 
     return () => window.removeEventListener('resize', update);
   }, []);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const recordedChunksRef = useRef<BlobPart[]>([]);
-  const skipTranscribeRef = useRef<boolean>(false);
+  // Realtime transcription audio pipeline
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const systemStreamRef = useRef<MediaStream | null>(null);
+  const mixGainRef = useRef<GainNode | null>(null);
+  const muteGainRef = useRef<GainNode | null>(null);
+  const chunkFloatRef = useRef<Float32Array | null>(null);
+  const chunkFloatLenRef = useRef<number>(0);
+  const transcribeUnsubsRef = useRef<(() => void)[]>([]);
+  const transcriptModeRef = useRef<boolean>(false);
 
   useEffect(() => {
     tabRef.current = tab;
@@ -98,6 +105,7 @@ function App() {
 
     api?.onTextInputShow?.(() => {
       setVisible(true);
+      // Only open Ask panel on explicit TextInput action; transcriptMode stays unchanged
       setTab('ask');
       // Reset transient flags to allow new input
       setBusy(false);
@@ -168,11 +176,8 @@ function App() {
       setHistory([]);
       setResult('');
       setHistoryIndex(null);
-      // Reset audio state: stop recording and skip any pending transcription
-      if (recording) {
-        skipTranscribeRef.current = true;
-        setRecording(false);
-      }
+      // Reset audio state: stop recording
+      if (recording) setRecording(false);
       setElapsedMs(0);
     });
     api?.onAskPrev?.(() => {
@@ -206,62 +211,239 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (recording) {
+    const TARGET_SR = 24000;
+    const CHUNK_SAMPLES = 3072; // ~128ms at 24kHz
+
+    function floatTo16BitPCM(float32Array: Float32Array): Int16Array {
+      const out = new Int16Array(float32Array.length);
+      for (let i = 0; i < float32Array.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32Array[i] as number));
+        out[i] = (s < 0 ? s * 0x8000 : s * 0x7fff) | 0;
+      }
+      return out;
+    }
+
+    function base64EncodePCM(int16: Int16Array): string {
+      const bytes = new Uint8Array(int16.buffer);
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i] as number);
+      return btoa(binary);
+    }
+
+    function resample(buffer: Float32Array, inRate: number, outRate: number): Float32Array {
+      if (inRate === outRate) return buffer;
+      const ratio = inRate / outRate;
+      const newLen = Math.floor(buffer.length / ratio);
+      const out = new Float32Array(newLen);
+      let pos = 0;
+      for (let i = 0; i < newLen; i++) {
+        const index = i * ratio;
+        const i0 = Math.floor(index);
+        const i1 = Math.min(buffer.length - 1, i0 + 1);
+        const frac = index - i0;
+        out[i] = buffer[i0]! * (1 - frac) + buffer[i1]! * frac;
+        pos += ratio;
+      }
+      return out;
+    }
+
+    async function startPipeline() {
       setElapsedMs(0);
       timerRef.current = window.setInterval(() => {
         setElapsedMs((ms) => ms + 1000);
       }, 1000) as unknown as number;
-      (async () => {
+
+      // Show overlay, but do NOT open Ask panel; use transcript-only bubble
+      setVisible(true);
+      transcriptModeRef.current = true;
+      setResult('');
+
+      try {
+        await (window as any).ghostAI?.startTranscription?.({ model: 'gpt-4o-mini-transcribe' });
+      } catch (e) {
+        console.error('Failed to start transcription session', e);
+        alert('Failed to start transcription session. Check API key in Settings.');
+        setRecording(false);
+        return;
+      }
+
+      // Bind transcript events (store unsubs to clean on stop)
+      try {
+        const u1 = (window as any).ghostAI?.onTranscribeDelta?.(({ delta }: { delta: string }) => {
+          if (!delta) return;
+          setResult((prev) => prev + delta);
+        });
+        if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
+
+        const u2 = (window as any).ghostAI?.onTranscribeDone?.(({ content }: { content: string }) => {
+          if (!content) return;
+          setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
+        });
+        if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
+
+        const u3 = (window as any).ghostAI?.onTranscribeError?.(({ error }: { error: string }) => {
+          console.error('Transcribe error', error);
+        });
+        if (typeof u3 === 'function') transcribeUnsubsRef.current.push(u3);
+      } catch {}
+
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtxRef.current = audioCtx;
+      const mix = audioCtx.createGain();
+      mix.gain.value = 1.0;
+      mixGainRef.current = mix;
+
+      // Mute path to avoid audible feedback
+      const mute = audioCtx.createGain();
+      mute.gain.value = 0.0;
+      muteGainRef.current = mute;
+
+      // Try capture mic
+      try {
+        console.log('[Audio] requesting microphone');
+        const mic = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          } as any,
+          video: false as any,
+        });
+        console.log('[Audio] microphone granted', mic.getAudioTracks().map((t) => t.label));
+        micStreamRef.current = mic;
+        const micSrc = audioCtx.createMediaStreamSource(mic);
+        micSrc.connect(mix);
+      } catch (e) {
+        console.warn('[Audio] microphone capture failed', e);
+      }
+
+      // Try capture system audio via display media
+      try {
+        console.log('[Audio] requesting system audio via getDisplayMedia');
+        const sys = await navigator.mediaDevices.getDisplayMedia({
+          audio: true as any,
+          video: { frameRate: 1, width: 1, height: 1 } as any,
+        } as any);
+        // Remove video tracks to reduce overhead
+        sys.getVideoTracks().forEach((t) => t.stop());
+        console.log('[Audio] system audio granted', sys.getAudioTracks().map((t) => t.label));
+        systemStreamRef.current = sys;
+        const sysSrc = audioCtx.createMediaStreamSource(sys);
+        sysSrc.connect(mix);
+      } catch (e) {
+        console.warn('[Audio] system audio capture failed', e);
+      }
+
+      const bufferSize = 4096;
+      const processor = audioCtx.createScriptProcessor(bufferSize, 2, 2);
+      processorRef.current = processor as any;
+      mix.connect(processor);
+      processor.connect(mute).connect(audioCtx.destination);
+
+      chunkFloatRef.current = new Float32Array(CHUNK_SAMPLES * 4);
+      chunkFloatLenRef.current = 0;
+
+      processor.onaudioprocess = (ev: AudioProcessingEvent) => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const input = ev.inputBuffer;
+          const channels = input.numberOfChannels;
+          const len = input.length;
+          // Mix down to mono
+          const mono = new Float32Array(len);
+          for (let c = 0; c < channels; c++) {
+            const data = input.getChannelData(c);
+            for (let i = 0; i < len; i++) mono[i] += data[i]! / channels;
+          }
+          const inRate = input.sampleRate || audioCtx.sampleRate;
+          const resampled = resample(mono, inRate, TARGET_SR);
 
-          mediaStreamRef.current = stream;
-          recordedChunksRef.current = [];
-          const mr = new MediaRecorder(stream, {
-            mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-              ? 'audio/webm;codecs=opus'
-              : 'audio/webm',
-          });
+          // Append to chunk buffer
+          const buf = chunkFloatRef.current!;
+          let used = chunkFloatLenRef.current;
+          let offset = 0;
+          while (offset < resampled.length) {
+            const space = buf.length - used;
+            const copy = Math.min(space, resampled.length - offset);
+            buf.set(resampled.subarray(offset, offset + copy), used);
+            used += copy;
+            offset += copy;
 
-          mediaRecorderRef.current = mr;
-          mr.ondataavailable = (ev) => {
-            if (ev.data && ev.data.size > 0) recordedChunksRef.current.push(ev.data);
-          };
-          mr.start();
+            if (used >= CHUNK_SAMPLES) {
+              const toSend = buf.subarray(0, CHUNK_SAMPLES);
+              // Shift remaining
+              const remain = used - CHUNK_SAMPLES;
+              if (remain > 0) buf.copyWithin(0, CHUNK_SAMPLES, used);
+              used = remain;
+
+              const pcm16 = floatTo16BitPCM(toSend);
+              const b64 = base64EncodePCM(pcm16);
+              (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
+            }
+          }
+          chunkFloatLenRef.current = used;
         } catch (err) {
-          console.error('Mic permission / recording error', err);
-          setRecording(false);
-          alert('Microphone permission denied or unavailable.');
+          console.error('[Audio] process error', err);
         }
-      })();
-    } else if (timerRef.current) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
+      };
+    }
+
+    function stopPipeline() {
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      try {
+        (window as any).ghostAI?.endTranscription?.();
+      } catch {}
+      try {
+        (window as any).ghostAI?.stopTranscription?.();
+      } catch {}
+      try {
+        const unsubs = transcribeUnsubsRef.current.splice(0);
+        unsubs.forEach((fn) => {
+          try { fn(); } catch {}
+        });
+      } catch {}
+      try {
+        processorRef.current && (processorRef.current as any).disconnect();
+      } catch {}
+      try {
+        mixGainRef.current && mixGainRef.current.disconnect();
+      } catch {}
+      try {
+        muteGainRef.current && muteGainRef.current.disconnect();
+      } catch {}
+      try {
+        audioCtxRef.current && audioCtxRef.current.close();
+      } catch {}
+      audioCtxRef.current = null;
+      processorRef.current = null as any;
+      mixGainRef.current = null;
+      muteGainRef.current = null;
+      chunkFloatRef.current = null;
+      chunkFloatLenRef.current = 0;
+      try {
+        micStreamRef.current?.getTracks().forEach((t) => t.stop());
+        systemStreamRef.current?.getTracks().forEach((t) => t.stop());
+      } catch {}
+      micStreamRef.current = null;
+      systemStreamRef.current = null;
+      // Keep transcriptModeRef true so last transcript remains visible; caller clears if needed
+    }
+
+    if (recording) {
+      startPipeline();
+    } else {
+      stopPipeline();
     }
 
     return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      if (!recording) return;
+      stopPipeline();
     };
   }, [recording]);
-
-  useEffect(() => {
-    if (!recording) {
-      const mr = mediaRecorderRef.current;
-
-      if (mr && mr.state !== 'inactive') {
-        mr.onstop = async () => {
-          skipTranscribeRef.current = false;
-        };
-        mr.stop();
-      }
-      if (mediaStreamRef.current) {
-        for (const track of mediaStreamRef.current.getTracks()) track.stop();
-        mediaStreamRef.current = null;
-      }
-      mediaRecorderRef.current = null;
-      recordedChunksRef.current = [];
-    }
-  }, [recording]);
+  // No-op cleanup useEffect removed; handled in stopPipeline
 
   const onSubmit = useCallback(async () => {
     if (busy || streaming) return;
@@ -457,7 +639,10 @@ function App() {
             ...ghostButton,
             color: tab === 'ask' ? theme.color.text() : theme.color.muted(),
           }}
-          onClick={() => setTab((t) => (t === 'ask' ? null : 'ask'))}
+          onClick={() => {
+            transcriptModeRef.current = false;
+            setTab((t) => (t === 'ask' ? null : 'ask'));
+          }}
         >
           <IconText color={tab === 'ask' ? theme.color.text() : theme.color.muted()} />
           Ask
@@ -537,6 +722,13 @@ function App() {
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {/* Transcript-only bubble (no input). Visible when not in Ask/Settings and recording, or when last content came from transcript mode. */}
+        {!tab && (recording || (result && transcriptModeRef.current)) && (
+          <div style={askCard}>
+            <div style={{ ...askResultArea, display: result ? 'block' : 'none' }}>{result}</div>
           </div>
         )}
       </div>
