@@ -11,10 +11,10 @@
 使用者播放的影片 與 麥克風的聲音 都要取得並得到逐字稿
 
 如果妳不知道怎麼做 可以透過 MCP 的 Context7 或是 訪問下面幾個網頁來取得資訊
-https://platform.openai.com/docs/guides/realtime
-https://platform.openai.com/docs/guides/realtime-conversations
-https://platform.openai.com/docs/guides/realtime-transcription
-https://platform.openai.com/docs/guides/realtime-vad
+- https://platform.openai.com/docs/guides/realtime
+- https://platform.openai.com/docs/guides/realtime-conversations
+- https://platform.openai.com/docs/guides/realtime-transcription
+- https://platform.openai.com/docs/guides/realtime-vad
 
 ```typescript
 // 安裝依賴
