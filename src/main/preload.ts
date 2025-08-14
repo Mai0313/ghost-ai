@@ -86,27 +86,37 @@ const api = {
   stopTranscription: () => ipcRenderer.send('transcribe:stop'),
   onTranscribeStart: (handler: (data: { ok: boolean }) => void) => {
     const fn = (_e: any, data: { ok: boolean }) => handler(data);
+
     ipcRenderer.on('transcribe:start', fn);
+
     return () => ipcRenderer.off('transcribe:start', fn);
   },
   onTranscribeDelta: (handler: (data: { delta: string }) => void) => {
     const fn = (_e: any, data: { delta: string }) => handler(data);
+
     ipcRenderer.on('transcribe:delta', fn);
+
     return () => ipcRenderer.off('transcribe:delta', fn);
   },
   onTranscribeDone: (handler: (data: { content: string }) => void) => {
     const fn = (_e: any, data: { content: string }) => handler(data);
+
     ipcRenderer.on('transcribe:done', fn);
+
     return () => ipcRenderer.off('transcribe:done', fn);
   },
   onTranscribeError: (handler: (data: { error: string }) => void) => {
     const fn = (_e: any, data: { error: string }) => handler(data);
+
     ipcRenderer.on('transcribe:error', fn);
+
     return () => ipcRenderer.off('transcribe:error', fn);
   },
   onTranscribeClosed: (handler: () => void) => {
     const fn = () => handler();
+
     ipcRenderer.on('transcribe:closed', fn);
+
     return () => ipcRenderer.off('transcribe:closed', fn);
   },
   // Control whether the overlay window ignores mouse events (click-through)

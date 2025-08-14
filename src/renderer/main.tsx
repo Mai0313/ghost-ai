@@ -218,10 +218,13 @@ function App() {
 
     function floatTo16BitPCM(float32Array: Float32Array): Int16Array {
       const out = new Int16Array(float32Array.length);
+
       for (let i = 0; i < float32Array.length; i++) {
         let s = Math.max(-1, Math.min(1, float32Array[i] as number));
+
         out[i] = (s < 0 ? s * 0x8000 : s * 0x7fff) | 0;
       }
+
       return out;
     }
 
@@ -229,7 +232,9 @@ function App() {
       const bytes = new Uint8Array(int16.buffer);
       let binary = '';
       const len = bytes.byteLength;
+
       for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i] as number);
+
       return btoa(binary);
     }
 
@@ -239,14 +244,17 @@ function App() {
       const newLen = Math.floor(buffer.length / ratio);
       const out = new Float32Array(newLen);
       let pos = 0;
+
       for (let i = 0; i < newLen; i++) {
         const index = i * ratio;
         const i0 = Math.floor(index);
         const i1 = Math.min(buffer.length - 1, i0 + 1);
         const frac = index - i0;
+
         out[i] = buffer[i0]! * (1 - frac) + buffer[i1]! * frac;
         pos += ratio;
       }
+
       return out;
     }
 
@@ -268,6 +276,7 @@ function App() {
         console.error('Failed to start transcription session', e);
         alert('Failed to start transcription session. Check API key in Settings.');
         setRecording(false);
+
         return;
       }
 
@@ -278,29 +287,37 @@ function App() {
           setResult((prev) => prev + delta);
           transcriptBufferRef.current += delta;
         });
+
         if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
 
-        const u2 = (window as any).ghostAI?.onTranscribeDone?.(({ content }: { content: string }) => {
-          if (!content) return;
-          setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
-          if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
-        });
+        const u2 = (window as any).ghostAI?.onTranscribeDone?.(
+          ({ content }: { content: string }) => {
+            if (!content) return;
+            setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
+            if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
+          },
+        );
+
         if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
 
         const u3 = (window as any).ghostAI?.onTranscribeError?.(({ error }: { error: string }) => {
           console.error('Transcribe error', error);
         });
+
         if (typeof u3 === 'function') transcribeUnsubsRef.current.push(u3);
       } catch {}
 
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
       audioCtxRef.current = audioCtx;
       const mix = audioCtx.createGain();
+
       mix.gain.value = 1.0;
       mixGainRef.current = mix;
 
       // Mute path to avoid audible feedback
       const mute = audioCtx.createGain();
+
       mute.gain.value = 0.0;
       muteGainRef.current = mute;
 
@@ -315,9 +332,14 @@ function App() {
           } as any,
           video: false as any,
         });
-        console.log('[Audio] microphone granted', mic.getAudioTracks().map((t) => t.label));
+
+        console.log(
+          '[Audio] microphone granted',
+          mic.getAudioTracks().map((t) => t.label),
+        );
         micStreamRef.current = mic;
         const micSrc = audioCtx.createMediaStreamSource(mic);
+
         micSrc.connect(mix);
       } catch (e) {
         console.warn('[Audio] microphone capture failed', e);
@@ -330,11 +352,16 @@ function App() {
           audio: true as any,
           video: { frameRate: 1, width: 1, height: 1 } as any,
         } as any);
+
         // Remove video tracks to reduce overhead
         sys.getVideoTracks().forEach((t) => t.stop());
-        console.log('[Audio] system audio granted', sys.getAudioTracks().map((t) => t.label));
+        console.log(
+          '[Audio] system audio granted',
+          sys.getAudioTracks().map((t) => t.label),
+        );
         systemStreamRef.current = sys;
         const sysSrc = audioCtx.createMediaStreamSource(sys);
+
         sysSrc.connect(mix);
       } catch (e) {
         console.warn('[Audio] system audio capture failed', e);
@@ -342,6 +369,7 @@ function App() {
 
       const bufferSize = 4096;
       const processor = audioCtx.createScriptProcessor(bufferSize, 2, 2);
+
       processorRef.current = processor as any;
       mix.connect(processor);
       processor.connect(mute).connect(audioCtx.destination);
@@ -356,8 +384,10 @@ function App() {
           const len = input.length;
           // Mix down to mono
           const mono = new Float32Array(len);
+
           for (let c = 0; c < channels; c++) {
             const data = input.getChannelData(c);
+
             for (let i = 0; i < len; i++) mono[i] += data[i]! / channels;
           }
           const inRate = input.sampleRate || audioCtx.sampleRate;
@@ -367,9 +397,11 @@ function App() {
           const buf = chunkFloatRef.current!;
           let used = chunkFloatLenRef.current;
           let offset = 0;
+
           while (offset < resampled.length) {
             const space = buf.length - used;
             const copy = Math.min(space, resampled.length - offset);
+
             buf.set(resampled.subarray(offset, offset + copy), used);
             used += copy;
             offset += copy;
@@ -378,11 +410,13 @@ function App() {
               const toSend = buf.subarray(0, CHUNK_SAMPLES);
               // Shift remaining
               const remain = used - CHUNK_SAMPLES;
+
               if (remain > 0) buf.copyWithin(0, CHUNK_SAMPLES, used);
               used = remain;
 
               const pcm16 = floatTo16BitPCM(toSend);
               const b64 = base64EncodePCM(pcm16);
+
               (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
             }
           }
@@ -406,8 +440,11 @@ function App() {
       } catch {}
       try {
         const unsubs = transcribeUnsubsRef.current.splice(0);
+
         unsubs.forEach((fn) => {
-          try { fn(); } catch {}
+          try {
+            fn();
+          } catch {}
         });
       } catch {}
       try {

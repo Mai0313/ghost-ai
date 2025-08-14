@@ -9,11 +9,14 @@ interface RealtimeSessionOptions {
 }
 
 export class RealtimeTranscribeManager {
-  private sessions = new Map<number, {
-    ws: WebSocket;
-    webContents: WebContents;
-    current: string[]; // collect current sentence parts
-  }>();
+  private sessions = new Map<
+    number,
+    {
+      ws: WebSocket;
+      webContents: WebContents;
+      current: string[]; // collect current sentence parts
+    }
+  >();
 
   start(webContents: WebContents, opts: RealtimeSessionOptions) {
     const wcId = webContents.id;
@@ -22,15 +25,17 @@ export class RealtimeTranscribeManager {
     this.stop(webContents);
 
     const url = 'wss://api.openai.com/v1/realtime?intent=transcription';
+
     console.log('[WS] connecting', { url, wcId });
     const ws = new WebSocket(url, {
       headers: {
-        Authorization: `Bearer ${opts.apiKey}`,
+        'Authorization': `Bearer ${opts.apiKey}`,
         'OpenAI-Beta': 'realtime=v1',
       },
     });
 
     const entry = { ws, webContents, current: [] as string[] };
+
     this.sessions.set(wcId, entry);
 
     ws.on('open', () => {
@@ -57,8 +62,13 @@ export class RealtimeTranscribeManager {
       try {
         const txt = data.toString();
         const typeHint = (() => {
-          try { return JSON.parse(txt)?.type; } catch { return undefined; }
+          try {
+            return JSON.parse(txt)?.type;
+          } catch {
+            return undefined;
+          }
         })();
+
         if (typeHint) console.log('[WS] message', { wcId, type: typeHint });
       } catch {}
       try {
@@ -69,6 +79,7 @@ export class RealtimeTranscribeManager {
 
         if (typ === 'conversation.item.input_audio_transcription.delta') {
           const delta = ev?.delta as string | undefined;
+
           if (typeof delta === 'string' && delta.length) {
             entry.current.push(delta);
             try {
@@ -77,6 +88,7 @@ export class RealtimeTranscribeManager {
           }
         } else if (typ === 'conversation.item.input_audio_transcription.completed') {
           const full = entry.current.join('');
+
           entry.current.length = 0;
           try {
             webContents.send('transcribe:done', { content: full });
@@ -92,6 +104,7 @@ export class RealtimeTranscribeManager {
     ws.on('close', () => {
       console.log('[WS] close', { wcId });
       const full = entry.current.join('');
+
       entry.current.length = 0;
       try {
         if (full) webContents.send('transcribe:done', { content: full });
@@ -110,15 +123,21 @@ export class RealtimeTranscribeManager {
 
   append(webContents: WebContents, base64Pcm16: string) {
     const entry = this.sessions.get(webContents.id);
+
     if (!entry || entry.ws.readyState !== WebSocket.OPEN) return;
     // Log only meta info to avoid massive logs
-    console.log('[WS] append audio', { wcId: webContents.id, bytes: Math.floor((base64Pcm16.length * 3) / 4) });
+    console.log('[WS] append audio', {
+      wcId: webContents.id,
+      bytes: Math.floor((base64Pcm16.length * 3) / 4),
+    });
     const payload = { type: 'input_audio_buffer.append', audio: base64Pcm16 };
+
     entry.ws.send(JSON.stringify(payload));
   }
 
   end(webContents: WebContents) {
     const entry = this.sessions.get(webContents.id);
+
     if (!entry || entry.ws.readyState !== WebSocket.OPEN) return;
     console.log('[WS] input_audio_buffer.end', { wcId: webContents.id });
     entry.ws.send(JSON.stringify({ type: 'input_audio_buffer.end' }));
@@ -126,6 +145,7 @@ export class RealtimeTranscribeManager {
 
   stop(webContents: WebContents) {
     const entry = this.sessions.get(webContents.id);
+
     if (!entry) return;
     console.log('[WS] stop/close', { wcId: webContents.id });
     try {
@@ -136,5 +156,3 @@ export class RealtimeTranscribeManager {
 }
 
 export const realtimeTranscribeManager = new RealtimeTranscribeManager();
-
-

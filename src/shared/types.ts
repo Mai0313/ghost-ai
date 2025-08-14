@@ -26,7 +26,6 @@ export interface AnalysisResult {
   timestamp: string;
 }
 
-
 export interface HotkeyConfig {
   textInput: string;
   audioRecord: string;

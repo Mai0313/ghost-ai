@@ -174,6 +174,7 @@ app.whenReady().then(async () => {
       // Suppress Ask toggle if audio toggle fired very recently (key overlap)
       if (Date.now() - lastAudioToggleAt < 400) {
         console.log('[Hotkey] Suppress Ask toggle due to recent Audio toggle');
+
         return;
       }
       if (!mainWindow) return;
@@ -317,6 +318,7 @@ ipcMain.on(
           evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
         },
       );
+
       evt.sender.send('capture:analyze-stream:done', result);
 
       // Append to plain-text conversation history
@@ -342,8 +344,10 @@ ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
 // Realtime transcription IPC (global handlers)
 ipcMain.handle('transcribe:start', async (evt, options: { model?: string }) => {
   const cfg = loadOpenAIConfig();
+
   if (!cfg?.apiKey) throw new Error('Missing OpenAI API key');
   realtimeTranscribeManager.start(evt.sender, { apiKey: cfg.apiKey, model: options?.model });
+
   return { ok: true };
 });
 ipcMain.on('transcribe:append', (evt, data: { audio: string }) => {
@@ -356,4 +360,3 @@ ipcMain.on('transcribe:end', (evt) => {
 ipcMain.on('transcribe:stop', (evt) => {
   realtimeTranscribeManager.stop(evt.sender);
 });
-

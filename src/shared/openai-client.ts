@@ -109,7 +109,6 @@ export class OpenAIClient {
       timestamp: new Date().toISOString(),
     };
   }
-
 }
 
 export const openAIClient = new OpenAIClient();

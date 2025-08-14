@@ -8,7 +8,7 @@
 
 並且你要確保這個錄音功能是可以聽到使用者電腦的所有聲音
 使用者播放的影片 與 麥克風的聲音 都要取得並得到逐字稿
-你可以參考一下  ./node_modules/openai/src/resources/beta/realtime/transcription-sessions.ts 幫我看看要如何完成realtime transcription
+你可以參考一下 ./node_modules/openai/src/resources/beta/realtime/transcription-sessions.ts 幫我看看要如何完成realtime transcription
 
 這裡是 Python 版本的範例 可以提供給你參考
 
