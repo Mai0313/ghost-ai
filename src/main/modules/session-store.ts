@@ -65,11 +65,21 @@ class SessionStore {
   }
 
   // Return a plain object { sessionId: { entries, nextIndex } } for persistence
-  toJSON(): Record<string, { entries: SessionEntry[]; nextIndex: number; log_path: string | null }> {
-    const out: Record<string, { entries: SessionEntry[]; nextIndex: number; log_path: string | null }> = {};
+  toJSON(): Record<
+    string,
+    { entries: SessionEntry[]; nextIndex: number; log_path: string | null }
+  > {
+    const out: Record<
+      string,
+      { entries: SessionEntry[]; nextIndex: number; log_path: string | null }
+    > = {};
 
     for (const [sid, st] of this.sessions) {
-      out[sid] = { entries: [...st.entries], nextIndex: st.nextIndex, log_path: st.logPath ?? null };
+      out[sid] = {
+        entries: [...st.entries],
+        nextIndex: st.nextIndex,
+        log_path: st.logPath ?? null,
+      };
     }
 
     return out;
@@ -77,5 +87,3 @@ class SessionStore {
 }
 
 export const sessionStore = new SessionStore();
-
-

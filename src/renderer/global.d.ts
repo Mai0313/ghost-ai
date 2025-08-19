@@ -40,7 +40,20 @@ declare global {
       getSession: () => Promise<string>;
       newSession: () => Promise<string>;
       onSessionChanged: (handler: (data: { sessionId: string }) => void) => () => void;
-      dumpSession: () => Promise<Array<Record<string, { index: number; requestId: string; log_path: string | null; text_input: string; voice_input: string }[]>>>;
+      dumpSession: () => Promise<
+        Array<
+          Record<
+            string,
+            {
+              index: number;
+              requestId: string;
+              log_path: string | null;
+              text_input: string;
+              voice_input: string;
+            }[]
+          >
+        >
+      >;
       // Control whether the overlay window ignores mouse events
       setMouseIgnore: (ignore: boolean) => Promise<true>;
       // Realtime transcription bridge
@@ -48,10 +61,18 @@ declare global {
       appendTranscriptionAudio: (base64Pcm16: string) => void;
       endTranscription: () => void;
       stopTranscription: () => void;
-      onTranscribeStart: (handler: (data: { ok: boolean; sessionId?: string }) => void) => () => void;
-      onTranscribeDelta: (handler: (data: { delta: string; sessionId?: string }) => void) => () => void;
-      onTranscribeDone: (handler: (data: { content: string; sessionId?: string }) => void) => () => void;
-      onTranscribeError: (handler: (data: { error: string; sessionId?: string }) => void) => () => void;
+      onTranscribeStart: (
+        handler: (data: { ok: boolean; sessionId?: string }) => void,
+      ) => () => void;
+      onTranscribeDelta: (
+        handler: (data: { delta: string; sessionId?: string }) => void,
+      ) => () => void;
+      onTranscribeDone: (
+        handler: (data: { content: string; sessionId?: string }) => void,
+      ) => () => void;
+      onTranscribeError: (
+        handler: (data: { error: string; sessionId?: string }) => void,
+      ) => () => void;
       onTranscribeClosed: (handler: () => void) => () => void;
     };
   }

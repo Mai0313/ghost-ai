@@ -151,7 +151,12 @@ app.whenReady().then(async () => {
   createWindow();
   createTray();
   try {
-    console.log('[Global Session]', new Date().toISOString(), 'sessionId created at app start:', currentSessionId);
+    console.log(
+      '[Global Session]',
+      new Date().toISOString(),
+      'sessionId created at app start:',
+      currentSessionId,
+    );
   } catch {}
   // Application menu
   const template: Electron.MenuItemConstructorOptions[] = [
@@ -218,7 +223,12 @@ app.whenReady().then(async () => {
       // Generate a new top-level session ID and broadcast
       currentSessionId = crypto.randomUUID();
       try {
-        console.log('[Session]', new Date().toISOString(), 'sessionId reset (clear):', currentSessionId);
+        console.log(
+          '[Session]',
+          new Date().toISOString(),
+          'sessionId reset (clear):',
+          currentSessionId,
+        );
       } catch {}
       try {
         mainWindow.webContents.send('session:changed', { sessionId: currentSessionId });
@@ -299,7 +309,12 @@ app.whenReady().then(async () => {
     } catch {}
     currentSessionId = crypto.randomUUID();
     try {
-      console.log('[Global Session]', new Date().toISOString(), 'sessionId reset (manual):', currentSessionId);
+      console.log(
+        '[Global Session]',
+        new Date().toISOString(),
+        'sessionId reset (manual):',
+        currentSessionId,
+      );
     } catch {}
     try {
       mainWindow?.webContents.send('session:changed', { sessionId: currentSessionId });
@@ -307,6 +322,7 @@ app.whenReady().then(async () => {
     // Write an empty session file to mark creation
     try {
       const json = sessionStore.toJSON();
+
       logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
     } catch {}
 
@@ -420,6 +436,7 @@ ipcMain.on(
           currentSessionId,
           conversationHistoryText,
         );
+
         // Track session entry
         sessionStore.appendEntry(currentSessionId, {
           requestId,
@@ -430,6 +447,7 @@ ipcMain.on(
         // Persist session store to JSON for debugging/inspection
         try {
           const json = sessionStore.toJSON();
+
           await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
         } catch {}
       } catch {}

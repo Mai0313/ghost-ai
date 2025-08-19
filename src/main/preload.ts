@@ -33,7 +33,10 @@ const api = {
       activeRequestId = data.requestId;
       handlers.onStart?.(data);
     };
-    const deltaHandler = (_: any, data: { requestId: string; delta: string; sessionId?: string }) => {
+    const deltaHandler = (
+      _: any,
+      data: { requestId: string; delta: string; sessionId?: string },
+    ) => {
       if (activeRequestId && data.requestId !== activeRequestId) return;
       handlers.onDelta?.(data);
     };
@@ -45,7 +48,10 @@ const api = {
         unsubscribe();
       }
     };
-    const errorHandler = (_: any, data: { requestId?: string; error: string; sessionId?: string }) => {
+    const errorHandler = (
+      _: any,
+      data: { requestId?: string; error: string; sessionId?: string },
+    ) => {
       if (activeRequestId && data.requestId && data.requestId !== activeRequestId) return;
       try {
         handlers.onError?.(data);

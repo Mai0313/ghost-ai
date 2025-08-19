@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useCreateBlockNote } from '@blocknote/react';
+import { BlockNoteView } from '@blocknote/mantine';
 
 import { Settings } from './components/Settings';
 import {
@@ -26,8 +28,6 @@ import { theme } from './styles/theme';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import './styles/blocknote-custom.css';
-import { BlockNoteView } from '@blocknote/mantine';
-import { useCreateBlockNote } from '@blocknote/react';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
@@ -77,6 +77,7 @@ function App() {
       },
       createHighlighter: async () => {
         const { createHighlighter } = await import('shiki');
+
         return createHighlighter({
           themes: ['nord'],
           langs: [
@@ -134,14 +135,17 @@ function App() {
   // Update BlockNote content whenever `result` (Markdown) changes
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
         const blocks = await bnEditor.tryParseMarkdownToBlocks(result || '');
+
         if (!cancelled) {
           bnEditor.replaceBlocks(bnEditor.document, blocks);
         }
       } catch {}
     })();
+
     return () => {
       cancelled = true;
     };
@@ -250,6 +254,7 @@ function App() {
       transcriptBufferRef.current = '';
       setRecording(false);
     });
+
     api?.onAskClear?.(() => {
       // Reset conversation UI state
       setHistory([]);
@@ -288,6 +293,7 @@ function App() {
         return next;
       });
     });
+
     return () => {
       try {
         if (typeof offSession === 'function') offSession();
@@ -605,14 +611,27 @@ function App() {
         userMessage,
         effectiveCustomPrompt,
         {
-          onStart: ({ requestId: rid, sessionId: sid }: { requestId: string; sessionId?: string }) => {
+          onStart: ({
+            requestId: rid,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            sessionId?: string;
+          }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
             }
             setRequestId(rid);
           },
-          onDelta: ({ delta, sessionId: sid }: { requestId: string; delta: string; sessionId?: string }) => {
+          onDelta: ({
+            delta,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            delta: string;
+            sessionId?: string;
+          }) => {
             if (
               sid &&
               activeSessionIdForRequestRef.current &&
@@ -624,7 +643,14 @@ function App() {
             lastDeltaRef.current = delta;
             setResult((prev) => prev + delta);
           },
-          onDone: ({ content, sessionId: sid }: { requestId: string; content: string; sessionId?: string }) => {
+          onDone: ({
+            content,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            content: string;
+            sessionId?: string;
+          }) => {
             if (
               sid &&
               activeSessionIdForRequestRef.current &&
@@ -649,7 +675,14 @@ function App() {
               activeUnsubRef.current = null;
             }
           },
-          onError: ({ error, sessionId: sid }: { requestId?: string; error: string; sessionId?: string }) => {
+          onError: ({
+            error,
+            sessionId: sid,
+          }: {
+            requestId?: string;
+            error: string;
+            sessionId?: string;
+          }) => {
             if (
               sid &&
               activeSessionIdForRequestRef.current &&
@@ -862,8 +895,11 @@ function App() {
 
         {tab === 'ask' && (
           <div style={askCard}>
-            <div style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }} className="bn-markdown-viewer">
-              <BlockNoteView editor={bnEditor} editable={false} className="bn-readonly" />
+            <div
+              className="bn-markdown-viewer"
+              style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }}
+            >
+              <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
               <input
@@ -892,8 +928,11 @@ function App() {
         {/* Transcript-only bubble (no input). Visible when not in Ask/Settings and recording, or when last content came from transcript mode. */}
         {!tab && (recording || (result && transcriptModeRef.current)) && (
           <div style={askCard}>
-            <div style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }} className="bn-markdown-viewer">
-              <BlockNoteView editor={bnEditor} editable={false} className="bn-readonly" />
+            <div
+              className="bn-markdown-viewer"
+              style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }}
+            >
+              <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
           </div>
         )}

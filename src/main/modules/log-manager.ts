@@ -40,5 +40,3 @@ export const logManager = {
   writeConversationLog,
   writeSessionJson,
 };
-
-

@@ -73,7 +73,7 @@ export class OpenAIClient {
       // Use system role for custom prompt/instructions to guide the model
       messages.push({ role: 'system', content: customPrompt.trim() } as any);
     }
-    const effectiveText = (textPrompt?.trim() || 'Please analyze this screenshot.');
+    const effectiveText = textPrompt?.trim() || 'Please analyze this screenshot.';
     const content: ChatMessage['content'] = [
       { type: 'text', text: effectiveText },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },

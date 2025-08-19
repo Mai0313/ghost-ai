@@ -380,6 +380,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - `Cmd/Ctrl+Shift+Enter`：切換語音錄音（開始/停止）。目前僅切換 UI 與錄音計時，不進行轉錄。
 - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
 - `Cmd/Ctrl+R`：清除 Ask 對話與結果，並重置語音狀態（停止錄音並丟棄暫存音訊）
+
 ### 會話（Top-level Session）
 
 - 應用程式在啟動時會生成一個頂層 `sessionId`（UUID）。
@@ -412,10 +413,10 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - `toJSON()`: 輸出 `{ [sessionId]: { entries, nextIndex, log_path } }` 形態，提供持久化用
 - 整合點：
   - 影像分析完成（`capture:analyze-stream:done`）後：
-    1) 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`
-    2) 擷取並清空轉錄快照，`appendEntry(...)`
-    3) `updateSessionLogPath(...)`
-    4) 將 `toJSON()[sessionId]` 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`
+    1. 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`
+    2. 擷取並清空轉錄快照，`appendEntry(...)`
+    3. `updateSessionLogPath(...)`
+    4. 將 `toJSON()[sessionId]` 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`
   - 清除（Ctrl/Cmd+R）或 `session:new`：清掉 store 並重置 `sessionId`
 - IPC/Preload：
   - `ipcMain.handle('session:dump')`、`window.ghostAI.dumpSession()` 可即時讀取當前 list-dict

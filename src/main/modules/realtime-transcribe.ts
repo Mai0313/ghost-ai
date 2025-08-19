@@ -109,7 +109,8 @@ export class RealtimeTranscribeManager {
 
       entry.current.length = 0;
       try {
-        if (full) webContents.send('transcribe:done', { content: full, sessionId: entry.sessionId });
+        if (full)
+          webContents.send('transcribe:done', { content: full, sessionId: entry.sessionId });
         webContents.send('transcribe:closed');
       } catch {}
       this.sessions.delete(wcId);
@@ -118,7 +119,10 @@ export class RealtimeTranscribeManager {
     ws.on('error', (err) => {
       console.error('[WS] error', { wcId, error: String(err?.message || err) });
       try {
-        webContents.send('transcribe:error', { error: String(err?.message || err), sessionId: entry.sessionId });
+        webContents.send('transcribe:error', {
+          error: String(err?.message || err),
+          sessionId: entry.sessionId,
+        });
       } catch {}
     });
   }
