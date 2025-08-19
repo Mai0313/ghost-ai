@@ -29,11 +29,11 @@ const api = {
       ipcRenderer.off('capture:analyze-stream:error', errorHandler);
     };
 
-    const startHandler = (_: any, data: { requestId: string }) => {
+    const startHandler = (_: any, data: { requestId: string; sessionId?: string }) => {
       activeRequestId = data.requestId;
       handlers.onStart?.(data);
     };
-    const deltaHandler = (_: any, data: { requestId: string; delta: string }) => {
+    const deltaHandler = (_: any, data: { requestId: string; delta: string; sessionId?: string }) => {
       if (activeRequestId && data.requestId !== activeRequestId) return;
       handlers.onDelta?.(data);
     };
@@ -45,7 +45,7 @@ const api = {
         unsubscribe();
       }
     };
-    const errorHandler = (_: any, data: { requestId?: string; error: string }) => {
+    const errorHandler = (_: any, data: { requestId?: string; error: string; sessionId?: string }) => {
       if (activeRequestId && data.requestId && data.requestId !== activeRequestId) return;
       try {
         handlers.onError?.(data);
@@ -87,6 +87,24 @@ const api = {
   onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
   onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
+  // Session APIs
+  getSession: async (): Promise<string> => {
+    const res = await ipcRenderer.invoke('session:get');
+
+    return (res && res.sessionId) || '';
+  },
+  newSession: async (): Promise<string> => {
+    const res = await ipcRenderer.invoke('session:new');
+
+    return (res && res.sessionId) || '';
+  },
+  onSessionChanged: (handler: (data: { sessionId: string }) => void) => {
+    const fn = (_e: any, data: { sessionId: string }) => handler(data);
+
+    ipcRenderer.on('session:changed', fn);
+
+    return () => ipcRenderer.off('session:changed', fn);
+  },
   // Realtime transcription IPC wrappers
   startTranscription: (options: { model?: string }) =>
     ipcRenderer.invoke('transcribe:start', options),

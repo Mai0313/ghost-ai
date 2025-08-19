@@ -61,6 +61,7 @@ export class OpenAIClient {
     customPrompt: string,
     requestId: string,
     onDelta: (textDelta: string) => void,
+    sessionId: string,
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
@@ -69,10 +70,12 @@ export class OpenAIClient {
     const messages: ChatMessage[] = [];
 
     if (customPrompt?.trim()) {
-      messages.push({ role: 'assistant', content: customPrompt.trim() } as ChatMessage);
+      // Use system role for custom prompt/instructions to guide the model
+      messages.push({ role: 'system', content: customPrompt.trim() } as any);
     }
+    const effectiveText = (textPrompt?.trim() || 'Please analyze this screenshot.');
     const content: ChatMessage['content'] = [
-      { type: 'text', text: textPrompt?.trim() ?? '' },
+      { type: 'text', text: effectiveText },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
@@ -107,6 +110,7 @@ export class OpenAIClient {
       content: finalContent,
       model: config.model,
       timestamp: new Date().toISOString(),
+      sessionId,
     };
   }
 }

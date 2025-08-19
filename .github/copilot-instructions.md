@@ -380,6 +380,29 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - `Cmd/Ctrl+Shift+Enter`：切換語音錄音（開始/停止）。目前僅切換 UI 與錄音計時，不進行轉錄。
 - `Cmd/Ctrl+\\`：隱藏/顯示 HUD（切換）
 - `Cmd/Ctrl+R`：清除 Ask 對話與結果，並重置語音狀態（停止錄音並丟棄暫存音訊）
+### 會話（Top-level Session）
+
+- 應用程式在啟動時會生成一個頂層 `sessionId`（UUID）。
+- 觸發 `Cmd/Ctrl+R` 清除時，主程序會：
+  - 清空 `conversationHistoryText`
+  - 生成新的 `sessionId`
+  - 廣播 `session:changed` 給 Renderer，並嘗試停止目前的轉錄連線
+- IPC：
+  - `session:get` → `{ sessionId }`
+  - `session:new` → 建立新 session 並回傳 `{ sessionId }`
+  - 事件：`session:changed` → `{ sessionId }`
+- 所有截圖分析串流事件都會攜帶 `sessionId`：
+  - `capture:analyze-stream:start|delta|error` payload 新增 `sessionId`
+  - `capture:analyze-stream:done` 的 `AnalysisResult` 新增 `sessionId`
+- 即時轉錄事件也會攜帶 `sessionId`：
+  - `transcribe:start|delta|done|error` payload 新增 `sessionId`
+- 紀錄檔：`writeConversationLog(id, content)` 目前以 `sessionId` 為檔名（`~/.ghost_ai/logs/<sessionId>.log`）。
+
+### 影像分析串流（空白輸入處理與提示詞角色）
+
+- 若 Renderer 傳入的 `textPrompt` 為空字串，主程序仍會送出請求；在 SDK 呼叫前，會以預設文字 `'Please analyze this screenshot.'` 進行補齊，確保串流能正常返回。
+- 啟用中的自定義提示詞（從 `prompts-manager` 讀取）會以 `system` 角色附加，提供全域指示；避免使用 `assistant` 角色以免影響模型行為。
+
 - `Cmd/Ctrl+Up`：查看上一則回答
 - `Cmd/Ctrl+Down`：查看下一則回答
 

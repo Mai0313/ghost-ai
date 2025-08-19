@@ -40,6 +40,7 @@ function App() {
   const [historyIndex, setHistoryIndex] = useState<number | null>(null); // null = latest
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
   const tabRef = useRef<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,6 +55,7 @@ function App() {
   const [composing, setComposing] = useState(false);
   const activeUnsubRef = useRef<null | (() => void)>(null);
   const lastDeltaRef = useRef<string | null>(null);
+  const activeSessionIdForRequestRef = useRef<string | null>(null);
   // BlockNote editor for rendering Markdown answers with syntax highlighting
   const bnEditor = useCreateBlockNote({
     codeBlock: {
@@ -234,6 +236,20 @@ function App() {
     const api = (window as any).ghostAI;
 
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
+    // Initialize and watch top-level session
+    try {
+      api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
+    } catch {}
+    const offSession = api?.onSessionChanged?.(({ sessionId: sid }: { sessionId: string }) => {
+      if (sid) setSessionId(sid);
+      // Reset UI state on session change
+      setHistory([]);
+      setResult('');
+      setHistoryIndex(null);
+      setElapsedMs(0);
+      transcriptBufferRef.current = '';
+      setRecording(false);
+    });
     api?.onAskClear?.(() => {
       // Reset conversation UI state
       setHistory([]);
@@ -272,6 +288,11 @@ function App() {
         return next;
       });
     });
+    return () => {
+      try {
+        if (typeof offSession === 'function') offSession();
+      } catch {}
+    };
   }, []);
 
   useEffect(() => {
@@ -344,16 +365,20 @@ function App() {
 
       // Bind transcript events (store unsubs to clean on stop)
       try {
-        const u1 = (window as any).ghostAI?.onTranscribeDelta?.(({ delta }: { delta: string }) => {
-          if (!delta) return;
-          setResult((prev) => prev + delta);
-          transcriptBufferRef.current += delta;
-        });
+        const u1 = (window as any).ghostAI?.onTranscribeDelta?.(
+          ({ delta, sessionId: sid }: { delta: string; sessionId?: string }) => {
+            if (sid && sessionId && sid !== sessionId) return;
+            if (!delta) return;
+            setResult((prev) => prev + delta);
+            transcriptBufferRef.current += delta;
+          },
+        );
 
         if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
 
         const u2 = (window as any).ghostAI?.onTranscribeDone?.(
-          ({ content }: { content: string }) => {
+          ({ content, sessionId: sid }: { content: string; sessionId?: string }) => {
+            if (sid && sessionId && sid !== sessionId) return;
             if (!content) return;
             setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
             if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
@@ -362,9 +387,12 @@ function App() {
 
         if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
 
-        const u3 = (window as any).ghostAI?.onTranscribeError?.(({ error }: { error: string }) => {
-          console.error('Transcribe error', error);
-        });
+        const u3 = (window as any).ghostAI?.onTranscribeError?.(
+          ({ error, sessionId: sid }: { error: string; sessionId?: string }) => {
+            if (sid && sessionId && sid !== sessionId) return;
+            console.error('Transcribe error', error);
+          },
+        );
 
         if (typeof u3 === 'function') transcribeUnsubsRef.current.push(u3);
       } catch {}
@@ -559,6 +587,7 @@ function App() {
       activeUnsubRef.current = null;
     }
     lastDeltaRef.current = null;
+    activeSessionIdForRequestRef.current = null;
     setBusy(true);
     setStreaming(true);
     // Merge Ask input with any transcript captured so far
@@ -576,18 +605,37 @@ function App() {
         userMessage,
         effectiveCustomPrompt,
         {
-          onStart: ({ requestId: rid }: { requestId: string }) => setRequestId(rid),
-          onDelta: ({ delta }: { requestId: string; delta: string }) => {
+          onStart: ({ requestId: rid, sessionId: sid }: { requestId: string; sessionId?: string }) => {
+            if (sid) {
+              activeSessionIdForRequestRef.current = sid;
+              setSessionId(sid);
+            }
+            setRequestId(rid);
+          },
+          onDelta: ({ delta, sessionId: sid }: { requestId: string; delta: string; sessionId?: string }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             if (!delta) return;
             if (lastDeltaRef.current === delta) return; // de-dup identical consecutive chunks
             lastDeltaRef.current = delta;
             setResult((prev) => prev + delta);
           },
-          onDone: ({ content }: { requestId: string; content: string }) => {
+          onDone: ({ content, sessionId: sid }: { requestId: string; content: string; sessionId?: string }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             setResult(content ?? '');
             setStreaming(false);
             setRequestId(null);
             lastDeltaRef.current = null;
+            activeSessionIdForRequestRef.current = null;
             setHistory((prev) => [
               ...prev,
               { role: 'user', content: userMessage },
@@ -601,11 +649,18 @@ function App() {
               activeUnsubRef.current = null;
             }
           },
-          onError: ({ error }: { requestId?: string; error: string }) => {
+          onError: ({ error, sessionId: sid }: { requestId?: string; error: string; sessionId?: string }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             setStreaming(false);
             setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
             lastDeltaRef.current = null;
+            activeSessionIdForRequestRef.current = null;
             if (activeUnsubRef.current) {
               try {
                 activeUnsubRef.current();

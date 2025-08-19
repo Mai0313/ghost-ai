@@ -34,6 +34,8 @@ let tray: Tray | null = null;
 let conversationHistoryText: string = '';
 // Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
 let lastAudioToggleAt = 0;
+// Top-level session identifier (resets on app start and when user clears)
+let currentSessionId: string = crypto.randomUUID();
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -147,6 +149,9 @@ app.whenReady().then(async () => {
   } catch {}
   createWindow();
   createTray();
+  try {
+    console.log('[Global Session]', new Date().toISOString(), 'sessionId created at app start:', currentSessionId);
+  } catch {}
   // Application menu
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -205,6 +210,18 @@ app.whenReady().then(async () => {
       mainWindow.webContents.send('ask:clear');
       // Also clear main-process conversation history
       conversationHistoryText = '';
+      // Generate a new top-level session ID and broadcast
+      currentSessionId = crypto.randomUUID();
+      try {
+        console.log('[Session]', new Date().toISOString(), 'sessionId reset (clear):', currentSessionId);
+      } catch {}
+      try {
+        mainWindow.webContents.send('session:changed', { sessionId: currentSessionId });
+      } catch {}
+      // Best-effort: stop any active transcription session for this window
+      try {
+        realtimeTranscribeManager.stop(mainWindow.webContents);
+      } catch {}
     },
     onAudioToggle: async () => {
       lastAudioToggleAt = Date.now();
@@ -268,6 +285,20 @@ app.whenReady().then(async () => {
 
     return true;
   });
+  // Session IPC
+  ipcMain.handle('session:get', () => ({ sessionId: currentSessionId }));
+  ipcMain.handle('session:new', () => {
+    conversationHistoryText = '';
+    currentSessionId = crypto.randomUUID();
+    try {
+      console.log('[Global Session]', new Date().toISOString(), 'sessionId reset (manual):', currentSessionId);
+    } catch {}
+    try {
+      mainWindow?.webContents.send('session:changed', { sessionId: currentSessionId });
+    } catch {}
+
+    return { sessionId: currentSessionId };
+  });
 });
 
 app.on('window-all-closed', () => {
@@ -325,7 +356,7 @@ ipcMain.on(
       const image = await hideAllWindowsDuring(async () => captureScreen());
       const requestId = crypto.randomUUID();
 
-      evt.sender.send('capture:analyze-stream:start', { requestId });
+      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: currentSessionId });
 
       // Inject prior plain-text history into the text prompt for simple continuity.
       // We keep renderer history for UI navigation only; model context is driven here.
@@ -348,11 +379,19 @@ ipcMain.on(
         activePrompt,
         requestId,
         (delta) => {
-          evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
+          evt.sender.send('capture:analyze-stream:delta', {
+            requestId,
+            delta,
+            sessionId: currentSessionId,
+          });
         },
+        currentSessionId,
       );
 
-      evt.sender.send('capture:analyze-stream:done', result);
+      evt.sender.send('capture:analyze-stream:done', {
+        ...result,
+        sessionId: currentSessionId,
+      });
 
       // Append to plain-text conversation history
       const question = (payload.textPrompt ?? '').trim();
@@ -363,13 +402,13 @@ ipcMain.on(
       }
       // Persist current conversation history for this request for debugging/inspection
       try {
-        await logManager.writeConversationLog(requestId, conversationHistoryText);
+        await logManager.writeConversationLog(currentSessionId, conversationHistoryText);
       } catch {}
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
 
       // Best-effort request routing – if requestId isn't known yet, send without
-      evt.sender.send('capture:analyze-stream:error', { error });
+      evt.sender.send('capture:analyze-stream:error', { error, sessionId: currentSessionId });
     }
   },
 );
@@ -383,7 +422,11 @@ ipcMain.handle('transcribe:start', async (evt, options: { model?: string }) => {
   const cfg = loadOpenAIConfig();
 
   if (!cfg?.apiKey) throw new Error('Missing OpenAI API key');
-  realtimeTranscribeManager.start(evt.sender, { apiKey: cfg.apiKey, model: options?.model });
+  realtimeTranscribeManager.start(evt.sender, {
+    apiKey: cfg.apiKey,
+    model: options?.model,
+    sessionId: currentSessionId,
+  });
 
   return { ok: true };
 });

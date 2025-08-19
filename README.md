@@ -45,6 +45,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
 - **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
+- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost_ai/logs/<sessionId>.log` for easier correlation.
 
 ### 🔒 **Privacy & Security**
 
@@ -227,7 +228,7 @@ npm run dist
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
-8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
+8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<sessionId>.log`.
 
 ### Privacy Protection
 

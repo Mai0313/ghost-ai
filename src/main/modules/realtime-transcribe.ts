@@ -6,6 +6,7 @@ interface RealtimeSessionOptions {
   apiKey: string;
   baseURL?: string; // not used by WS
   model?: string; // default gpt-4o-mini-transcribe
+  sessionId?: string;
 }
 
 export class RealtimeTranscribeManager {
@@ -15,6 +16,7 @@ export class RealtimeTranscribeManager {
       ws: WebSocket;
       webContents: WebContents;
       current: string[]; // collect current sentence parts
+      sessionId?: string;
     }
   >();
 
@@ -34,7 +36,7 @@ export class RealtimeTranscribeManager {
       },
     });
 
-    const entry = { ws, webContents, current: [] as string[] };
+    const entry = { ws, webContents, current: [] as string[], sessionId: opts.sessionId };
 
     this.sessions.set(wcId, entry);
 
@@ -53,7 +55,7 @@ export class RealtimeTranscribeManager {
 
       ws.send(JSON.stringify(cfg));
       try {
-        webContents.send('transcribe:start', { ok: true });
+        webContents.send('transcribe:start', { ok: true, sessionId: entry.sessionId });
       } catch {}
     });
 
@@ -83,7 +85,7 @@ export class RealtimeTranscribeManager {
           if (typeof delta === 'string' && delta.length) {
             entry.current.push(delta);
             try {
-              webContents.send('transcribe:delta', { delta });
+              webContents.send('transcribe:delta', { delta, sessionId: entry.sessionId });
             } catch {}
           }
         } else if (typ === 'conversation.item.input_audio_transcription.completed') {
@@ -91,12 +93,12 @@ export class RealtimeTranscribeManager {
 
           entry.current.length = 0;
           try {
-            webContents.send('transcribe:done', { content: full });
+            webContents.send('transcribe:done', { content: full, sessionId: entry.sessionId });
           } catch {}
         }
       } catch (err) {
         try {
-          webContents.send('transcribe:error', { error: String(err) });
+          webContents.send('transcribe:error', { error: String(err), sessionId: entry.sessionId });
         } catch {}
       }
     });
@@ -107,7 +109,7 @@ export class RealtimeTranscribeManager {
 
       entry.current.length = 0;
       try {
-        if (full) webContents.send('transcribe:done', { content: full });
+        if (full) webContents.send('transcribe:done', { content: full, sessionId: entry.sessionId });
         webContents.send('transcribe:closed');
       } catch {}
       this.sessions.delete(wcId);
@@ -116,7 +118,7 @@ export class RealtimeTranscribeManager {
     ws.on('error', (err) => {
       console.error('[WS] error', { wcId, error: String(err?.message || err) });
       try {
-        webContents.send('transcribe:error', { error: String(err?.message || err) });
+        webContents.send('transcribe:error', { error: String(err?.message || err), sessionId: entry.sessionId });
       } catch {}
     });
   }

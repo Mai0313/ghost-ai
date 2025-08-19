@@ -24,6 +24,7 @@ export interface AnalysisResult {
   content: string;
   model: string;
   timestamp: string;
+  sessionId: string;
 }
 
 export interface HotkeyConfig {
