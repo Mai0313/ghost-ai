@@ -420,15 +420,13 @@ ipcMain.on(
           currentSessionId,
           conversationHistoryText,
         );
-        // Track session entry: snapshot voice buffer at send time and record
-        const voiceSnapshot = sessionStore.snapshotAndClearVoiceBuffer(currentSessionId);
+        // Track session entry
         sessionStore.appendEntry(currentSessionId, {
           requestId,
           text_input: (payload.textPrompt ?? '').trim(),
-          voice_input: voiceSnapshot,
           ai_output: answer,
         });
-        sessionStore.updateEntryLogPath(currentSessionId, requestId, logPath);
+        sessionStore.updateSessionLogPath(currentSessionId, logPath);
         // Persist session store to JSON for debugging/inspection
         try {
           const json = sessionStore.toJSON();

@@ -1,7 +1,6 @@
 import type { WebContents } from 'electron';
 
 import WebSocket from 'ws';
-import { sessionStore } from './session-store';
 
 interface RealtimeSessionOptions {
   apiKey: string;
@@ -86,7 +85,6 @@ export class RealtimeTranscribeManager {
           if (typeof delta === 'string' && delta.length) {
             entry.current.push(delta);
             try {
-              if (entry.sessionId) sessionStore.appendVoiceDelta(entry.sessionId, delta);
               webContents.send('transcribe:delta', { delta, sessionId: entry.sessionId });
             } catch {}
           }
@@ -95,7 +93,6 @@ export class RealtimeTranscribeManager {
 
           entry.current.length = 0;
           try {
-            if (entry.sessionId) sessionStore.markVoiceSentenceEnd(entry.sessionId);
             webContents.send('transcribe:done', { content: full, sessionId: entry.sessionId });
           } catch {}
         }

@@ -49,7 +49,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 ### 🔒 **隱私與安全**
 
 - **圖片不持久化**: 截圖僅在 RAM 中處理，不會寫入磁碟
-- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, voice_input, ai_output }`。
+- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, ai_output }`。
 - **加密通訊**: 所有 API 呼叫使用 HTTPS 和憑證固定
 - **鍵盤記錄器偵測**: 警告使用者監控軟體的潛在隱私風險
 - **自動清理**: 記憶體和網路痕跡自動清除
