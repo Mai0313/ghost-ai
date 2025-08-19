@@ -16,7 +16,7 @@
 
 </center>
 
-👻 **An invisible AI-powered desktop assistant that captures, analyzes, and provides insights without leaving a trace**
+👻 **An invisible AI-powered desktop assistant that captures, analyzes, and provides insights**
 
 Ghost AI is a privacy-first cross-platform desktop application built with Electron and TypeScript. It provides three core features: text input with screenshot analysis, voice recording with real-time conversation support, and stealth operation interface. The system integrates directly with OpenAI API through global hotkeys, with all API settings configurable through the frontend interface, offering seamless AI assistance while remaining completely invisible to screen sharing and monitoring software.
 
@@ -29,7 +29,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Ghost Mode**: Completely invisible during screenshots and screen sharing
 - **Stealth Hotkeys**: Low-level keyboard hooks that avoid detection by monitoring software
 - **Hidden Process**: Disguised process names and window titles for maximum privacy
-- **Memory-Only Processing**: No traces left on disk - all image processing happens in memory
+- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per request under `~/.ghost_ai/logs/<requestId>.log` for debugging/inspection.
 
 ### ⚡ **Lightning Fast Capture**
 
@@ -44,11 +44,12 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
-- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory only; subsequent asks include prior Q/A text for continuity.
+- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
 
 ### 🔒 **Privacy & Security**
 
-- **Zero Persistence**: Images never touch the disk - processed entirely in memory
+- **Images never persisted**: Screenshots are processed in RAM only and are not saved to disk
+- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost_ai/logs/<requestId>.log` after each analyze request completes
 - **Encrypted Communication**: All API calls use HTTPS with certificate pinning
 - **Keylogger Detection**: Warns users about potential privacy risks from monitoring software
 - **Automatic Cleanup**: Memory and network traces are automatically cleared
@@ -226,7 +227,7 @@ npm run dist
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
-8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question.
+8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
 
 ### Privacy Protection
 

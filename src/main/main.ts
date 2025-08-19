@@ -21,6 +21,7 @@ import {
   deletePrompt,
 } from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
+import { logManager } from './modules/log-manager';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -360,6 +361,10 @@ ipcMain.on(
       if (question || answer) {
         conversationHistoryText += `Q: ${question}\nA: ${answer}\n\n`;
       }
+      // Persist current conversation history for this request for debugging/inspection
+      try {
+        await logManager.writeConversationLog(requestId, conversationHistoryText);
+      } catch {}
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
 

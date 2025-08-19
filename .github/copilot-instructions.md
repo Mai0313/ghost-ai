@@ -108,6 +108,13 @@ Conversation history (main-managed):
   - `Previous conversation (plain text):\n<conversationHistoryText>\n\nNew question:\n<current question>`
 - On `Cmd/Ctrl+R` (clear), renderer emits `ask:clear`, and main resets `conversationHistoryText` to empty.
 
+Logging (new):
+
+- Module: `src/main/modules/log-manager.ts`
+  - `writeConversationLog(requestId: string, content: string): Promise<string>`
+  - Writes plain-text conversation to `~/.ghost_ai/logs/<requestId>.log`.
+- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to `conversationHistoryText`, call `await logManager.writeConversationLog(requestId, conversationHistoryText)`.
+
 HUD / Hide integration:
 
 - `ipcMain.handle('hud:toggle-hide')` toggles visibility via `toggleHidden(mainWindow)`.
