@@ -23,6 +23,11 @@ import {
   settingsCard,
 } from './styles/styles';
 import { theme } from './styles/theme';
+import '@blocknote/core/fonts/inter.css';
+import '@blocknote/mantine/style.css';
+import './styles/blocknote-custom.css';
+import { BlockNoteView } from '@blocknote/mantine';
+import { useCreateBlockNote } from '@blocknote/react';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
@@ -49,6 +54,48 @@ function App() {
   const [composing, setComposing] = useState(false);
   const activeUnsubRef = useRef<null | (() => void)>(null);
   const lastDeltaRef = useRef<string | null>(null);
+  // BlockNote editor for rendering Markdown answers with syntax highlighting
+  const bnEditor = useCreateBlockNote({
+    codeBlock: {
+      defaultLanguage: 'text',
+      supportedLanguages: {
+        javascript: { name: 'JavaScript', aliases: ['js'] },
+        typescript: { name: 'TypeScript', aliases: ['ts'] },
+        python: { name: 'Python', aliases: ['py'] },
+        java: { name: 'Java' },
+        cpp: { name: 'C++' },
+        csharp: { name: 'C#', aliases: ['cs'] },
+        rust: { name: 'Rust' },
+        sql: { name: 'SQL' },
+        xml: { name: 'XML' },
+        html: { name: 'HTML' },
+        php: { name: 'PHP' },
+        json: { name: 'JSON' },
+        text: { name: 'Text' },
+      },
+      createHighlighter: async () => {
+        const { createHighlighter } = await import('shiki');
+        return createHighlighter({
+          themes: ['nord'],
+          langs: [
+            'javascript',
+            'typescript',
+            'python',
+            'java',
+            'cpp',
+            'csharp',
+            'rust',
+            'sql',
+            'xml',
+            'html',
+            'php',
+            'json',
+            'text',
+          ],
+        } as any);
+      },
+    },
+  });
 
   // Center the bar horizontally on first mount
   useLayoutEffect(() => {
@@ -82,6 +129,21 @@ function App() {
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
+  // Update BlockNote content whenever `result` (Markdown) changes
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const blocks = await bnEditor.tryParseMarkdownToBlocks(result || '');
+        if (!cancelled) {
+          bnEditor.replaceBlocks(bnEditor.document, blocks);
+        }
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [result, bnEditor]);
   // Global hover detection to toggle native click-through dynamically
   useEffect(() => {
     const onMove = (ev: MouseEvent) => {
@@ -745,7 +807,9 @@ function App() {
 
         {tab === 'ask' && (
           <div style={askCard}>
-            <div style={{ ...askResultArea, display: result ? 'block' : 'none' }}>{result}</div>
+            <div style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }} className="bn-markdown-viewer">
+              <BlockNoteView editor={bnEditor} editable={false} className="bn-readonly" />
+            </div>
             <div style={askFooter}>
               <input
                 ref={askInputRef}
@@ -773,7 +837,9 @@ function App() {
         {/* Transcript-only bubble (no input). Visible when not in Ask/Settings and recording, or when last content came from transcript mode. */}
         {!tab && (recording || (result && transcriptModeRef.current)) && (
           <div style={askCard}>
-            <div style={{ ...askResultArea, display: result ? 'block' : 'none' }}>{result}</div>
+            <div style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }} className="bn-markdown-viewer">
+              <BlockNoteView editor={bnEditor} editable={false} className="bn-readonly" />
+            </div>
           </div>
         )}
       </div>

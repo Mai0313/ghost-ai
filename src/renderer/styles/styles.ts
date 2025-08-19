@@ -92,6 +92,8 @@ export const askResultArea: CSSProperties = {
   lineHeight: 1.4,
   maxHeight: '50vh',
   overflowY: 'auto',
+  // Semi-transparent background similar to panels
+  background: theme.color.panelBg(),
 };
 
 export const askFooter: CSSProperties = {
