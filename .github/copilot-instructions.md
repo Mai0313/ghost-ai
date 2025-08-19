@@ -68,6 +68,26 @@ interface GhostAPI {
 }
 ```
 
+## Prompts Management
+
+- Prompts are stored under `~/.ghost_ai/prompts`.
+- The active prompt file is referenced by `~/.ghost_ai/prompts/active.txt`.
+- Main module: `src/main/modules/prompts-manager.ts`
+  - `listPrompts()`, `readPrompt(name?)`, `writePrompt(name, content)`, `setActivePromptName(name)`, `getActivePromptName()`, `deletePrompt(name)`, `ensureDefaultPrompt()`
+- IPC handlers in main: `prompts:list`, `prompts:read`, `prompts:write`, `prompts:set-active`, `prompts:get-active`, `prompts:delete`
+- Preload exposes:
+
+```ts
+listPrompts(): Promise<{ prompts: string[]; active: string | null }>;
+readPrompt(name?: string): Promise<string>;
+writePrompt(name: string, content: string): Promise<string>;
+setActivePrompt(name: string): Promise<string>;
+getActivePrompt(): Promise<string | null>;
+deletePrompt(name: string): Promise<boolean>;
+```
+
+Analyze flow: main now loads the active prompt content from disk and passes it to `openAIClient.analyzeImageWithTextStream(...)` as the `customPrompt`.
+
 Main-side handlers in `src/main/main.ts` (streaming only):
 
 - `ipcMain.on('capture:analyze-stream', ...)`

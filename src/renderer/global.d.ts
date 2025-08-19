@@ -19,6 +19,13 @@ declare global {
       ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
       updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
+      // Prompts management
+      listPrompts: () => Promise<{ prompts: string[]; active: string | null }>;
+      readPrompt: (name?: string) => Promise<string>;
+      writePrompt: (name: string, content: string) => Promise<string>;
+      setActivePrompt: (name: string) => Promise<string>;
+      getActivePrompt: () => Promise<string | null>;
+      deletePrompt: (name: string) => Promise<boolean>;
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;

@@ -35,7 +35,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Global Hotkeys**: Trigger screenshots from any application with customizable key combinations
 - **Instant Analysis**: Real-time image analysis using OpenAI's Vision API
-- **Smart Prompting**: Add custom prompts or use intelligent defaults for context-aware analysis
+- **Smart Prompting**: Manage prompt files stored under `~/.ghost_ai/prompts` and switch the active prompt used for analysis
 - **Multiple Capture Modes**: Full screen, active window, or custom region selection
 
 ### 🤖 **AI-Powered Intelligence**
@@ -138,7 +138,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 1. Press your configured hotkey to capture a screenshot
 2. Use the top control bar to switch between Ask and Settings
-3. Enter a prompt and optional custom prompt, then click Send
+3. Enter your question and click Send. The active prompt from `~/.ghost_ai/prompts` will be applied automatically
 4. View the AI response inside the bubble and use Copy response if needed
 
 ## 📁 Project Structure
@@ -316,19 +316,14 @@ interface PrivacySettings {
 }
 ```
 
-### Default Prompts (example)
+### Prompts Directory
 
-Set up default analysis prompts:
-
-```typescript
-const defaultPrompts = {
-  general: 'Describe what you see in this image',
-  code: 'Explain the code shown in this screenshot',
-  ui: 'Analyze the user interface design and suggest improvements',
-  error: 'Help me understand and fix this error message',
-  text: 'Extract and format the text from this image',
-};
-```
+- Ghost AI loads prompts from `~/.ghost_ai/prompts`.
+- The active prompt is the file named in `~/.ghost_ai/prompts/active.txt`.
+- Use the Settings panel to:
+  - Create, edit, and delete prompt files (e.g., `general.txt`, `ui-review.txt`).
+  - Switch the active prompt used for all analyses.
+  - The app creates a default `default.txt` on first run.
 
 ## 🔧 Development
 

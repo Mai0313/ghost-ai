@@ -11,6 +11,15 @@ import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-man
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
 import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings } from './modules/settings-manager';
+import {
+  ensureDefaultPrompt,
+  listPrompts,
+  readPrompt,
+  writePrompt,
+  setActivePromptName,
+  getActivePromptName,
+  deletePrompt,
+} from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
@@ -131,6 +140,10 @@ async function initializeOpenAI() {
 
 app.whenReady().then(async () => {
   await initializeOpenAI();
+  // Ensure prompts directory and a default active prompt exist
+  try {
+    ensureDefaultPrompt();
+  } catch {}
   createWindow();
   createTray();
   // Application menu
@@ -229,6 +242,16 @@ app.whenReady().then(async () => {
     return { ...loadUserSettings(), ...partial };
   });
 
+  // Prompts IPC
+  ipcMain.handle('prompts:list', () => listPrompts());
+  ipcMain.handle('prompts:read', (_evt, name?: string) => readPrompt(name));
+  ipcMain.handle('prompts:write', (_evt, name: string, content: string) =>
+    writePrompt(name, content),
+  );
+  ipcMain.handle('prompts:set-active', (_evt, name: string) => setActivePromptName(name));
+  ipcMain.handle('prompts:get-active', () => getActivePromptName());
+  ipcMain.handle('prompts:delete', (_evt, name: string) => deletePrompt(name));
+
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {
     await toggleHidden(mainWindow);
@@ -309,10 +332,19 @@ ipcMain.on(
         ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
 
+      // Load active prompt content from prompts manager; fall back to empty
+      const activePrompt = (() => {
+        try {
+          return readPrompt() || '';
+        } catch {
+          return '';
+        }
+      })();
+
       const result = await openAIClient.analyzeImageWithTextStream(
         image,
         combinedTextPrompt,
-        payload.customPrompt,
+        activePrompt,
         requestId,
         (delta) => {
           evt.sender.send('capture:analyze-stream:delta', { requestId, delta });
