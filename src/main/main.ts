@@ -22,6 +22,7 @@ import {
 } from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 import { logManager } from './modules/log-manager';
+import { sessionStore } from './modules/session-store';
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -210,6 +211,10 @@ app.whenReady().then(async () => {
       mainWindow.webContents.send('ask:clear');
       // Also clear main-process conversation history
       conversationHistoryText = '';
+      // Clear global session entries
+      try {
+        sessionStore.clearAll();
+      } catch {}
       // Generate a new top-level session ID and broadcast
       currentSessionId = crypto.randomUUID();
       try {
@@ -289,6 +294,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('session:get', () => ({ sessionId: currentSessionId }));
   ipcMain.handle('session:new', () => {
     conversationHistoryText = '';
+    try {
+      sessionStore.clearAll();
+    } catch {}
     currentSessionId = crypto.randomUUID();
     try {
       console.log('[Global Session]', new Date().toISOString(), 'sessionId reset (manual):', currentSessionId);
@@ -296,9 +304,15 @@ app.whenReady().then(async () => {
     try {
       mainWindow?.webContents.send('session:changed', { sessionId: currentSessionId });
     } catch {}
+    // Write an empty session file to mark creation
+    try {
+      const json = sessionStore.toJSON();
+      logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+    } catch {}
 
     return { sessionId: currentSessionId };
   });
+  ipcMain.handle('session:dump', () => sessionStore.getSessionsData());
 });
 
 app.on('window-all-closed', () => {
@@ -402,7 +416,24 @@ ipcMain.on(
       }
       // Persist current conversation history for this request for debugging/inspection
       try {
-        await logManager.writeConversationLog(currentSessionId, conversationHistoryText);
+        const logPath = await logManager.writeConversationLog(
+          currentSessionId,
+          conversationHistoryText,
+        );
+        // Track session entry: snapshot voice buffer at send time and record
+        const voiceSnapshot = sessionStore.snapshotAndClearVoiceBuffer(currentSessionId);
+        sessionStore.appendEntry(currentSessionId, {
+          requestId,
+          text_input: (payload.textPrompt ?? '').trim(),
+          voice_input: voiceSnapshot,
+          ai_output: answer,
+        });
+        sessionStore.updateEntryLogPath(currentSessionId, requestId, logPath);
+        // Persist session store to JSON for debugging/inspection
+        try {
+          const json = sessionStore.toJSON();
+          await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+        } catch {}
       } catch {}
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');

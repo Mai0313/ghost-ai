@@ -396,7 +396,50 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - `capture:analyze-stream:done` 的 `AnalysisResult` 新增 `sessionId`
 - 即時轉錄事件也會攜帶 `sessionId`：
   - `transcribe:start|delta|done|error` payload 新增 `sessionId`
-- 紀錄檔：`writeConversationLog(id, content)` 目前以 `sessionId` 為檔名（`~/.ghost_ai/logs/<sessionId>.log`）。
+- 紀錄檔：`writeConversationLog(id, content)` 目前以 `sessionId` 為檔名並存放於資料夾 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`。
+  同時會在每次更新時輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含：
+  - `entries[]`: `{ index, requestId, log_path, text_input, voice_input, ai_output }`
+  - `nextIndex`: 下一個索引
+
+### Session Store (global list-dict)
+
+- 模組：`src/main/modules/session-store.ts`
+- 功能：以 `sessionId` 為 key，維護每次送出（Ask + 圖片 + 可能的 Listen 轉錄快照）的結構化清單。
+  - `appendEntry(sessionId, { requestId, text_input, voice_input })`: 新增一筆 entry，並自動賦予流水號 `index`
+  - `updateEntryLogPath(sessionId, requestId, logPath)`: 補上該 entry 的 `log_path`
+  - `appendVoiceDelta(sessionId, delta)`: 在轉錄串流期間累積 Listen 的逐字稿快照（僅在主程序記憶體）
+  - `markVoiceSentenceEnd(sessionId)`: 聲明一句結束（加入換行）
+  - `snapshotAndClearVoiceBuffer(sessionId)`: 在送出時擷取目前逐字稿快照，並清空快取
+  - `getSessionsData()`: 輸出 `[{ sessionId: [entries...] }, ...]` 形態供除錯
+  - `toJSON()`: 輸出 `{ [sessionId]: { entries, nextIndex } }` 形態，提供持久化用
+- 整合點：
+  - 影像分析完成（`capture:analyze-stream:done`）後：
+    1) 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`
+    2) 擷取並清空轉錄快照，`appendEntry(...)`
+    3) `updateEntryLogPath(...)`
+    4) 將 `toJSON()[sessionId]` 寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`
+  - 清除（Ctrl/Cmd+R）或 `session:new`：清掉 store 並重置 `sessionId`
+- IPC/Preload：
+  - `ipcMain.handle('session:dump')`、`window.ghostAI.dumpSession()` 可即時讀取當前 list-dict
+
+範例（`session:dump` 的輸出形態）：
+
+```
+[
+  {
+    "d1a4c8c6-8f3c-4f8e-9fd0-2e7f5b6c5a12": [
+      {
+        "index": 0,
+        "requestId": "f0a3e9f8-1c32-4e1b-9e7f-91a2b4c3d5e6",
+        "log_path": "C:\\Users\\Wei\\.ghost_ai\\logs\\d1a4c8c6-8f3c-4f8e-9fd0-2e7f5b6c5a12\\d1a4c8c6-8f3c-4f8e-9fd0-2e7f5b6c5a12.log",
+        "text_input": "使用者輸入的內容（可為空）",
+        "voice_input": "Listen的逐字稿快照（可為空）",
+        "ai_output": "模型的回應（完整內容）"
+      }
+    ]
+  }
+]
+```
 
 ### 影像分析串流（空白輸入處理與提示詞角色）
 

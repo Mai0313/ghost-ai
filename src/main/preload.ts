@@ -149,6 +149,8 @@ const api = {
   },
   // Control whether the overlay window ignores mouse events (click-through)
   setMouseIgnore: (ignore: boolean) => ipcRenderer.invoke('hud:set-mouse-ignore', ignore),
+  // Debug helper: dump current session data (list-dict)
+  dumpSession: () => ipcRenderer.invoke('session:dump'),
 };
 
 declare global {
