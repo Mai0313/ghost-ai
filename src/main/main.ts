@@ -15,8 +15,8 @@ import {
   ensureDefaultPrompt,
   listPrompts,
   readPrompt,
-  setActivePromptName,
-  getActivePromptName,
+  setDefaultPromptFrom,
+  getDefaultPromptName,
 } from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 import { logManager } from './modules/log-manager';
@@ -290,8 +290,8 @@ app.whenReady().then(async () => {
   // Prompts IPC
   ipcMain.handle('prompts:list', () => listPrompts());
   ipcMain.handle('prompts:read', (_evt, name?: string) => readPrompt(name));
-  ipcMain.handle('prompts:set-active', (_evt, name: string) => setActivePromptName(name));
-  ipcMain.handle('prompts:get-active', () => getActivePromptName());
+  ipcMain.handle('prompts:set-default', (_evt, name: string) => setDefaultPromptFrom(name));
+  ipcMain.handle('prompts:get-default', () => getDefaultPromptName());
 
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {

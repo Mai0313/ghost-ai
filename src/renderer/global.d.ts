@@ -20,10 +20,10 @@ declare global {
       listOpenAIModels: () => Promise<string[]>;
       updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
       // Prompts management
-      listPrompts: () => Promise<{ prompts: string[]; active: string | null }>;
+      listPrompts: () => Promise<{ prompts: string[]; defaultPrompt: string | null }>;
       readPrompt: (name?: string) => Promise<string>;
-      setActivePrompt: (name: string) => Promise<string>;
-      getActivePrompt: () => Promise<string | null>;
+      setDefaultPrompt: (name: string) => Promise<string>;
+      getDefaultPrompt: () => Promise<string | null>;
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;

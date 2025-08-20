@@ -73,12 +73,12 @@ const api = {
   updateOpenAIConfigVolatile: (config: Partial<OpenAIConfig>) =>
     ipcRenderer.invoke('openai:update-config-volatile', config),
   // Prompts management
-  listPrompts: (): Promise<{ prompts: string[]; active: string | null }> =>
+  listPrompts: (): Promise<{ prompts: string[]; defaultPrompt: string | null }> =>
     ipcRenderer.invoke('prompts:list'),
   readPrompt: (name?: string): Promise<string> => ipcRenderer.invoke('prompts:read', name),
-  setActivePrompt: (name: string): Promise<string> =>
-    ipcRenderer.invoke('prompts:set-active', name),
-  getActivePrompt: (): Promise<string | null> => ipcRenderer.invoke('prompts:get-active'),
+  setDefaultPrompt: (name: string): Promise<string> =>
+    ipcRenderer.invoke('prompts:set-default', name),
+  getDefaultPrompt: (): Promise<string | null> => ipcRenderer.invoke('prompts:get-default'),
   // Settings (user preferences)
   getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
   updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),

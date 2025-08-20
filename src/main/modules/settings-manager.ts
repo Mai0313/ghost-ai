@@ -15,30 +15,13 @@ try {
   fs.mkdirSync(configDir, { recursive: true });
 } catch {}
 
-const store = new Store<{ encryptedOpenAI?: string }>({
+const store = new Store<{ encryptedOpenAI?: string; baseURL?: string; model?: string }>({
   cwd: configDir,
   name: 'config',
   fileExtension: 'json',
 });
 
-// Cleanup: ensure we do NOT persist any keys other than 'encryptedOpenAI'
-try {
-  // @ts-ignore accessing unknown keys tolerated for cleanup
-  if ((store as any).has && (store as any).has('userSettings')) {
-    // @ts-ignore
-    (store as any).delete('userSettings');
-  }
-  // @ts-ignore
-  if ((store as any).has && (store as any).has('hiddenState')) {
-    // @ts-ignore
-    (store as any).delete('hiddenState');
-  }
-  // @ts-ignore
-  if ((store as any).has && (store as any).has('migratedFromLegacy')) {
-    // @ts-ignore
-    (store as any).delete('migratedFromLegacy');
-  }
-} catch {}
+// Keep config minimal but explicit: store encrypted full config and also plain baseURL/model
 
 export function saveOpenAIConfig(cfg: OpenAIConfig) {
   const json = JSON.stringify(cfg);
@@ -47,6 +30,11 @@ export function saveOpenAIConfig(cfg: OpenAIConfig) {
     : Buffer.from(json).toString('base64');
 
   store.set('encryptedOpenAI', encrypted);
+  try {
+    // Persist baseURL and model in plain text for transparency/usability
+    if (cfg?.baseURL) store.set('baseURL', cfg.baseURL);
+    if (typeof cfg?.model === 'string') store.set('model', cfg.model);
+  } catch {}
 }
 
 export function loadOpenAIConfig(): OpenAIConfig | null {
@@ -58,8 +46,14 @@ export function loadOpenAIConfig(): OpenAIConfig | null {
     const json = safeStorage.isEncryptionAvailable()
       ? safeStorage.decryptString(buf)
       : buf.toString('utf8');
+    const parsed = JSON.parse(json) as OpenAIConfig;
+    // Override with explicit plain entries if present
+    const plainBaseURL = store.get('baseURL');
+    const plainModel = store.get('model');
+    if (typeof plainBaseURL === 'string' && plainBaseURL) parsed.baseURL = plainBaseURL;
+    if (typeof plainModel === 'string') parsed.model = plainModel;
 
-    return JSON.parse(json) as OpenAIConfig;
+    return parsed;
   } catch {
     return null;
   }

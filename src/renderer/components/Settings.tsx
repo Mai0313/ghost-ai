@@ -10,7 +10,7 @@ export function Settings() {
   const [ok, setOk] = useState<boolean | null>(null);
   // Prompts manager state
   const [promptNames, setPromptNames] = useState<string[]>([]);
-  const [activePrompt, setActivePrompt] = useState<string | null>(null);
+  const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   
 
@@ -45,8 +45,8 @@ export function Settings() {
         // Prompts
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
-          setActivePrompt(promptsInfo.active || null);
-          const initial = promptsInfo.active || promptsInfo.prompts[0] || null;
+          setDefaultPrompt(promptsInfo.defaultPrompt || null);
+          const initial = promptsInfo.defaultPrompt || promptsInfo.prompts[0] || null;
           setSelectedPrompt(initial);
         }
       } catch {}
@@ -176,8 +176,8 @@ export function Settings() {
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
         <div style={{ display: 'grid', gap: 10 }}>
           <label htmlFor="prompt-select" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Active prompt file (stored under ~/.ghost_ai/prompts){' '}
-            {activePrompt ? `— current: ${activePrompt}` : ''}
+            Default prompt file (stored under ~/.ghost_ai/prompts){' '}
+            {defaultPrompt ? `— current: ${defaultPrompt}` : ''}
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <select
@@ -197,8 +197,8 @@ export function Settings() {
                 setSelectedPrompt(name);
                 try {
                   if (name) {
-                    const ret = await (window as any).ghostAI?.setActivePrompt?.(name);
-                    setActivePrompt(ret || 'default.txt');
+                    const ret = await (window as any).ghostAI?.setDefaultPrompt?.(name);
+                    setDefaultPrompt(ret || 'default.txt');
                   }
                 } catch {}
               }}
