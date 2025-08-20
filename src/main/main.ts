@@ -412,7 +412,7 @@ ipcMain.on(
         : (payload.textPrompt ?? '').trim();
 
       // Load active prompt content from prompts manager; fall back to empty
-      const activePrompt = (() => {
+      const defaultPrompt = (() => {
         try {
           return readPrompt() || '';
         } catch {
@@ -439,7 +439,7 @@ ipcMain.on(
       const result = await openAIClient.analyzeImageWithTextStream(
         image,
         combinedTextPrompt,
-        activePrompt,
+        defaultPrompt,
         requestId,
         (delta) => {
           evt.sender.send('capture:analyze-stream:delta', {
