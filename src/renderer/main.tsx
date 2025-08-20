@@ -56,7 +56,7 @@ function App() {
   const activeUnsubRef = useRef<null | (() => void)>(null);
   const lastDeltaRef = useRef<string | null>(null);
   const activeSessionIdForRequestRef = useRef<string | null>(null);
-  // BlockNote editor for rendering Markdown answers with syntax highlighting
+  // BlockNote editor for rendering Markdown answers without syntax highlighting
   const bnEditor = useCreateBlockNote({
     codeBlock: {
       defaultLanguage: 'text',
@@ -74,29 +74,7 @@ function App() {
         php: { name: 'PHP' },
         json: { name: 'JSON' },
         text: { name: 'Text' },
-      },
-      createHighlighter: async () => {
-        const { createHighlighter } = await import('shiki');
-
-        return createHighlighter({
-          themes: ['nord'],
-          langs: [
-            'javascript',
-            'typescript',
-            'python',
-            'java',
-            'cpp',
-            'csharp',
-            'rust',
-            'sql',
-            'xml',
-            'html',
-            'php',
-            'json',
-            'text',
-          ],
-        } as any);
-      },
+      }
     },
   });
 

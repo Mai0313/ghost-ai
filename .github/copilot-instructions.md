@@ -204,7 +204,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
   - Appends deltas to `result` in real time.
   - Streamed answers are rendered as Markdown using a read-only BlockNote editor. On each `result` change, the renderer converts Markdown with `editor.tryParseMarkdownToBlocks(result)` and replaces content via `editor.replaceBlocks(editor.document, blocks)`.
-  - Code blocks are syntax-highlighted via BlockNote's built-in Shiki integration (`codeBlock.createHighlighter`). Supported languages include: cpp, html, java, javascript, json, php, python, rust, sql, xml, and csharp.
+  - Code blocks are rendered without syntax highlighting. We removed the Shiki-based highlighter to simplify dependencies.
   - Shows the streamed response bubble ABOVE the input field.
   - Disables the input while streaming.
   - No non-streaming fallback; errors are surfaced inline and user can retry immediately.

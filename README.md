@@ -144,7 +144,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 1. Press your configured hotkey to capture a screenshot
 2. Use the top control bar to switch between Ask and Settings
 3. Enter your question and click Send. The active prompt from `~/.ghost_ai/prompts` is applied automatically on the first turn of a session.
-4. View the AI response inside the bubble. Answers are rendered as Markdown with proper formatting and code block highlighting.
+4. View the AI response inside the bubble. Answers are rendered as Markdown with proper formatting. Code blocks are shown without syntax highlighting.
 
 ## 📁 Project Structure
 

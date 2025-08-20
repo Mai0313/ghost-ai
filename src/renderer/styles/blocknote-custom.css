@@ -18,7 +18,7 @@
   padding: 0;
 }
 
-/* Code block styling: keep dark theme vibe; rely on CodeMirror tokens */
+/* Code block styling: keep dark theme vibe; no syntax highlighting */
 .bn-markdown-viewer pre {
   /* Slightly darker than the panel, still semi-transparent */
   background-color: rgba(22, 22, 22, 0.68) !important;
