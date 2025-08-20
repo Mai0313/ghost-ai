@@ -39,7 +39,7 @@ export class OpenAIClient {
     try {
       const list = await client.models.list();
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
-      const allowedOrder = ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-5', 'gpt-5-mini'];
+      const allowedOrder = ['chatgpt-4o-latest', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o4-mini-2025-04-16', 'gpt-5', 'gpt-5-mini'];
       const filtered = allowedOrder.filter((id) => ids.includes(id));
 
       return filtered.length ? filtered : allowedOrder;
