@@ -88,8 +88,7 @@ const api = {
   toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
   quitApp: () => ipcRenderer.invoke('app:quit'),
   onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),
-  onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
-  onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
+
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
   // Session APIs
   getSession: async (): Promise<string> => {

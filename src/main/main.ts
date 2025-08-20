@@ -262,18 +262,7 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send('audio:toggle');
     },
-    onPrevAnswer: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send('text-input:show');
-      mainWindow.webContents.send('ask:prev');
-    },
-    onNextAnswer: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send('text-input:show');
-      mainWindow.webContents.send('ask:next');
-    },
+
   });
 
   // If no OpenAI config yet, guide user by showing the overlay

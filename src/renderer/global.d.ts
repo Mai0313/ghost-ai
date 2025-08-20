@@ -32,8 +32,7 @@ declare global {
       toggleHide: () => Promise<any>;
       quitApp: () => Promise<any>;
       onAskClear: (handler: () => void) => void;
-      onAskPrev: (handler: () => void) => void;
-      onAskNext: (handler: () => void) => void;
+
       onAudioToggle: (handler: () => void) => void;
       // Session controls
       getSession: () => Promise<string>;

@@ -263,34 +263,7 @@ function App() {
       setElapsedMs(0);
       transcriptBufferRef.current = '';
     });
-    api?.onAskPrev?.(() => {
-      const answers = history.filter((m) => m.role === 'assistant');
 
-      if (!answers.length) return;
-      setHistoryIndex((idx) => {
-        const current = idx === null ? answers.length - 1 : Math.max(0, idx - 1);
-
-        setResult(answers[current]?.content ?? '');
-
-        return current;
-      });
-    });
-    api?.onAskNext?.(() => {
-      const answers = history.filter((m) => m.role === 'assistant');
-
-      if (!answers.length) return;
-      setHistoryIndex((idx) => {
-        if (idx === null) return null;
-        const next = idx + 1;
-
-        if (next >= answers.length) {
-          return answers.length - 1;
-        }
-        setResult(answers[next]?.content ?? '');
-
-        return next;
-      });
-    });
 
     return () => {
       try {
