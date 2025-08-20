@@ -53,6 +53,12 @@ class SessionStore {
     st.logPath = logPath;
   }
 
+  hasEntries(sessionId: string): boolean {
+    const st = this.sessions.get(sessionId);
+
+    return !!st && st.entries.length > 0;
+  }
+
   // For debugging/inspection
   getSessionsData(): Array<Record<string, SessionEntry[]>> {
     const list: Array<Record<string, SessionEntry[]>> = [];

@@ -45,6 +45,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
 - **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
+- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost_ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history.
 - **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost_ai/logs/<sessionId>.log` for easier correlation.
   - A structured Session Store is also maintained in memory and persisted to `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
 
@@ -142,7 +143,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 1. Press your configured hotkey to capture a screenshot
 2. Use the top control bar to switch between Ask and Settings
-3. Enter your question and click Send. The active prompt from `~/.ghost_ai/prompts` will be applied automatically
+3. Enter your question and click Send. The active prompt from `~/.ghost_ai/prompts` is applied automatically on the first turn of a session.
 4. View the AI response inside the bubble. Answers are rendered as Markdown with proper formatting and code block highlighting.
 
 ## 📁 Project Structure

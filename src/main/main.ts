@@ -411,9 +411,13 @@ ipcMain.on(
         ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
 
-      // Load active prompt content from prompts manager; fall back to empty
+      // Load active prompt content only for the first turn of the current session
       const defaultPrompt = (() => {
         try {
+          const isFirstTurn = !sessionStore.hasEntries(currentSessionId);
+
+          if (!isFirstTurn) return '';
+
           return readPrompt() || '';
         } catch {
           return '';
@@ -469,7 +473,7 @@ ipcMain.on(
       const answer = (result?.content ?? '').trim();
 
       if (question || answer) {
-        conversationHistoryText += `Q: ${question}\nA: ${answer}\n\n`;
+        conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
       }
       // Persist current conversation history for this request for debugging/inspection
       try {

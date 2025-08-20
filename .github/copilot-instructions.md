@@ -1,3 +1,52 @@
+## Ghost AI – Developer Notes
+
+This document explains technical behaviors relevant to contributors.
+
+### Prompt Injection Behavior
+
+- The active default prompt is stored in `~/.ghost_ai/prompts/default.txt`.
+- It is injected into the first turn of each session only.
+- Subsequent turns for the same `sessionId` omit the default prompt to avoid duplicative instructions.
+
+Implementation details:
+
+- `src/main/modules/session-store.ts` exposes `hasEntries(sessionId: string): boolean`.
+- `src/main/main.ts` checks `!sessionStore.hasEntries(currentSessionId)` to decide whether to read and pass the default prompt.
+- The call site:
+
+```414:425:src/main/main.ts
+// Load active prompt content only for the first turn of the current session
+const defaultPrompt = (() => {
+  try {
+    const isFirstTurn = !sessionStore.hasEntries(currentSessionId);
+    if (!isFirstTurn) return '';
+    return readPrompt() || '';
+  } catch {
+    return '';
+  }
+})();
+```
+
+### Conversation Memory
+
+- Plain-text `Q:`/`A:` history is maintained in the main process as a single string and is appended after each successful request.
+- On each new request, `combinedTextPrompt` is composed as:
+
+```410:412:src/main/main.ts
+const combinedTextPrompt = conversationHistoryText
+  ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+  : (payload.textPrompt ?? '').trim();
+```
+
+### Sessions
+
+- A top-level `currentSessionId` is created on app start and when Ask is cleared or a new session is requested.
+- Session entries are appended via `sessionStore.appendEntry` and persisted under `~/.ghost_ai/logs/<sessionId>/<sessionId>.json` for debugging/inspection.
+
+### Streaming Only
+
+- The app uses streaming analysis only (`capture:analyze-stream` IPC). Legacy non-streaming paths were removed.
+
 # Ghost AI - Developer Instructions (Copilot)
 
 This document describes important technical details for contributors. Update this whenever you change IPC channels, main/renderer contracts, or shared types.
