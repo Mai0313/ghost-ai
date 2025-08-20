@@ -22,16 +22,15 @@ declare global {
       // Prompts management
       listPrompts: () => Promise<{ prompts: string[]; active: string | null }>;
       readPrompt: (name?: string) => Promise<string>;
-      writePrompt: (name: string, content: string) => Promise<string>;
       setActivePrompt: (name: string) => Promise<string>;
       getActivePrompt: () => Promise<string | null>;
-      deletePrompt: (name: string) => Promise<boolean>;
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;
       onTextInputToggle: (handler: () => void) => void;
       onHUDShow: (handler: () => void) => void;
       toggleHide: () => Promise<any>;
+      quitApp: () => Promise<any>;
       onAskClear: (handler: () => void) => void;
       onAskPrev: (handler: () => void) => void;
       onAskNext: (handler: () => void) => void;

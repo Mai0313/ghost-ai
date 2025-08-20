@@ -15,10 +15,8 @@ import {
   ensureDefaultPrompt,
   listPrompts,
   readPrompt,
-  writePrompt,
   setActivePromptName,
   getActivePromptName,
-  deletePrompt,
 } from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 import { logManager } from './modules/log-manager';
@@ -292,16 +290,21 @@ app.whenReady().then(async () => {
   // Prompts IPC
   ipcMain.handle('prompts:list', () => listPrompts());
   ipcMain.handle('prompts:read', (_evt, name?: string) => readPrompt(name));
-  ipcMain.handle('prompts:write', (_evt, name: string, content: string) =>
-    writePrompt(name, content),
-  );
   ipcMain.handle('prompts:set-active', (_evt, name: string) => setActivePromptName(name));
   ipcMain.handle('prompts:get-active', () => getActivePromptName());
-  ipcMain.handle('prompts:delete', (_evt, name: string) => deletePrompt(name));
 
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {
     await toggleHidden(mainWindow);
+
+    return true;
+  });
+
+  // App lifecycle IPC
+  ipcMain.handle('app:quit', () => {
+    try {
+      app.quit();
+    } catch {}
 
     return true;
   });

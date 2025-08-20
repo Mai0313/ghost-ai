@@ -71,22 +71,23 @@ interface GhostAPI {
 ## Prompts Management
 
 - Prompts are stored under `~/.ghost_ai/prompts`.
-- The active prompt file is referenced by `~/.ghost_ai/prompts/active.txt`.
+- The app always reads `~/.ghost_ai/prompts/default.txt` as the effective prompt.
+- Selecting a prompt in Settings copies the selected file's content into `default.txt` (no in-app editing).
 - Main module: `src/main/modules/prompts-manager.ts`
-  - `listPrompts()`, `readPrompt(name?)`, `writePrompt(name, content)`, `setActivePromptName(name)`, `getActivePromptName()`, `deletePrompt(name)`, `ensureDefaultPrompt()`
-- IPC handlers in main: `prompts:list`, `prompts:read`, `prompts:write`, `prompts:set-active`, `prompts:get-active`, `prompts:delete`
-- Preload exposes:
+  - `listPrompts()`, `readPrompt(name?)`, `setActivePromptName(name)`, `getActivePromptName()`, `ensureDefaultPrompt()`
+- IPC handlers in main: `prompts:list`, `prompts:read`, `prompts:set-active`, `prompts:get-active`
+- Preload exposes selection-only surface:
 
 ```ts
 listPrompts(): Promise<{ prompts: string[]; active: string | null }>;
 readPrompt(name?: string): Promise<string>;
-writePrompt(name: string, content: string): Promise<string>;
-setActivePrompt(name: string): Promise<string>;
+setActivePrompt(name: string): Promise<string>; // returns 'default.txt'
 getActivePrompt(): Promise<string | null>;
-deletePrompt(name: string): Promise<boolean>;
 ```
 
-Analyze flow: main now loads the active prompt content from disk and passes it to `openAIClient.analyzeImageWithTextStream(...)` as the `customPrompt`.
+Renderer Settings UI lists available files and sets the active prompt; creating/editing/deleting prompt files is done outside the app (file system/editor). If `default.txt` is missing, `ensureDefaultPrompt` creates an empty `default.txt`.
+
+Analyze flow: main loads `default.txt` and passes it to `openAIClient.analyzeImageWithTextStream(...)` as the `customPrompt`.
 
 Main-side handlers in `src/main/main.ts` (streaming only):
 

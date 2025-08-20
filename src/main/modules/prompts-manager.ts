@@ -6,7 +6,6 @@ const homeDir = os.homedir();
 const baseDir = path.join(homeDir, '.ghost_ai');
 
 export const promptsDir = path.join(baseDir, 'prompts');
-const activeFile = path.join(promptsDir, 'active.txt');
 
 function ensureDirs() {
   try {
@@ -37,7 +36,10 @@ export function listPrompts(): { prompts: string[]; active: string | null } {
       return [] as string[];
     }
   })();
-  const active = getActivePromptName();
+  // Active prompt is always 'default.txt' if it exists
+  const active = fs.existsSync(path.join(promptsDir, 'default.txt'))
+    ? 'default.txt'
+    : null;
 
   return { prompts: files, active };
 }
@@ -45,30 +47,30 @@ export function listPrompts(): { prompts: string[]; active: string | null } {
 export function getActivePromptName(): string | null {
   ensureDirs();
   try {
-    const name = fs.readFileSync(activeFile, 'utf8').trim();
-
-    return name || null;
+    return fs.existsSync(path.join(promptsDir, 'default.txt')) ? 'default.txt' : null;
   } catch {
     return null;
   }
 }
 
 export function setActivePromptName(name: string): string {
+  // Selection sets the content of 'default.txt' to the content of the chosen file.
   ensureDirs();
-  const fileName = normalizeName(name);
+  const sourceName = normalizeName(name);
+  const sourceFull = path.join(promptsDir, sourceName);
+  const targetFull = path.join(promptsDir, 'default.txt');
 
   try {
-    fs.writeFileSync(activeFile, fileName, 'utf8');
+    const content = fs.existsSync(sourceFull) ? fs.readFileSync(sourceFull, 'utf8') : '';
+    fs.writeFileSync(targetFull, content ?? '', 'utf8');
   } catch {}
 
-  return fileName;
+  return 'default.txt';
 }
 
 export function readPrompt(name?: string): string {
   ensureDirs();
-  let fileName = name ? normalizeName(name) : getActivePromptName();
-
-  if (!fileName) return '';
+  const fileName = name ? normalizeName(name) : 'default.txt';
   const full = path.join(promptsDir, fileName);
 
   try {
@@ -114,24 +116,14 @@ export function deletePrompt(name: string): boolean {
 
 export function ensureDefaultPrompt(defaultContent?: string): { created: boolean; active: string } {
   ensureDirs();
-  const current = getActivePromptName();
-
-  if (current) return { created: false, active: current };
-
-  const fileName = 'default.txt';
-  const full = path.join(promptsDir, fileName);
-
+  const full = path.join(promptsDir, 'default.txt');
+  let created = false;
   try {
     if (!fs.existsSync(full)) {
-      fs.writeFileSync(
-        full,
-        defaultContent ??
-          'You are a helpful assistant. Analyze the screenshot and answer the question clearly and concisely.',
-        'utf8',
-      );
+      fs.writeFileSync(full, defaultContent ?? '', 'utf8');
+      created = true;
     }
   } catch {}
-  setActivePromptName(fileName);
 
-  return { created: true, active: fileName };
+  return { created, active: 'default.txt' };
 }

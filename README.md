@@ -35,7 +35,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Global Hotkeys**: Trigger screenshots from any application with customizable key combinations
 - **Instant Analysis**: Real-time image analysis using OpenAI's Vision API
-- **Smart Prompting**: Manage prompt files stored under `~/.ghost_ai/prompts` and switch the active prompt used for analysis
+- **Smart Prompting**: Store prompt files under `~/.ghost_ai/prompts` and switch the active prompt in Settings (editing is done outside the app)
 - **Multiple Capture Modes**: Full screen, active window, or custom region selection
 
 ### 🤖 **AI-Powered Intelligence**
@@ -322,11 +322,10 @@ interface PrivacySettings {
 ### Prompts Directory
 
 - Ghost AI loads prompts from `~/.ghost_ai/prompts`.
-- The active prompt is the file named in `~/.ghost_ai/prompts/active.txt`.
-- Use the Settings panel to:
-  - Create, edit, and delete prompt files (e.g., `general.txt`, `ui-review.txt`).
-  - Switch the active prompt used for all analyses.
-  - The app creates a default `default.txt` on first run.
+- The app always reads from `~/.ghost_ai/prompts/default.txt` as the effective prompt.
+- Using the Settings panel to select a prompt will copy that file's content into `default.txt`.
+- If `default.txt` does not exist, the app creates an empty `default.txt` on first run.
+- To create or edit prompts, manage files directly in your editor (e.g., `general.txt`, `ui-review.md`).
 
 ## 🔧 Development
 

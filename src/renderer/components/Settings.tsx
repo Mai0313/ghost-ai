@@ -11,9 +11,7 @@ export function Settings() {
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
-  const [promptContent, setPromptContent] = useState<string>('');
-  const [newPromptName, setNewPromptName] = useState<string>('');
-  const [loadingPrompt, setLoadingPrompt] = useState<boolean>(false);
+  
 
   useEffect(() => {
     (async () => {
@@ -48,15 +46,7 @@ export function Settings() {
           setPromptNames(promptsInfo.prompts);
           setActivePrompt(promptsInfo.active || null);
           const initial = promptsInfo.active || promptsInfo.prompts[0] || null;
-
           setSelectedPrompt(initial);
-          if (initial) {
-            try {
-              const content = await api.readPrompt?.(initial);
-
-              setPromptContent(content || '');
-            } catch {}
-          }
         }
       } catch {}
     })();
@@ -185,7 +175,8 @@ export function Settings() {
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
         <div style={{ display: 'grid', gap: 10 }}>
           <label htmlFor="prompt-select" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Active prompt file (stored under ~/.ghost_ai/prompts)
+            Active prompt file (stored under ~/.ghost_ai/prompts){' '}
+            {activePrompt ? `— current: ${activePrompt}` : ''}
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <select
@@ -202,22 +193,13 @@ export function Settings() {
               value={selectedPrompt || ''}
               onChange={async (e) => {
                 const name = e.target.value || null;
-
                 setSelectedPrompt(name);
-                setLoadingPrompt(true);
                 try {
-                  const api: any = (window as any).ghostAI;
-
                   if (name) {
-                    const content = await api.readPrompt?.(name);
-
-                    setPromptContent(content || '');
-                  } else {
-                    setPromptContent('');
+                    const ret = await (window as any).ghostAI?.setActivePrompt?.(name);
+                    setActivePrompt(ret || 'default.txt');
                   }
-                } finally {
-                  setLoadingPrompt(false);
-                }
+                } catch {}
               }}
             >
               {(!promptNames.length || !selectedPrompt) && (
@@ -231,160 +213,6 @@ export function Settings() {
                 </option>
               ))}
             </select>
-            <button
-              style={{
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'transparent',
-                color: '#E6E6E6',
-                padding: '10px 14px',
-                borderRadius: 10,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-              onClick={async () => {
-                if (!selectedPrompt) return alert('Select a prompt first');
-                try {
-                  await (window as any).ghostAI?.setActivePrompt?.(selectedPrompt);
-                  setActivePrompt(selectedPrompt);
-                  alert(`Active prompt set to ${selectedPrompt}`);
-                } catch (e) {
-                  alert('Failed to set active prompt');
-                }
-              }}
-            >
-              Set Active
-            </button>
-          </div>
-
-          <label htmlFor="prompt-editor" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Edit prompt content {activePrompt ? `(active: ${activePrompt})` : ''}
-          </label>
-          <textarea
-            disabled={!selectedPrompt}
-            id="prompt-editor"
-            rows={6}
-            style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
-              borderRadius: 10,
-              outline: 'none',
-              resize: 'vertical',
-              opacity: loadingPrompt ? 0.6 : 1,
-            }}
-            value={promptContent}
-            onChange={(e) => setPromptContent(e.target.value)}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              disabled={!selectedPrompt}
-              style={{
-                border: 'none',
-                borderRadius: 10,
-                padding: '10px 14px',
-                background: '#2B66F6',
-                color: 'white',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-              onClick={async () => {
-                if (!selectedPrompt) return;
-                try {
-                  const name = await (window as any).ghostAI?.writePrompt?.(
-                    selectedPrompt,
-                    promptContent,
-                  );
-
-                  if (name && !promptNames.includes(name)) setPromptNames((p) => [...p, name]);
-                  alert('Prompt saved');
-                } catch {
-                  alert('Failed to save prompt');
-                }
-              }}
-            >
-              Save Prompt
-            </button>
-            <button
-              disabled={!selectedPrompt}
-              style={{
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'transparent',
-                color: '#E6E6E6',
-                padding: '10px 14px',
-                borderRadius: 10,
-                cursor: 'pointer',
-              }}
-              onClick={async () => {
-                if (!selectedPrompt) return;
-                if (!confirm(`Delete prompt ${selectedPrompt}?`)) return;
-                try {
-                  const ok = await (window as any).ghostAI?.deletePrompt?.(selectedPrompt);
-
-                  if (ok) {
-                    const next = promptNames.filter((n) => n !== selectedPrompt);
-
-                    setPromptNames(next);
-                    if (activePrompt === selectedPrompt) setActivePrompt(null);
-                    setSelectedPrompt(next[0] || null);
-                    setPromptContent('');
-                  }
-                } catch {}
-              }}
-            >
-              Delete
-            </button>
-          </div>
-
-          <label htmlFor="new-prompt-name" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Create new prompt
-          </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              id="new-prompt-name"
-              placeholder="e.g. ui-review.txt"
-              style={{
-                background: '#141414',
-                border: '1px solid #2a2a2a',
-                color: 'white',
-                padding: '10px 12px',
-                borderRadius: 10,
-                outline: 'none',
-                flex: 1,
-              }}
-              value={newPromptName}
-              onChange={(e) => setNewPromptName(e.target.value)}
-            />
-            <button
-              style={{
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'transparent',
-                color: '#E6E6E6',
-                padding: '10px 14px',
-                borderRadius: 10,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-              onClick={async () => {
-                const name = (newPromptName || '').trim();
-
-                if (!name) return alert('Enter a name');
-                try {
-                  const saved = await (window as any).ghostAI?.writePrompt?.(
-                    name,
-                    promptContent || '',
-                  );
-
-                  if (saved && !promptNames.includes(saved)) setPromptNames((p) => [...p, saved]);
-                  setSelectedPrompt(saved || name);
-                  setNewPromptName('');
-                } catch {
-                  alert('Failed to create prompt');
-                }
-              }}
-            >
-              Create
-            </button>
           </div>
         </div>
       </div>
@@ -416,6 +244,19 @@ export function Settings() {
           onClick={onTest}
         >
           {testing ? 'Testing…' : 'Test'}
+        </button>
+        <button
+          style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'transparent',
+            color: '#ff4d4f',
+            padding: '10px 14px',
+            borderRadius: 10,
+            cursor: 'pointer',
+          }}
+          onClick={() => (window as any).ghostAI?.quitApp?.()}
+        >
+          Quit Ghost
         </button>
         {ok !== null && (
           <span style={{ color: ok ? '#52c41a' : '#ff4d4f', alignSelf: 'center' }}>

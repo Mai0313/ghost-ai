@@ -76,12 +76,9 @@ const api = {
   listPrompts: (): Promise<{ prompts: string[]; active: string | null }> =>
     ipcRenderer.invoke('prompts:list'),
   readPrompt: (name?: string): Promise<string> => ipcRenderer.invoke('prompts:read', name),
-  writePrompt: (name: string, content: string): Promise<string> =>
-    ipcRenderer.invoke('prompts:write', name, content),
   setActivePrompt: (name: string): Promise<string> =>
     ipcRenderer.invoke('prompts:set-active', name),
   getActivePrompt: (): Promise<string | null> => ipcRenderer.invoke('prompts:get-active'),
-  deletePrompt: (name: string): Promise<boolean> => ipcRenderer.invoke('prompts:delete', name),
   // Settings (user preferences)
   getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
   updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),
@@ -89,6 +86,7 @@ const api = {
   onTextInputToggle: (handler: () => void) => ipcRenderer.on('text-input:toggle', () => handler()),
   onHUDShow: (handler: () => void) => ipcRenderer.on('hud:show', () => handler()),
   toggleHide: () => ipcRenderer.invoke('hud:toggle-hide'),
+  quitApp: () => ipcRenderer.invoke('app:quit'),
   onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),
   onAskPrev: (handler: () => void) => ipcRenderer.on('ask:prev', () => handler()),
   onAskNext: (handler: () => void) => ipcRenderer.on('ask:next', () => handler()),
