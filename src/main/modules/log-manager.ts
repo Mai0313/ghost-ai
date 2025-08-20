@@ -8,13 +8,13 @@ function resolveLogsDir(): string {
   return path.join(home, '.ghost_ai', 'logs');
 }
 
-export async function writeConversationLog(requestId: string, content: string): Promise<string> {
+export async function writeConversationLog(sessionId: string, content: string): Promise<string> {
   const logsDir = resolveLogsDir();
-  const safeRequestId = requestId.replace(/[^a-zA-Z0-9-_]/g, '');
-  const sessionDir = path.join(logsDir, safeRequestId);
+  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9-_]/g, '');
+  const sessionDir = path.join(logsDir, safeSessionId);
 
   await fs.mkdir(sessionDir, { recursive: true });
-  const filePath = path.join(sessionDir, `${safeRequestId}.log`);
+  const filePath = path.join(sessionDir, `${safeSessionId}.log`);
 
   await fs.writeFile(filePath, content ?? '', { encoding: 'utf8' });
 

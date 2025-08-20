@@ -29,7 +29,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Ghost Mode**: Completely invisible during screenshots and screen sharing
 - **Stealth Hotkeys**: Low-level keyboard hooks that avoid detection by monitoring software
 - **Hidden Process**: Disguised process names and window titles for maximum privacy
-- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per request under `~/.ghost_ai/logs/<requestId>.log` for debugging/inspection.
+- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per session under `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` for debugging/inspection.
 
 ### ⚡ **Lightning Fast Capture**
 
@@ -44,15 +44,15 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
-- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<requestId>.log`.
+- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`.
 - **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost_ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history.
-- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost_ai/logs/<sessionId>.log` for easier correlation.
+- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
   - A structured Session Store is also maintained in memory and persisted to `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
 
 ### 🔒 **Privacy & Security**
 
 - **Images never persisted**: Screenshots are processed in RAM only and are not saved to disk
-- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost_ai/logs/<requestId>.log` after each analyze request completes
+- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` after each analyze request completes. This fix ensures new sessions create proper separate log paths without mixing with previous sessions. Interrupted conversations (via Ctrl+R) are not logged to prevent race conditions.
 - **Encrypted Communication**: All API calls use HTTPS with certificate pinning
 - **Keylogger Detection**: Warns users about potential privacy risks from monitoring software
 - **Automatic Cleanup**: Memory and network traces are automatically cleared
@@ -231,7 +231,7 @@ npm run dist
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
-8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<sessionId>.log`.
+8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`.
 
 ### Privacy Protection
 

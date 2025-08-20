@@ -29,7 +29,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **幽靈模式**: 在截圖和螢幕分享時完全隱形
 - **隱蔽熱鍵**: 使用低層級鍵盤鉤子避免被監控軟體偵測
 - **隱藏程序**: 偽裝程序名稱和視窗標題以獲得最大隱私保護
-- **圖片僅在記憶體處理**: 圖片僅在 RAM 中處理，不會寫入磁碟。純文字 Q/A 對話在每次請求完成後，會寫入 `~/.ghost_ai/logs/<sessionId>.log` 以便除錯/檢視。
+- **圖片僅在記憶體處理**: 圖片僅在 RAM 中處理，不會寫入磁碟。純文字 Q/A 對話在每次請求完成後，會寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` 以便除錯/檢視。
 
 ### ⚡ **閃電般快速捕獲**
 
@@ -44,13 +44,13 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **情境感知**: 提供自訂提示以獲得關於截圖的特定洞察
 - **錯誤處理**: 強健的重試機制和優雅的錯誤恢復
 - **速率限制**: 內建 API 配額管理和請求最佳化
-- **簡易對話記憶**: 應用在主程序以純文字維持 Q/A 歷史用於提示組合；每次請求完成後，也會將目前對話文字寫入 `~/.ghost_ai/logs/<sessionId>.log`。
+- **簡易對話記憶**: 應用在主程序以純文字維持 Q/A 歷史用於提示組合；每次請求完成後，也會將目前對話文字寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`。
 - **預設提示詞僅首輪注入**：每個會話（session）的第一輪才會注入 `~/.ghost_ai/prompts/default.txt` 的內容；後續各輪只會帶上您的新問題與純文字對話歷史。
 
 ### 🔒 **隱私與安全**
 
 - **圖片不持久化**: 截圖僅在 RAM 中處理，不會寫入磁碟
-- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, ai_output }`。
+- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, ai_output }`。此修復確保新 session 會正確建立新的日誌路徑，而不會與先前的 session 混合。被中斷的對話（透過 Ctrl+R）不會寫入日誌，以避免競爭條件問題。
 - **加密通訊**: 所有 API 呼叫使用 HTTPS 和憑證固定
 - **鍵盤記錄器偵測**: 警告使用者監控軟體的潛在隱私風險
 - **自動清理**: 記憶體和網路痕跡自動清除
@@ -237,7 +237,7 @@ npm run dist
 5. **AI 分析**: 圖片和提示發送到 OpenAI Vision API（僅支援串流）
 6. **結果顯示**: 回答以串流方式在輸入框上方顯示；若發生錯誤，會在同一泡泡顯示 `Error: ...`，可立即重試。應用程式已全面改為串流流程，過去的非串流聊天路徑已移除。
 7. **記憶體清理**: 所有痕跡自動從記憶體中清除
-8. **對話記憶**: 每次回答後會將 `Q:`/`A:` 內容附加到主程序的記憶體字串；下一輪會連同新問題一併送出。此外，會把目前對話文字寫入 `~/.ghost_ai/logs/<requestId>.log`。
+8. **對話記憶**: 每次回答後會將 `Q:`/`A:` 內容附加到主程序的記憶體字串；下一輪會連同新問題一併送出。此外，會把目前對話文字寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`。
 
 ### 隱私保護
 

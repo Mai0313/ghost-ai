@@ -242,6 +242,12 @@ app.whenReady().then(async () => {
           currentSessionId,
         );
       } catch {}
+      // Initialize new session with empty log file to ensure correct path structure
+      try {
+        await logManager.writeConversationLog(currentSessionId, '');
+        const json = sessionStore.toJSON();
+        await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+      } catch {}
       try {
         mainWindow.webContents.send('session:changed', { sessionId: currentSessionId });
       } catch {}
@@ -319,7 +325,7 @@ app.whenReady().then(async () => {
   });
   // Session IPC
   ipcMain.handle('session:get', () => ({ sessionId: currentSessionId }));
-  ipcMain.handle('session:new', () => {
+  ipcMain.handle('session:new', async () => {
     conversationHistoryText = '';
     try {
       sessionStore.clearAll();
@@ -336,11 +342,11 @@ app.whenReady().then(async () => {
     try {
       mainWindow?.webContents.send('session:changed', { sessionId: currentSessionId });
     } catch {}
-    // Write an empty session file to mark creation
+    // Initialize new session with empty log file and session JSON to ensure correct path structure
     try {
+      await logManager.writeConversationLog(currentSessionId, '');
       const json = sessionStore.toJSON();
-
-      logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+      await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
     } catch {}
 
     return { sessionId: currentSessionId };
@@ -398,12 +404,14 @@ ipcMain.handle('openai:list-models', async () => {
 ipcMain.on(
   'capture:analyze-stream',
   async (evt, payload: { textPrompt: string; customPrompt: string; history?: any[] }) => {
+    // Record the sessionId at the start of this analysis to prevent race conditions with Ctrl+R
+    const analysisSessionId = currentSessionId;
     try {
       ensureHiddenOnCapture();
       const image = await hideAllWindowsDuring(async () => captureScreen());
       const requestId = crypto.randomUUID();
 
-      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: currentSessionId });
+      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: analysisSessionId });
 
       // Inject prior plain-text history into the text prompt for simple continuity.
       // We keep renderer history for UI navigation only; model context is driven here.
@@ -414,7 +422,7 @@ ipcMain.on(
       // Load active prompt content only for the first turn of the current session
       const defaultPrompt = (() => {
         try {
-          const isFirstTurn = !sessionStore.hasEntries(currentSessionId);
+          const isFirstTurn = !sessionStore.hasEntries(analysisSessionId);
 
           if (!isFirstTurn) return '';
 
@@ -449,16 +457,16 @@ ipcMain.on(
           evt.sender.send('capture:analyze-stream:delta', {
             requestId,
             delta,
-            sessionId: currentSessionId,
+            sessionId: analysisSessionId,
           });
         },
-        currentSessionId,
+        analysisSessionId,
         controller.signal,
       );
 
       evt.sender.send('capture:analyze-stream:done', {
         ...result,
-        sessionId: currentSessionId,
+        sessionId: analysisSessionId,
       });
 
       // Clear controller on successful completion
@@ -468,34 +476,40 @@ ipcMain.on(
         if (cur === controller) activeAnalyzeControllers.delete(wcId);
       } catch {}
 
-      // Append to plain-text conversation history
-      const question = (payload.textPrompt ?? '').trim();
-      const answer = (result?.content ?? '').trim();
+      // Check if this request was aborted (e.g., by Ctrl+R). If so, don't write to log
+      // to prevent interrupted conversations from being written to the wrong session
+      if (!controller.signal.aborted && analysisSessionId === currentSessionId) {
+        // Only write to log if not aborted AND the session hasn't changed during analysis
+        
+        // Append to plain-text conversation history
+        const question = (payload.textPrompt ?? '').trim();
+        const answer = (result?.content ?? '').trim();
 
-      if (question || answer) {
-        conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
-      }
-      // Persist current conversation history for this request for debugging/inspection
-      try {
-        const logPath = await logManager.writeConversationLog(
-          currentSessionId,
-          conversationHistoryText,
-        );
-
-        // Track session entry
-        sessionStore.appendEntry(currentSessionId, {
-          requestId,
-          text_input: (payload.textPrompt ?? '').trim(),
-          ai_output: answer,
-        });
-        sessionStore.updateSessionLogPath(currentSessionId, logPath);
-        // Persist session store to JSON for debugging/inspection
+        if (question || answer) {
+          conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
+        }
+        // Persist current conversation history for this request for debugging/inspection
         try {
-          const json = sessionStore.toJSON();
+          const logPath = await logManager.writeConversationLog(
+            analysisSessionId,
+            conversationHistoryText,
+          );
 
-          await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+          // Track session entry
+          sessionStore.appendEntry(analysisSessionId, {
+            requestId,
+            text_input: (payload.textPrompt ?? '').trim(),
+            ai_output: answer,
+          });
+          sessionStore.updateSessionLogPath(analysisSessionId, logPath);
+          // Persist session store to JSON for debugging/inspection
+          try {
+            const json = sessionStore.toJSON();
+
+            await logManager.writeSessionJson(analysisSessionId, json[analysisSessionId] ?? {});
+          } catch {}
         } catch {}
-      } catch {}
+      }
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
       // If aborted, suppress noisy error; listeners will be cleaned up via ask:clear
@@ -513,7 +527,8 @@ ipcMain.on(
       } catch {}
       if (!isAbort) {
         // Best-effort request routing – if requestId isn't known yet, send without
-        evt.sender.send('capture:analyze-stream:error', { error, sessionId: currentSessionId });
+        // Use the original analysis sessionId, not the current one (which might have changed due to Ctrl+R)
+        evt.sender.send('capture:analyze-stream:error', { error, sessionId: analysisSessionId });
       }
     }
   },

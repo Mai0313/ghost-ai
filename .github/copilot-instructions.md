@@ -155,6 +155,7 @@ Streaming cancellation (interrupt):
 - The main process now tracks per-renderer AbortControllers for analyze streams. On `Cmd/Ctrl+R` (clear), main aborts the active stream for that renderer, emits `ask:clear`, resets conversation history, generates a new `sessionId`, and broadcasts `session:changed`.
 - Renderer must unsubscribe any active stream listeners upon `ask:clear` or `session:changed` and reset its UI state (`streaming=false`, clear `requestId`, `result`, input `text`, stop recording, etc.).
 - The OpenAI client (`openai-client.ts`) accepts an optional `AbortSignal` in `analyzeImageWithTextStream(..., signal?)` which is passed through to the SDK call to cancel mid-stream.
+- **Race condition fix**: To prevent interrupted conversations from being written to the wrong session log, each analysis records the `sessionId` at start (`analysisSessionId`) and only writes to log if not aborted AND the session hasn't changed during analysis (`analysisSessionId === currentSessionId`). This ensures interrupted conversations are not logged at all, rather than being written to the new session.
 
 Conversation history (main-managed):
 
@@ -167,9 +168,9 @@ Conversation history (main-managed):
 Logging (new):
 
 - Module: `src/main/modules/log-manager.ts`
-  - `writeConversationLog(requestId: string, content: string): Promise<string>`
-  - Writes plain-text conversation to `~/.ghost_ai/logs/<requestId>.log`.
-- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to `conversationHistoryText`, call `await logManager.writeConversationLog(requestId, conversationHistoryText)`.
+  - `writeConversationLog(sessionId: string, content: string): Promise<string>`
+  - Writes plain-text conversation to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`.
+- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to `conversationHistoryText`, call `await logManager.writeConversationLog(currentSessionId, conversationHistoryText)`.
 
 HUD / Hide integration:
 
