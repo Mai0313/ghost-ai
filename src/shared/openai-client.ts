@@ -44,7 +44,7 @@ export class OpenAIClient {
       // @ts-ignore
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
       // Temporary filter: only expose a curated subset in the dropdown
-      const allowedOrder = ['gpt-4o', 'gpt-5-mini', 'gpt-4o-mini'];
+      const allowedOrder = ['gpt-4o', 'gpt-4o-mini', 'gpt-5', 'gpt-5-mini'];
       const filtered = allowedOrder.filter((id) => ids.includes(id));
 
       return filtered.length ? filtered : allowedOrder;
