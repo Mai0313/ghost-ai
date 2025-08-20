@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import { IconCheckCircle, IconXCircle } from './Icons';
 
 export function Settings() {
@@ -12,7 +13,6 @@ export function Settings() {
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
-  
 
   useEffect(() => {
     (async () => {
@@ -47,6 +47,7 @@ export function Settings() {
           setPromptNames(promptsInfo.prompts);
           setDefaultPrompt(promptsInfo.defaultPrompt || null);
           const initial = promptsInfo.defaultPrompt || promptsInfo.prompts[0] || null;
+
           setSelectedPrompt(initial);
         }
       } catch {}
@@ -194,10 +195,12 @@ export function Settings() {
               value={selectedPrompt || ''}
               onChange={async (e) => {
                 const name = e.target.value || null;
+
                 setSelectedPrompt(name);
                 try {
                   if (name) {
                     const ret = await (window as any).ghostAI?.setDefaultPrompt?.(name);
+
                     setDefaultPrompt(ret || 'default.txt');
                   }
                 } catch {}
@@ -260,16 +263,18 @@ export function Settings() {
           Quit Ghost
         </button>
         {ok !== null && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            padding: '6px 12px', 
-            background: ok ? 'rgba(82, 196, 26, 0.1)' : 'rgba(255, 77, 79, 0.1)', 
-            borderRadius: 8,
-            border: `1px solid ${ok ? 'rgba(82, 196, 26, 0.3)' : 'rgba(255, 77, 79, 0.3)'}`,
-            gap: 8,
-            alignSelf: 'center'
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '6px 12px',
+              background: ok ? 'rgba(82, 196, 26, 0.1)' : 'rgba(255, 77, 79, 0.1)',
+              borderRadius: 8,
+              border: `1px solid ${ok ? 'rgba(82, 196, 26, 0.3)' : 'rgba(255, 77, 79, 0.3)'}`,
+              gap: 8,
+              alignSelf: 'center',
+            }}
+          >
             {ok ? <IconCheckCircle /> : <IconXCircle />}
             <span style={{ color: ok ? '#52c41a' : '#ff4d4f', fontWeight: 500 }}>
               {ok ? 'Valid' : 'Invalid'}

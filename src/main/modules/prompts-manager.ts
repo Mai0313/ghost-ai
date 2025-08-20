@@ -60,6 +60,7 @@ export function setDefaultPromptFrom(name: string): string {
 
   try {
     const content = fs.existsSync(sourceFull) ? fs.readFileSync(sourceFull, 'utf8') : '';
+
     fs.writeFileSync(targetFull, content ?? '', 'utf8');
   } catch {}
 
@@ -78,10 +79,14 @@ export function readPrompt(name?: string): string {
   }
 }
 
-export function ensureDefaultPrompt(defaultContent?: string): { created: boolean; defaultPrompt: string } {
+export function ensureDefaultPrompt(defaultContent?: string): {
+  created: boolean;
+  defaultPrompt: string;
+} {
   ensureDirs();
   const full = path.join(promptsDir, 'default.txt');
   let created = false;
+
   try {
     if (!fs.existsSync(full)) {
       fs.writeFileSync(full, defaultContent ?? '', 'utf8');

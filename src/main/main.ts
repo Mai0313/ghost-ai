@@ -422,6 +422,7 @@ ipcMain.on(
 
       // Create AbortController for this renderer and abort any prior one
       const wcId = evt.sender.id;
+
       try {
         const prev = activeAnalyzeControllers.get(wcId);
 
@@ -432,6 +433,7 @@ ipcMain.on(
         }
       } catch {}
       const controller = new AbortController();
+
       activeAnalyzeControllers.set(wcId, controller);
 
       const result = await openAIClient.analyzeImageWithTextStream(
@@ -493,9 +495,16 @@ ipcMain.on(
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
       // If aborted, suppress noisy error; listeners will be cleaned up via ask:clear
-      const isAbort = typeof err === 'object' && err !== null && String((err as any).name || '').toLowerCase().includes('abort');
+      const isAbort =
+        typeof err === 'object' &&
+        err !== null &&
+        String((err as any).name || '')
+          .toLowerCase()
+          .includes('abort');
+
       try {
         const wcId = evt.sender.id;
+
         activeAnalyzeControllers.delete(wcId);
       } catch {}
       if (!isAbort) {

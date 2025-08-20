@@ -50,6 +50,7 @@ export function loadOpenAIConfig(): OpenAIConfig | null {
     // Override with explicit plain entries if present
     const plainBaseURL = store.get('baseURL');
     const plainModel = store.get('model');
+
     if (typeof plainBaseURL === 'string' && plainBaseURL) parsed.baseURL = plainBaseURL;
     if (typeof plainModel === 'string') parsed.model = plainModel;
 
