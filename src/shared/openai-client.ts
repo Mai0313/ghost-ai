@@ -20,8 +20,6 @@ export class OpenAIClient {
   async validateConfig(config: OpenAIConfig): Promise<boolean> {
     try {
       const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
-      // Minimal call: list models
-      // @ts-ignore: types may vary across SDK versions
       const list = await client.models.list();
 
       return Array.isArray(list.data) && list.data.length >= 0;
@@ -39,11 +37,8 @@ export class OpenAIClient {
     const client = this.client!;
 
     try {
-      // @ts-ignore
       const list = await client.models.list();
-      // @ts-ignore
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
-      // Temporary filter: only expose a curated subset in the dropdown
       const allowedOrder = ['gpt-4o', 'gpt-4o-mini', 'gpt-5', 'gpt-5-mini'];
       const filtered = allowedOrder.filter((id) => ids.includes(id));
 
@@ -52,8 +47,6 @@ export class OpenAIClient {
       return [];
     }
   }
-
-  // Non-streaming image analysis has been removed in favor of streaming-only flow
 
   async analyzeImageWithTextStream(
     imageBuffer: Buffer,
@@ -72,7 +65,7 @@ export class OpenAIClient {
 
     if (customPrompt?.trim()) {
       // Use system role for custom prompt/instructions to guide the model
-      messages.push({ role: 'system', content: customPrompt.trim() } as any);
+      messages.push({ role: 'user', content: customPrompt.trim() } as any);
     }
     const effectiveText = textPrompt?.trim() || 'Please analyze this screenshot.';
     const content: ChatMessage['content'] = [
