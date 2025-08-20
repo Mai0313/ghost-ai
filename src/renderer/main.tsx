@@ -246,6 +246,15 @@ function App() {
     } catch {}
     const offSession = api?.onSessionChanged?.(({ sessionId: sid }: { sessionId: string }) => {
       if (sid) setSessionId(sid);
+      // Abort any active analyze stream listeners and reset streaming flags
+      try {
+        if (activeUnsubRef.current) {
+          activeUnsubRef.current();
+        }
+      } catch {}
+      activeUnsubRef.current = null;
+      setStreaming(false);
+      setRequestId(null);
       // Reset UI state on session change
       setHistory([]);
       setResult('');
@@ -253,13 +262,24 @@ function App() {
       setElapsedMs(0);
       transcriptBufferRef.current = '';
       setRecording(false);
+      setText('');
     });
 
     api?.onAskClear?.(() => {
+      // Abort any active analyze stream listeners and reset streaming flags
+      try {
+        if (activeUnsubRef.current) {
+          activeUnsubRef.current();
+        }
+      } catch {}
+      activeUnsubRef.current = null;
+      setStreaming(false);
+      setRequestId(null);
       // Reset conversation UI state
       setHistory([]);
       setResult('');
       setHistoryIndex(null);
+      setText('');
       // Reset audio state: stop recording
       if (recording) setRecording(false);
       setElapsedMs(0);

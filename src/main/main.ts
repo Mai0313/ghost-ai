@@ -37,6 +37,8 @@ let conversationHistoryText: string = '';
 let lastAudioToggleAt = 0;
 // Top-level session identifier (resets on app start and when user clears)
 let currentSessionId: string = crypto.randomUUID();
+// Track active analyze stream AbortControllers per renderer
+const activeAnalyzeControllers = new Map<number, AbortController>();
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -213,6 +215,18 @@ app.whenReady().then(async () => {
       if (!mainWindow) return;
       // Ensure window is visible so user sees the clear effect
       mainWindow.show();
+      // Abort any active analyze stream for this renderer
+      try {
+        const wcId = mainWindow.webContents.id;
+        const ctrl = activeAnalyzeControllers.get(wcId);
+
+        if (ctrl) {
+          try {
+            ctrl.abort();
+          } catch {}
+          activeAnalyzeControllers.delete(wcId);
+        }
+      } catch {}
       mainWindow.webContents.send('ask:clear');
       // Also clear main-process conversation history
       conversationHistoryText = '';
@@ -403,6 +417,20 @@ ipcMain.on(
         }
       })();
 
+      // Create AbortController for this renderer and abort any prior one
+      const wcId = evt.sender.id;
+      try {
+        const prev = activeAnalyzeControllers.get(wcId);
+
+        if (prev) {
+          try {
+            prev.abort();
+          } catch {}
+        }
+      } catch {}
+      const controller = new AbortController();
+      activeAnalyzeControllers.set(wcId, controller);
+
       const result = await openAIClient.analyzeImageWithTextStream(
         image,
         combinedTextPrompt,
@@ -416,12 +444,20 @@ ipcMain.on(
           });
         },
         currentSessionId,
+        controller.signal,
       );
 
       evt.sender.send('capture:analyze-stream:done', {
         ...result,
         sessionId: currentSessionId,
       });
+
+      // Clear controller on successful completion
+      try {
+        const cur = activeAnalyzeControllers.get(wcId);
+
+        if (cur === controller) activeAnalyzeControllers.delete(wcId);
+      } catch {}
 
       // Append to plain-text conversation history
       const question = (payload.textPrompt ?? '').trim();
@@ -453,9 +489,16 @@ ipcMain.on(
       } catch {}
     } catch (err) {
       const error = String(err ?? 'analyze-stream failed');
-
-      // Best-effort request routing – if requestId isn't known yet, send without
-      evt.sender.send('capture:analyze-stream:error', { error, sessionId: currentSessionId });
+      // If aborted, suppress noisy error; listeners will be cleaned up via ask:clear
+      const isAbort = typeof err === 'object' && err !== null && String((err as any).name || '').toLowerCase().includes('abort');
+      try {
+        const wcId = evt.sender.id;
+        activeAnalyzeControllers.delete(wcId);
+      } catch {}
+      if (!isAbort) {
+        // Best-effort request routing – if requestId isn't known yet, send without
+        evt.sender.send('capture:analyze-stream:error', { error, sessionId: currentSessionId });
+      }
     }
   },
 );

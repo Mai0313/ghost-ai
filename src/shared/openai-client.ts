@@ -62,6 +62,7 @@ export class OpenAIClient {
     requestId: string,
     onDelta: (textDelta: string) => void,
     sessionId: string,
+    signal?: AbortSignal,
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
@@ -81,13 +82,17 @@ export class OpenAIClient {
 
     messages.push({ role: 'user', content } as ChatMessage);
 
-    // @ts-ignore: SDK message types may differ by version
-    const stream = await client.chat.completions.create({
-      model: config.model,
-      // @ts-ignore allow system role
-      messages: messages as any,
-      stream: true,
-    });
+    // @ts-ignore: SDK message types may differ across SDK versions
+    const stream = await (client as any).chat.completions.create(
+      {
+        model: config.model,
+        // @ts-ignore allow system role
+        messages: messages as any,
+        stream: true,
+      },
+      // Pass AbortSignal so callers can cancel mid-stream
+      { signal } as any,
+    );
 
     let finalContent = '';
 

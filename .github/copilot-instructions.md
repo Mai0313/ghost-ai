@@ -95,10 +95,16 @@ Main-side handlers in `src/main/main.ts` (streaming only):
 - Hotkey handler emits `text-input:toggle` to renderer on `Cmd/Ctrl+Enter` to toggle Ask panel
   - To avoid overlap with `Cmd/Ctrl+Shift+Enter` (voice), the main process suppresses Ask toggles within ~400ms after a voice toggle.
 - Emits to renderer:
-  - `capture:analyze-stream:start` with `{ requestId }`
-  - `capture:analyze-stream:delta` with `{ requestId, delta }`
-  - `capture:analyze-stream:done` with final `AnalysisResult`
-  - `capture:analyze-stream:error` with `{ requestId?, error }`
+  - `capture:analyze-stream:start` with `{ requestId, sessionId }`
+  - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }`
+  - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }`
+  - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }`
+
+Streaming cancellation (interrupt):
+
+- The main process now tracks per-renderer AbortControllers for analyze streams. On `Cmd/Ctrl+R` (clear), main aborts the active stream for that renderer, emits `ask:clear`, resets conversation history, generates a new `sessionId`, and broadcasts `session:changed`.
+- Renderer must unsubscribe any active stream listeners upon `ask:clear` or `session:changed` and reset its UI state (`streaming=false`, clear `requestId`, `result`, input `text`, stop recording, etc.).
+- The OpenAI client (`openai-client.ts`) accepts an optional `AbortSignal` in `analyzeImageWithTextStream(..., signal?)` which is passed through to the SDK call to cancel mid-stream.
 
 Conversation history (main-managed):
 
