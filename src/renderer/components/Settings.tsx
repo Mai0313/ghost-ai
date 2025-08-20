@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { IconCheckCircle, IconXCircle } from './Icons';
 
 export function Settings() {
   const [apiKey, setApiKey] = useState('');
@@ -259,9 +260,21 @@ export function Settings() {
           Quit Ghost
         </button>
         {ok !== null && (
-          <span style={{ color: ok ? '#52c41a' : '#ff4d4f', alignSelf: 'center' }}>
-            {ok ? 'Valid' : 'Invalid'}
-          </span>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '6px 12px', 
+            background: ok ? 'rgba(82, 196, 26, 0.1)' : 'rgba(255, 77, 79, 0.1)', 
+            borderRadius: 8,
+            border: `1px solid ${ok ? 'rgba(82, 196, 26, 0.3)' : 'rgba(255, 77, 79, 0.3)'}`,
+            gap: 8,
+            alignSelf: 'center'
+          }}>
+            {ok ? <IconCheckCircle /> : <IconXCircle />}
+            <span style={{ color: ok ? '#52c41a' : '#ff4d4f', fontWeight: 500 }}>
+              {ok ? 'Valid' : 'Invalid'}
+            </span>
+          </div>
         )}
       </div>
     </div>

@@ -60,6 +60,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card (streaming‑only)**: The AI response and the input are combined into one card; the streamed answer appears above, and the input sits in the same card footer (IME‑safe)
+- **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately

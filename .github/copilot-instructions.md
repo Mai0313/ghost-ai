@@ -171,6 +171,13 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - The renderer toggles click-through dynamically via `window.ghostAI.setMouseIgnore(false/true)` when the pointer is over the HUD bar or bubbles, and during drag.
 - The root container uses `pointer-events: none` while interactive elements use `pointer-events: auto`, ensuring only visible UI captures input. This also allows dragging the HUD to the very top/bottom edges without invisible blockers.
 
+### Validation messages
+
+- When testing API settings via the "Test" button in Settings, the validation result is shown as a styled notification next to the button.
+- Validation uses IconCheckCircle and IconXCircle from Icons.tsx to display success/failure states with appropriate colors.
+- The notification appears in a styled container with a background color, border, and icon to improve visibility and user experience.
+- The validation message style is defined inline in Settings.tsx in the JSX return section.
+
 ## UI Theming and Styles
 
 - Centralized theme and styles live under `src/renderer/styles/`.

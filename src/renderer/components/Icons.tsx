@@ -107,3 +107,21 @@ export function IconX({ color = '#E6E6E6' }: { color?: string }) {
     </svg>
   );
 }
+
+export function IconCheckCircle({ color = '#52c41a' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M22 4L12 14.01l-3-3" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function IconXCircle({ color = '#ff4d4f' }: { color?: string }) {
+  return (
+    <svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M15 9l-6 6M9 9l6 6" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
