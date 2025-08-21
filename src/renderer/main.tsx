@@ -135,10 +135,8 @@ function App() {
   const hasPages = assistantAnswerIndices.length > 0;
   const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
   const currentPageLabel = historyIndex === null
-    ? hasPages
-      ? `${assistantAnswerIndices.length}/${assistantAnswerIndices.length}`
-      : `0/0`
-    : `${(historyIndex ?? 0) + 1}/${assistantAnswerIndices.length}`;
+    ? 'Latest'
+    : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
 
   const gotoPrevPage = useCallback(() => {
     if (!hasPages) return;
@@ -153,14 +151,10 @@ function App() {
 
   const gotoNextPage = useCallback(() => {
     if (!hasPages) return;
-    if (historyIndex === null) return; // already at live/latest
+    if (historyIndex === null) return; // live view: do nothing
     if (historyIndex < lastPageIndex) {
       setHistoryIndex(historyIndex + 1);
-
-      return;
     }
-    // From last page, go back to live view
-    setHistoryIndex(null);
   }, [hasPages, historyIndex, lastPageIndex]);
 
   useEffect(() => {
@@ -923,31 +917,6 @@ function App() {
         {/* Spacer to push controls to the right */}
         <div style={{ flex: 1 }} />
 
-        {/* Pagination controls (bar right) */}
-        {hasPages && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              style={ghostButton}
-              title="Previous answer (Ctrl/Cmd+Shift+Up)"
-              onClick={gotoPrevPage}
-              disabled={!hasPages || historyIndex === 0}
-            >
-              ◀ Prev
-            </button>
-            <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
-              {currentPageLabel}
-            </div>
-            <button
-              style={ghostButton}
-              title="Next answer / Latest (Ctrl/Cmd+Shift+Down)"
-              onClick={gotoNextPage}
-              disabled={!hasPages}
-            >
-              Next ▶
-            </button>
-          </div>
-        )}
-
         {/* Settings (toggle) */}
         <button
           style={iconButton}
@@ -989,39 +958,6 @@ function App() {
 
         {tab === 'ask' && (
           <div style={askCard}>
-            {/* Corner pagination: top-left and top-right inside the Ask card */}
-            {hasPages && (
-              <>
-                <button
-                  style={{
-                    ...ghostButton,
-                    position: 'absolute',
-                    top: 6,
-                    left: 6,
-                    padding: '6px 8px',
-                  }}
-                  title="Previous answer (Ctrl/Cmd+Shift+Up or Ctrl/Cmd+Left)"
-                  onClick={gotoPrevPage}
-                  disabled={!hasPages || historyIndex === 0}
-                >
-                  ◀ Prev
-                </button>
-                <button
-                  style={{
-                    ...ghostButton,
-                    position: 'absolute',
-                    top: 6,
-                    right: 6,
-                    padding: '6px 8px',
-                  }}
-                  title="Next answer / Latest (Ctrl/Cmd+Shift+Down or Ctrl/Cmd+Right)"
-                  onClick={gotoNextPage}
-                  disabled={!hasPages}
-                >
-                  Next ▶
-                </button>
-              </>
-            )}
             <div
               className="bn-markdown-viewer"
               style={{
@@ -1033,10 +969,28 @@ function App() {
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
-              {/* Page indicator in footer (optional) */}
+              {/* Pagination controls next to the dialog (footer) */}
               {hasPages && (
-                <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'left' }}>
-                  {currentPageLabel}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
+                  <button
+                    style={ghostButton}
+                    title="Previous answer (Ctrl/Cmd+Shift+Up or Ctrl/Cmd+Left)"
+                    onClick={gotoPrevPage}
+                    disabled={!hasPages || historyIndex === 0}
+                  >
+                    ◀ Prev
+                  </button>
+                  <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
+                    {currentPageLabel}
+                  </div>
+                  <button
+                    style={ghostButton}
+                    title="Next answer / Latest (Ctrl/Cmd+Shift+Down or Ctrl/Cmd+Right)"
+                    onClick={gotoNextPage}
+                    disabled={!hasPages || historyIndex === null}
+                  >
+                    Next ▶
+                  </button>
                 </div>
               )}
               {(busy || streaming) && (
