@@ -48,7 +48,12 @@ export class RealtimeTranscribeManager {
         type: 'transcription_session.update',
         session: {
           input_audio_format: 'pcm16',
-          turn_detection: { type: 'server_vad', threshold: 0.5 },
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.5,
+            silence_duration_ms: 350,
+            prefix_padding_ms: 150,
+          },
           input_audio_transcription: { model },
         },
       };

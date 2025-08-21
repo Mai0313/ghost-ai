@@ -137,7 +137,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 2. **固定熱鍵（全域）**
    - **Ask（切換 Ask 面板）**: `Cmd/Ctrl+Enter`（再按一次收合）
-   - **語音（即時轉錄）**: `Cmd/Ctrl+Shift+Enter` — 捕獲麥克風與（作業系統允許時）系統音訊，並以 `gpt-4o-mini-transcribe` 在控制列下方串流顯示逐字稿。
+   - **語音（即時轉錄）**: `Cmd/Ctrl+Shift+Enter` — 捕獲麥克風與（允許時）系統音訊，客戶端啟用音訊小批次聚合（約 220 ms 或 32 KB）以提升穩定性並維持低延遲。預設使用 `gpt-4o-mini-transcribe`。
    - **切換隱藏**: `Cmd/Ctrl+\\`（即使先用 HUD 的 Hide 隱藏，也可用此熱鍵再顯示）
    - **清除對話**: `Cmd/Ctrl+R`（同時停止錄音並丟棄暫存音訊）
    - **向上滾動**（Ask/逐字稿泡泡）: `Cmd/Ctrl+Up`

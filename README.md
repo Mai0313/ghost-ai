@@ -131,7 +131,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 2. **Fixed hotkeys (global)**
    - **Ask (toggle Ask panel)**: `Cmd/Ctrl+Enter` (press again to collapse)
-   - **Voice (realtime transcription)**: `Cmd/Ctrl+Shift+Enter` — captures microphone +, where permitted, system audio, and streams live transcript under the bar using `gpt-4o-mini-transcribe`.
+   - **Voice (realtime transcription)**: `Cmd/Ctrl+Shift+Enter` — captures microphone and (where permitted) system audio, with client-side audio batching (~220 ms or 32 KB) to improve stability while keeping latency low. Uses `gpt-4o-mini-transcribe` by default.
    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
    - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and resets voice state)
    - **Scroll Up/Down** (Ask/Transcript content): `Cmd/Ctrl+Up` / `Cmd/Ctrl+Down`

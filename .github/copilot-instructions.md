@@ -189,7 +189,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - Main module: `src/main/modules/realtime-transcribe.ts`
   - Opens `wss://api.openai.com/v1/realtime?intent=transcription`
-  - Sends `transcription_session.update` with `input_audio_format: "pcm16"`, `turn_detection: { type: "server_vad", threshold: 0.5 }`, and `input_audio_transcription.model: "gpt-4o-mini-transcribe"`
+  - Sends `transcription_session.update` with `input_audio_format: "pcm16"`, `turn_detection: { type: "server_vad", threshold: 0.5, silence_duration_ms: 350, prefix_padding_ms: 150 }`, and `input_audio_transcription.model: "gpt-4o-mini-transcribe"`
   - Accepts `input_audio_buffer.append` events with base64 PCM16 mono @ 24kHz
   - Emits to renderer:
     - `transcribe:start`, `transcribe:delta` (streaming deltas), `transcribe:done` (sentence completed), `transcribe:error`, `transcribe:closed`
@@ -199,8 +199,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - Renderer (`src/renderer/main.tsx`):
   - Captures microphone via `getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } })`
   - Attempts to capture system audio via `getDisplayMedia({ audio:true })` and discards video tracks
-  - Mixes sources in `AudioContext`, downsamples to 24 kHz mono, converts to 16‑bit PCM, base64‑encodes, and batches by ~128 ms (3072 samples)
-  - Streams chunks via `appendTranscriptionAudio` and renders transcript deltas via the same unified render sink used by analyze streaming: `appendLive(delta)` and `finalizeLive({ appendNewline: true })`
+  - Mixes sources in `AudioContext`, downsamples to 24 kHz mono, converts to 16‑bit PCM, and performs client-side batching: flush every ~220 ms or at ~32 KB of PCM16 bytes. This reduces WS overhead and improves transcription stability with minimal latency.
+  - Sends batches via `appendTranscriptionAudio` and renders transcript deltas via the same unified render sink used by analyze streaming: `appendLive(delta)` and `finalizeLive({ appendNewline: true })`
   - Pause/Resume support: renderer gates both the elapsed timer and audio processing/delta application when paused (no IPC changes required)
   - On stop: sends `endTranscription` and `stopTranscription`, closes audio graph, stops tracks, and clears timers
   - Logs: microphone/system audio permission results and audio processing errors

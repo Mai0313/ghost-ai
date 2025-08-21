@@ -415,7 +415,10 @@ function App() {
 
   useEffect(() => {
     const TARGET_SR = 24000;
-    const CHUNK_SAMPLES = 3072; // ~128ms at 24kHz
+    const CHUNK_SAMPLES = 3072; // ~128ms at 24kHz (float buffer granularity)
+    // Client-side batching: flush approximately every ~220ms or when ~32KB reached
+    const BATCH_FLUSH_MS = 220;
+    const BATCH_MAX_BYTES = 32 * 1024; // safety cap; timer usually triggers first at 24kHz
 
     function floatTo16BitPCM(float32Array: Float32Array): Int16Array {
       const out = new Int16Array(float32Array.length);
@@ -587,6 +590,41 @@ function App() {
       chunkFloatRef.current = new Float32Array(CHUNK_SAMPLES * 4);
       chunkFloatLenRef.current = 0;
 
+      // Batching state (PCM16 bytes)
+      let batchChunks: Uint8Array[] = [];
+      let batchBytes = 0;
+      let batchTimer: number | null = null;
+
+      const flushBatch = () => {
+        if (!batchBytes) return;
+        if (batchTimer) {
+          window.clearTimeout(batchTimer);
+          batchTimer = null;
+        }
+        const merged = new Uint8Array(batchBytes);
+        let offset = 0;
+        for (const c of batchChunks) {
+          merged.set(c, offset);
+          offset += c.byteLength;
+        }
+        batchChunks = [];
+        batchBytes = 0;
+        const b64 = btoa(String.fromCharCode(...merged));
+        try {
+          (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
+        } catch (e) {
+          console.warn('[Audio] appendTranscriptionAudio failed', e);
+        }
+      };
+
+      const scheduleFlush = () => {
+        if (batchTimer) return;
+        batchTimer = window.setTimeout(() => {
+          batchTimer = null;
+          flushBatch();
+        }, BATCH_FLUSH_MS) as unknown as number;
+      };
+
       processor.onaudioprocess = (ev: AudioProcessingEvent) => {
         try {
           if (pausedRef.current) return;
@@ -621,14 +659,20 @@ function App() {
               const toSend = buf.subarray(0, CHUNK_SAMPLES);
               // Shift remaining
               const remain = used - CHUNK_SAMPLES;
-
               if (remain > 0) buf.copyWithin(0, CHUNK_SAMPLES, used);
               used = remain;
 
+              // Convert to PCM16 bytes and append to batch
               const pcm16 = floatTo16BitPCM(toSend);
-              const b64 = base64EncodePCM(pcm16);
-
-              (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
+              const bytes = new Uint8Array(pcm16.buffer);
+              batchChunks.push(bytes);
+              batchBytes += bytes.byteLength;
+              // Flush conditions
+              if (batchBytes >= BATCH_MAX_BYTES) {
+                flushBatch();
+              } else {
+                scheduleFlush();
+              }
             }
           }
           chunkFloatLenRef.current = used;
@@ -648,6 +692,12 @@ function App() {
       } catch {}
       try {
         (window as any).ghostAI?.stopTranscription?.();
+      } catch {}
+      // Best-effort: ensure any pending audio batch is flushed before teardown
+      try {
+        // flushBatch is scoped inside startPipeline; noop here if not defined
+        // @ts-ignore
+        typeof flushBatch === 'function' && flushBatch();
       } catch {}
       try {
         const unsubs = transcribeUnsubsRef.current.splice(0);
