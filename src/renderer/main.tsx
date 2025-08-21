@@ -989,6 +989,39 @@ function App() {
 
         {tab === 'ask' && (
           <div style={askCard}>
+            {/* Corner pagination: top-left and top-right inside the Ask card */}
+            {hasPages && (
+              <>
+                <button
+                  style={{
+                    ...ghostButton,
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    padding: '6px 8px',
+                  }}
+                  title="Previous answer (Ctrl/Cmd+Shift+Up or Ctrl/Cmd+Left)"
+                  onClick={gotoPrevPage}
+                  disabled={!hasPages || historyIndex === 0}
+                >
+                  ◀ Prev
+                </button>
+                <button
+                  style={{
+                    ...ghostButton,
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    padding: '6px 8px',
+                  }}
+                  title="Next answer / Latest (Ctrl/Cmd+Shift+Down or Ctrl/Cmd+Right)"
+                  onClick={gotoNextPage}
+                  disabled={!hasPages}
+                >
+                  Next ▶
+                </button>
+              </>
+            )}
             <div
               className="bn-markdown-viewer"
               style={{
@@ -1000,7 +1033,12 @@ function App() {
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
-              {/* Pagination controls moved to top bar */}
+              {/* Page indicator in footer (optional) */}
+              {hasPages && (
+                <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'left' }}>
+                  {currentPageLabel}
+                </div>
+              )}
               {(busy || streaming) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
                   <ThinkingIndicator size={8} dots={4} />

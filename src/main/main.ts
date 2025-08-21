@@ -282,6 +282,16 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send('ask:paginate', { direction: 'down' });
     },
+    onPageLeft: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:paginate', { direction: 'up' });
+    },
+    onPageRight: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:paginate', { direction: 'down' });
+    },
 
   });
 

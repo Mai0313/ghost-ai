@@ -84,6 +84,7 @@ export const askCard: CSSProperties = {
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
+  position: 'relative',
 };
 
 export const askResultArea: CSSProperties = {

@@ -131,7 +131,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
    - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and resets voice state)
    - **Scroll Up/Down** (Ask/Transcript content): `Cmd/Ctrl+Up` / `Cmd/Ctrl+Down`
-   - **Prev/Next Page** (pagination within a session): `Cmd/Ctrl+Shift+Up` / `Cmd/Ctrl+Shift+Down`
+   - **Prev/Next Page** (pagination within a session): `Cmd/Ctrl+Shift+Up` / `Cmd/Ctrl+Shift+Down` (also `Cmd/Ctrl+Left` / `Cmd/Ctrl+Right`)
 
 3. **Build for production**
 
