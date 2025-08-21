@@ -65,7 +65,7 @@ This document describes important technical details for contributors. Update thi
 
 - Wrapper class: `src/shared/openai-client.ts`
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
-  - Streaming only: `analyzeImageWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
+  - Streaming only: `completionWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
   - Removed legacy helpers: `chatCompletion(...)` and `analyzeWithHistoryStream(...)` were deleted. The main process manages plain‑text conversation history and injects it into `textPrompt` when composing each request.
 
 Notes:
@@ -136,7 +136,7 @@ getdefaultPrompt(): Promise<string | null>;
 
 Renderer Settings UI lists available files and sets the active prompt; creating/editing/deleting prompt files is done outside the app (file system/editor). If `default.txt` is missing, `ensureDefaultPrompt` creates an empty `default.txt`.
 
-Analyze flow: main loads `default.txt` and passes it to `openAIClient.analyzeImageWithTextStream(...)` as the `customPrompt`.
+Analyze flow: main loads `default.txt` and passes it to `openAIClient.completionWithTextStream(...)` as the `customPrompt`.
 
 Main-side handlers in `src/main/main.ts` (streaming only):
 
@@ -155,7 +155,7 @@ Streaming cancellation (interrupt):
 
 - The main process now tracks per-renderer AbortControllers for analyze streams. On `Cmd/Ctrl+R` (clear), main aborts the active stream for that renderer, emits `ask:clear`, resets conversation history, generates a new `sessionId`, and broadcasts `session:changed`.
 - Renderer must unsubscribe any active stream listeners upon `ask:clear` or `session:changed` and reset its UI state (`streaming=false`, clear `requestId`, `result`, input `text`, stop recording, etc.).
-- The OpenAI client (`openai-client.ts`) accepts an optional `AbortSignal` in `analyzeImageWithTextStream(..., signal?)` which is passed through to the SDK call to cancel mid-stream.
+- The OpenAI client (`openai-client.ts`) accepts an optional `AbortSignal` in `completionWithTextStream(..., signal?)` which is passed through to the SDK call to cancel mid-stream.
 - **Race condition fix**: To prevent interrupted conversations from being written to the wrong session log, each analysis records the `sessionId` at start (`analysisSessionId`) and only writes to log if not aborted AND the session hasn't changed during analysis (`analysisSessionId === currentSessionId`). This ensures interrupted conversations are not logged at all, rather than being written to the new session.
 
 Conversation history (main-managed):

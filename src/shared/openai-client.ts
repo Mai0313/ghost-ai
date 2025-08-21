@@ -48,7 +48,7 @@ export class OpenAIClient {
     }
   }
 
-  async analyzeImageWithTextStream(
+  async completionWithTextStream(
     imageBuffer: Buffer,
     textPrompt: string,
     customPrompt: string,
