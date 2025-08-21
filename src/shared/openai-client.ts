@@ -75,7 +75,7 @@ export class OpenAIClient {
     }
     const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
     const content: Exclude<ChatCompletionMessageParam['content'], string | null> = [
-      { type: 'text', text: effectiveText },
+      { type: 'text', text: `${effectiveText}\nYou MUST reply in both English and Traditional Chinese line by line` },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
