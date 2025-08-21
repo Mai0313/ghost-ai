@@ -73,6 +73,7 @@ Notes:
 - The project pins neither OpenAI SDK version nor strict types (uses `@ts-ignore` at call-sites as the SDK frequently changes). Keep the mapping minimal and guarded.
 - Vision is implemented through `chat.completions.create` with a `content` array of `[text, image_url]`.
 - To maximize model compatibility, we DO NOT set `temperature` or `max_tokens`/`max_completion_tokens` in API calls. Let the model defaults apply. If you re-introduce these, guard per-model support.
+ - For `gpt-5` only, we set `reasoning_effort: 'low'` on chat completion requests. Do not send `reasoning_effort` to non‑`gpt-5` models as many do not support it.
 
 ## IPC Contracts
 

@@ -81,11 +81,14 @@ export class OpenAIClient {
 
     messages.push({ role: 'user', content });
 
-    const request: ChatCompletionCreateParams & { stream: true } = {
+    const request: ChatCompletionCreateParams & { stream: true } = ({
       model: config.model,
       messages,
       stream: true,
-    };
+    } as any);
+    if (config.model === 'gpt-5') {
+      request.reasoning_effort = 'low';
+    }
     // Pass AbortSignal so callers can cancel mid-stream
     const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, { signal });
 
