@@ -135,7 +135,7 @@ function App() {
   const hasPages = assistantAnswerIndices.length > 0;
   const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
   const currentPageLabel = historyIndex === null
-    ? `${assistantAnswerIndices.length}/${assistantAnswerIndices.length}`
+    ? 'Live'
     : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
 
   const gotoPrevPage = useCallback(() => {
@@ -150,12 +150,14 @@ function App() {
 
   const gotoNextPage = useCallback(() => {
     if (!hasPages) return;
-    if (historyIndex === null) {
-      setHistoryIndex(lastPageIndex);
+    if (historyIndex === null) return; // stay on Live until user explicitly navigates from a page
+    if (historyIndex < lastPageIndex) {
+      setHistoryIndex(historyIndex + 1);
 
       return;
     }
-    if (historyIndex < lastPageIndex) setHistoryIndex(historyIndex + 1);
+    // When at the last completed page, Next goes to Live so you can view streaming output
+    setHistoryIndex(null);
   }, [hasPages, historyIndex, lastPageIndex]);
 
   useEffect(() => {
@@ -703,8 +705,6 @@ function App() {
             if (lastDeltaRef.current === delta) return; // de-dup identical consecutive chunks
             lastDeltaRef.current = delta;
             setResult((prev) => prev + delta);
-            // When we see first delta for a new turn, ensure we're in live view
-            if (historyIndex !== null) setHistoryIndex(null);
           },
           onDone: ({
             content,
