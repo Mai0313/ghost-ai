@@ -1,6 +1,12 @@
-import type { AnalysisResult, ChatMessage, OpenAIConfig } from './types';
+import type { AnalysisResult, OpenAIConfig } from './types';
 
 import OpenAI from 'openai';
+import type {
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
+  ChatCompletionMessageParam,
+} from 'openai/resources/chat/completions';
+import type { Stream } from 'openai/streaming';
 
 export class OpenAIClient {
   private client: OpenAI | null = null;
@@ -61,35 +67,30 @@ export class OpenAIClient {
     const config = this.config!;
     const client = this.client!;
     const base64 = imageBuffer.toString('base64');
-    const messages: ChatMessage[] = [];
+    const messages: ChatCompletionMessageParam[] = [];
 
     if (customPrompt?.trim()) {
       // Use system role for custom prompt/instructions to guide the model
-      messages.push({ role: 'user', content: customPrompt.trim() } as any);
+      messages.push({ role: 'system', content: customPrompt.trim() });
     }
-    const effectiveText = textPrompt?.trim() || 'Please analyze this screenshot.';
-    const content: ChatMessage['content'] = [
+    const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
+    const content: Exclude<ChatCompletionMessageParam['content'], string | null> = [
       { type: 'text', text: effectiveText },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
-    messages.push({ role: 'user', content } as ChatMessage);
+    messages.push({ role: 'user', content });
 
-    // @ts-ignore: SDK message types may differ across SDK versions
-    const stream = await (client as any).chat.completions.create(
-      {
-        model: config.model,
-        // @ts-ignore allow system role
-        messages: messages as any,
-        stream: true,
-      },
-      // Pass AbortSignal so callers can cancel mid-stream
-      { signal } as any,
-    );
+    const request: ChatCompletionCreateParams & { stream: true } = {
+      model: config.model,
+      messages,
+      stream: true,
+    };
+    // Pass AbortSignal so callers can cancel mid-stream
+    const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, { signal });
 
     let finalContent = '';
 
-    // @ts-ignore: streaming iterator typings vary across SDK versions
     for await (const chunk of stream) {
       try {
         const delta = chunk?.choices?.[0]?.delta?.content ?? '';

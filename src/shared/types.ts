@@ -1,14 +1,5 @@
 export type Role = 'system' | 'user' | 'assistant';
 
-export interface ChatMessage {
-  role: Role;
-  content:
-    | string
-    | Array<
-        | { type: 'text'; text: string }
-        | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } }
-      >;
-}
 
 export interface OpenAIConfig {
   apiKey: string;
