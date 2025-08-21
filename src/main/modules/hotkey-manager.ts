@@ -7,6 +7,8 @@ export interface HotkeyHandlers {
   onAudioToggle: () => void | Promise<void>;
   onScrollUp: () => void | Promise<void>;
   onScrollDown: () => void | Promise<void>;
+  onPagePrev: () => void | Promise<void>;
+  onPageNext: () => void | Promise<void>;
 
 }
 
@@ -17,6 +19,8 @@ const CLEAR_HOTKEY = 'CommandOrControl+R';
 const AUDIO_TOGGLE_HOTKEY = 'CommandOrControl+Shift+Enter';
 const SCROLL_UP_HOTKEY = 'CommandOrControl+Up';
 const SCROLL_DOWN_HOTKEY = 'CommandOrControl+Down';
+const PAGE_PREV_HOTKEY = 'CommandOrControl+Shift+Up';
+const PAGE_NEXT_HOTKEY = 'CommandOrControl+Shift+Down';
 
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
@@ -59,6 +63,18 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(SCROLL_DOWN_HOTKEY, () => void handlers.onScrollDown());
   } catch {
     failures.push(SCROLL_DOWN_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(PAGE_PREV_HOTKEY, () => void handlers.onPagePrev());
+  } catch {
+    failures.push(PAGE_PREV_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(PAGE_NEXT_HOTKEY, () => void handlers.onPageNext());
+  } catch {
+    failures.push(PAGE_NEXT_HOTKEY);
   }
 
 

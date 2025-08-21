@@ -278,6 +278,28 @@ function App() {
     const offScroll = api?.onAskScroll?.(({ direction }: { direction: 'up' | 'down' }) => {
       try {
         setVisible(true);
+        // Restore scroll behavior for Ctrl/Cmd+Up/Down
+        const containers = Array.from(
+          document.querySelectorAll<HTMLDivElement>('.bn-markdown-viewer'),
+        );
+        const target = containers.find((el) => {
+          const style = window.getComputedStyle(el);
+
+          return style.display !== 'none' && el.offsetParent !== null;
+        });
+        const area = target ?? null;
+
+        if (!area) return;
+        const step = Math.max(80, Math.round(area.clientHeight * 0.25));
+        const delta = direction === 'up' ? -step : step;
+
+        area.scrollBy({ top: delta, behavior: 'smooth' });
+      } catch {}
+    });
+    // Pagination via Ctrl/Cmd+Shift+Up/Down
+    const offPaginate = api?.onAskPaginate?.(({ direction }: { direction: 'up' | 'down' }) => {
+      try {
+        setVisible(true);
         if (direction === 'up') gotoPrevPage();
         else gotoNextPage();
       } catch {}
@@ -335,6 +357,9 @@ function App() {
       } catch {}
       try {
         if (typeof offScroll === 'function') offScroll();
+      } catch {}
+      try {
+        if (typeof offPaginate === 'function') offPaginate();
       } catch {}
     };
   }, []);
@@ -895,6 +920,34 @@ function App() {
           Hide
         </button>
 
+        {/* Spacer to push controls to the right */}
+        <div style={{ flex: 1 }} />
+
+        {/* Pagination controls (bar right) */}
+        {hasPages && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              style={ghostButton}
+              title="Previous answer (Ctrl/Cmd+Shift+Up)"
+              onClick={gotoPrevPage}
+              disabled={!hasPages || historyIndex === 0}
+            >
+              ◀ Prev
+            </button>
+            <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
+              {currentPageLabel}
+            </div>
+            <button
+              style={ghostButton}
+              title="Next answer / Latest (Ctrl/Cmd+Shift+Down)"
+              onClick={gotoNextPage}
+              disabled={!hasPages}
+            >
+              Next ▶
+            </button>
+          </div>
+        )}
+
         {/* Settings (toggle) */}
         <button
           style={iconButton}
@@ -947,30 +1000,7 @@ function App() {
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
-              {/* Pagination controls for in-session answers */}
-              {hasPages && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
-                  <button
-                    style={ghostButton}
-                    title="Previous answer"
-                    onClick={gotoPrevPage}
-                    disabled={!hasPages || historyIndex === 0}
-                  >
-                    ◀ Prev
-                  </button>
-                  <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
-                    {currentPageLabel}
-                  </div>
-                  <button
-                    style={ghostButton}
-                    title="Next answer (or Latest)"
-                    onClick={gotoNextPage}
-                    disabled={!hasPages}
-                  >
-                    Next ▶
-                  </button>
-                </div>
-              )}
+              {/* Pagination controls moved to top bar */}
               {(busy || streaming) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
                   <ThinkingIndicator size={8} dots={4} />

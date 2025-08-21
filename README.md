@@ -62,7 +62,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card with pagination (streaming‑only)**: The AI response and the input are combined into one card. Within the same session, past answers are shown as pages with Prev/Next controls and a page indicator (e.g., `2/5`). The live view is the latest page while streaming.
 - **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
-- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Prev Answer = Cmd/Ctrl+Up, Next Answer / Latest = Cmd/Ctrl+Down
+- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up/Down = Cmd/Ctrl+Up/Down, Prev/Next Page = Cmd/Ctrl+Shift+Up/Down
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear / Interrupt**: Press Cmd/Ctrl+R anytime to abort an in‑progress AI answer, clear the Ask bubble and conversation history, and start a brand‑new session instantly
@@ -130,8 +130,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    - **Voice (realtime transcription)**: `Cmd/Ctrl+Shift+Enter` — captures microphone +, where permitted, system audio, and streams live transcript under the bar using `gpt-4o-mini-transcribe`.
    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
    - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and resets voice state)
-   - **Prev Answer** (pagination within a session): `Cmd/Ctrl+Up`
-   - **Next Answer / Latest** (pagination within a session): `Cmd/Ctrl+Down`
+   - **Scroll Up/Down** (Ask/Transcript content): `Cmd/Ctrl+Up` / `Cmd/Ctrl+Down`
+   - **Prev/Next Page** (pagination within a session): `Cmd/Ctrl+Shift+Up` / `Cmd/Ctrl+Shift+Down`
 
 3. **Build for production**
 

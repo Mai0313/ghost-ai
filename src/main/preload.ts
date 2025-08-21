@@ -98,6 +98,14 @@ const api = {
 
     return () => ipcRenderer.off('ask:scroll', fn);
   },
+  // Pagination for Ask answers
+  onAskPaginate: (handler: (data: { direction: 'up' | 'down' }) => void) => {
+    const fn = (_e: any, data: { direction: 'up' | 'down' }) => handler(data);
+
+    ipcRenderer.on('ask:paginate', fn);
+
+    return () => ipcRenderer.off('ask:paginate', fn);
+  },
   // Session APIs
   getSession: async (): Promise<string> => {
     const res = await ipcRenderer.invoke('session:get');

@@ -35,6 +35,7 @@ declare global {
 
       onAudioToggle: (handler: () => void) => void;
       onAskScroll: (handler: (data: { direction: 'up' | 'down' }) => void) => () => void;
+      onAskPaginate: (handler: (data: { direction: 'up' | 'down' }) => void) => () => void;
       // Session controls
       getSession: () => Promise<string>;
       newSession: () => Promise<string>;
