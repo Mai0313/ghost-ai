@@ -200,7 +200,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Captures microphone via `getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } })`
   - Attempts to capture system audio via `getDisplayMedia({ audio:true })` and discards video tracks
   - Mixes sources in `AudioContext`, downsamples to 24 kHz mono, converts to 16‑bit PCM, base64‑encodes, and batches by ~128 ms (3072 samples)
-  - Streams chunks via `appendTranscriptionAudio` and shows deltas live in the Ask bubble (same area used for AI answers)
+  - Streams chunks via `appendTranscriptionAudio` and renders transcript deltas via the same unified render sink used by analyze streaming: `appendLive(delta)` and `finalizeLive({ appendNewline: true })`
   - On stop: sends `endTranscription` and `stopTranscription`, closes audio graph, stops tracks, and clears timers
   - Logs: microphone/system audio permission results and audio processing errors
 

@@ -111,6 +111,21 @@ function App() {
   const transcriptModeRef = useRef<boolean>(false);
   const transcriptBufferRef = useRef<string>('');
 
+  // Unified render sink for streaming text into the reply box
+  const appendLive = useCallback((delta: string) => {
+    if (!delta) return;
+    setResult((prev) => prev + delta);
+  }, []);
+  const finalizeLive = useCallback((opts?: { content?: string; appendNewline?: boolean }) => {
+    const contentProvided = typeof opts?.content === 'string';
+    if (contentProvided) {
+      setResult(opts!.content || '');
+    }
+    if (opts?.appendNewline) {
+      setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
+    }
+  }, []);
+
   // Indices of assistant answers within history; used for pagination
   const assistantAnswerIndices = useMemo(() => {
     const indices: number[] = [];
@@ -466,7 +481,7 @@ function App() {
           ({ delta, sessionId: sid }: { delta: string; sessionId?: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!delta) return;
-            setResult((prev) => prev + delta);
+            appendLive(delta);
             transcriptBufferRef.current += delta;
           },
         );
@@ -477,7 +492,7 @@ function App() {
           ({ content, sessionId: sid }: { content: string; sessionId?: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!content) return;
-            setResult((prev) => (prev.endsWith('\n') ? prev : prev + '\n'));
+            finalizeLive({ appendNewline: true });
             if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
           },
         );
@@ -735,7 +750,7 @@ function App() {
             if (!delta) return;
             if (lastDeltaRef.current === delta) return; // de-dup identical consecutive chunks
             lastDeltaRef.current = delta;
-            setResult((prev) => prev + delta);
+            appendLive(delta);
           },
           onDone: ({
             content,
@@ -751,7 +766,7 @@ function App() {
               sid !== activeSessionIdForRequestRef.current
             )
               return;
-            setResult(content ?? '');
+            finalizeLive({ content: content ?? '' });
             setStreaming(false);
             setRequestId(null);
             lastDeltaRef.current = null;
@@ -902,11 +917,11 @@ function App() {
             if (!delta) return;
             if (lastDeltaRef.current === delta) return;
             lastDeltaRef.current = delta;
-            setResult((prev) => prev + delta);
+            appendLive(delta);
           },
           onDone: ({ content, sessionId: sid }: { requestId: string; content: string; sessionId?: string }) => {
             if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
-            setResult(content ?? '');
+            finalizeLive({ content: content ?? '' });
             setStreaming(false);
             setRequestId(null);
             lastDeltaRef.current = null;

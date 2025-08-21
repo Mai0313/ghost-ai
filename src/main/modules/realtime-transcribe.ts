@@ -132,10 +132,6 @@ export class RealtimeTranscribeManager {
 
     if (!entry || entry.ws.readyState !== WebSocket.OPEN) return;
     // Log only meta info to avoid massive logs
-    console.log('[WS] append audio', {
-      wcId: webContents.id,
-      bytes: Math.floor((base64Pcm16.length * 3) / 4),
-    });
     const payload = { type: 'input_audio_buffer.append', audio: base64Pcm16 };
 
     entry.ws.send(JSON.stringify(payload));

@@ -61,6 +61,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card with pagination (streaming‑only)**: The AI response and the input are combined into one card. Within the same session, past answers are shown as pages with Prev/Next controls and a page indicator (e.g., `2/5`). While streaming, you can stay on an older page; use Next to jump back to Live at any time.
+ - **Unified rendering for answers and transcripts**: Both analyze responses and realtime transcripts stream into the same reply area using a shared render sink (append/finish). This ensures identical behavior and formatting for both sources.
 - **Regenerate on completed page**: After an answer finishes, a Regenerate button appears. Clicking it resends the original question for that page using only the prior conversation context (excluding that page), producing a new answer in place without creating a new page.
 - **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up/Down = Cmd/Ctrl+Up/Down, Prev/Next Page = Cmd/Ctrl+Shift+Up/Down
