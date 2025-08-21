@@ -634,8 +634,9 @@ function App() {
     activeSessionIdForRequestRef.current = null;
     setBusy(true);
     setStreaming(true);
-    // Ensure the viewer shows live content for the new streaming turn
-    setHistoryIndex(null);
+    // If user is currently viewing live/latest, keep it live; otherwise respect their current page.
+    // Do not force to live view when the user is inspecting older pages.
+    // (No-op intentionally)
     // Merge Ask input with any transcript captured so far
     const transcript = transcriptBufferRef.current || '';
     const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
@@ -953,7 +954,7 @@ function App() {
                     style={ghostButton}
                     title="Previous answer"
                     onClick={gotoPrevPage}
-                    disabled={streaming || (!hasPages ? true : historyIndex === 0)}
+                    disabled={!hasPages || historyIndex === 0}
                   >
                     ◀ Prev
                   </button>
@@ -964,7 +965,7 @@ function App() {
                     style={ghostButton}
                     title="Next answer (or Latest)"
                     onClick={gotoNextPage}
-                    disabled={streaming || !hasPages}
+                    disabled={!hasPages}
                   >
                     Next ▶
                   </button>
