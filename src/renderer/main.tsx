@@ -28,6 +28,7 @@ import { theme } from './styles/theme';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import './styles/blocknote-custom.css';
+import { ThinkingIndicator } from './components/ThinkingIndicator';
 
 // Window.ghostAI types are declared in src/renderer/global.d.ts
 
@@ -898,13 +899,16 @@ function App() {
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
+              {(busy || streaming) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
+                  <ThinkingIndicator size={8} dots={4} />
+                </div>
+              )}
               <input
                 ref={askInputRef}
                 disabled={busy || streaming}
                 id="ask-input"
-                placeholder={
-                  busy || streaming ? 'Thinking…' : 'Press Enter to ask with default prompt…'
-                }
+                placeholder={'Press Enter to ask with default prompt…'}
                 style={askInput}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
