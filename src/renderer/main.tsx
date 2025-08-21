@@ -218,6 +218,28 @@ function App() {
     const api = (window as any).ghostAI;
 
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
+    // Scroll handler for Ask result area via global hotkeys (Ctrl/Cmd+Up/Down)
+    const offScroll = api?.onAskScroll?.(({ direction }: { direction: 'up' | 'down' }) => {
+      try {
+        setVisible(true);
+        // Prefer Ask tab container if visible; otherwise fallback to transcript bubble
+        const containers = Array.from(
+          document.querySelectorAll<HTMLDivElement>('.bn-markdown-viewer'),
+        );
+        const target = containers.find((el) => {
+          const style = window.getComputedStyle(el);
+
+          return style.display !== 'none' && el.offsetParent !== null;
+        });
+        const area = target ?? null;
+
+        if (!area) return;
+        const step = Math.max(80, Math.round(area.clientHeight * 0.25));
+        const delta = direction === 'up' ? -step : step;
+
+        area.scrollBy({ top: delta, behavior: 'smooth' });
+      } catch {}
+    });
     // Initialize and watch top-level session
     try {
       api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
@@ -268,6 +290,9 @@ function App() {
     return () => {
       try {
         if (typeof offSession === 'function') offSession();
+      } catch {}
+      try {
+        if (typeof offScroll === 'function') offScroll();
       } catch {}
     };
   }, []);

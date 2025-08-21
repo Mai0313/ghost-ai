@@ -34,6 +34,7 @@ declare global {
       onAskClear: (handler: () => void) => void;
 
       onAudioToggle: (handler: () => void) => void;
+      onAskScroll: (handler: (data: { direction: 'up' | 'down' }) => void) => () => void;
       // Session controls
       getSession: () => Promise<string>;
       newSession: () => Promise<string>;

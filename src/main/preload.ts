@@ -90,6 +90,14 @@ const api = {
   onAskClear: (handler: () => void) => ipcRenderer.on('ask:clear', () => handler()),
 
   onAudioToggle: (handler: () => void) => ipcRenderer.on('audio:toggle', () => handler()),
+  // Scroll Ask result area
+  onAskScroll: (handler: (data: { direction: 'up' | 'down' }) => void) => {
+    const fn = (_e: any, data: { direction: 'up' | 'down' }) => handler(data);
+
+    ipcRenderer.on('ask:scroll', fn);
+
+    return () => ipcRenderer.off('ask:scroll', fn);
+  },
   // Session APIs
   getSession: async (): Promise<string> => {
     const res = await ipcRenderer.invoke('session:get');

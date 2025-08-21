@@ -62,7 +62,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card (streaming‑only)**: The AI response and the input are combined into one card; the streamed answer appears above, and the input sits in the same card footer (IME‑safe)
 - **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
-- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Previous Answer = Cmd/Ctrl+Up, Next Answer = Cmd/Ctrl+Down
+- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up = Cmd/Ctrl+Up, Scroll Down = Cmd/Ctrl+Down
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear / Interrupt**: Press Cmd/Ctrl+R anytime to abort an in‑progress AI answer, clear the Ask bubble and conversation history, and start a brand‑new session instantly
@@ -130,8 +130,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    - **Voice (realtime transcription)**: `Cmd/Ctrl+Shift+Enter` — captures microphone +, where permitted, system audio, and streams live transcript under the bar using `gpt-4o-mini-transcribe`.
    - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
    - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and resets voice state)
-   - **Previous Answer**: `Cmd/Ctrl+Up`
-   - **Next Answer**: `Cmd/Ctrl+Down`
+   - **Scroll Up** (Ask/Transcript bubble): `Cmd/Ctrl+Up`
+   - **Scroll Down** (Ask/Transcript bubble): `Cmd/Ctrl+Down`
 
 3. **Build for production**
 

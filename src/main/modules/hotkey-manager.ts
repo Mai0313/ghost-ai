@@ -5,6 +5,8 @@ export interface HotkeyHandlers {
   onToggleHide: () => void | Promise<void>;
   onClearAsk: () => void | Promise<void>;
   onAudioToggle: () => void | Promise<void>;
+  onScrollUp: () => void | Promise<void>;
+  onScrollDown: () => void | Promise<void>;
 
 }
 
@@ -13,6 +15,8 @@ const ASK_HOTKEY = 'CommandOrControl+Enter';
 const HIDE_HOTKEY = 'CommandOrControl+\\';
 const CLEAR_HOTKEY = 'CommandOrControl+R';
 const AUDIO_TOGGLE_HOTKEY = 'CommandOrControl+Shift+Enter';
+const SCROLL_UP_HOTKEY = 'CommandOrControl+Up';
+const SCROLL_DOWN_HOTKEY = 'CommandOrControl+Down';
 
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
@@ -43,6 +47,18 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(AUDIO_TOGGLE_HOTKEY, () => void handlers.onAudioToggle());
   } catch {
     failures.push(AUDIO_TOGGLE_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(SCROLL_UP_HOTKEY, () => void handlers.onScrollUp());
+  } catch {
+    failures.push(SCROLL_UP_HOTKEY);
+  }
+
+  try {
+    globalShortcut.register(SCROLL_DOWN_HOTKEY, () => void handlers.onScrollDown());
+  } catch {
+    failures.push(SCROLL_DOWN_HOTKEY);
   }
 
 

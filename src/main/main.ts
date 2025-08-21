@@ -262,6 +262,16 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send('audio:toggle');
     },
+    onScrollUp: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:scroll', { direction: 'up' });
+    },
+    onScrollDown: async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      mainWindow.webContents.send('ask:scroll', { direction: 'down' });
+    },
 
   });
 

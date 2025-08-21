@@ -149,6 +149,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
   - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }`
   - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }`
   - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }`
+  - `ask:scroll` with `{ direction: 'up' | 'down' }` to scroll the Ask result area when the user presses `Cmd/Ctrl+Up` or `Cmd/Ctrl+Down`.
 
 Streaming cancellation (interrupt):
 
@@ -510,6 +511,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - `Cmd/Ctrl+Up`：查看上一則回答
 - `Cmd/Ctrl+Down`：查看下一則回答
+  - 目前行為：在 Renderer 端對 `.bn-markdown-viewer` 滾動容器進行平滑滾動（各 25% 容器高度，最少 80px），IPC 事件為 `ask:scroll`，由 Preload 暴露 `window.ghostAI.onAskScroll(handler)` 供 Renderer 訂閱。
 
 ### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
 
