@@ -46,6 +46,7 @@ function App() {
   const tabRef = useRef<'ask' | 'settings' | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef<number | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
@@ -110,6 +111,11 @@ function App() {
   const transcribeUnsubsRef = useRef<(() => void)[]>([]);
   const transcriptModeRef = useRef<boolean>(false);
   const transcriptBufferRef = useRef<string>('');
+  const pausedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   // Unified render sink for streaming text into the reply box
   const appendLive = useCallback((delta: string) => {
@@ -456,7 +462,7 @@ function App() {
     async function startPipeline() {
       setElapsedMs(0);
       timerRef.current = window.setInterval(() => {
-        setElapsedMs((ms) => ms + 1000);
+        if (!pausedRef.current) setElapsedMs((ms) => ms + 1000);
       }, 1000) as unknown as number;
 
       // Show overlay, but do NOT open Ask panel; use transcript-only bubble
@@ -464,6 +470,7 @@ function App() {
       transcriptModeRef.current = true;
       setResult('');
       transcriptBufferRef.current = '';
+      setPaused(false);
 
       try {
         await (window as any).ghostAI?.startTranscription?.({ model: 'gpt-4o-mini-transcribe' });
@@ -481,6 +488,7 @@ function App() {
           ({ delta, sessionId: sid }: { delta: string; sessionId?: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!delta) return;
+            if (pausedRef.current) return;
             appendLive(delta);
             transcriptBufferRef.current += delta;
           },
@@ -581,6 +589,7 @@ function App() {
 
       processor.onaudioprocess = (ev: AudioProcessingEvent) => {
         try {
+          if (pausedRef.current) return;
           const input = ev.inputBuffer;
           const channels = input.numberOfChannels;
           const len = input.length;
@@ -1063,14 +1072,38 @@ function App() {
           }}
         />
         {/* Left primary pill */}
-        <button
-          style={pillButton({ primary: !recording, danger: recording })}
-          title={recording ? 'Stop recording' : 'Start recording'}
-          onClick={() => setRecording((r) => !r)}
-        >
-          {recording ? <IconMicOff color={theme.color.text()} /> : <IconWaveBars />}
-          {recording ? timeLabel : 'Listen'}
-        </button>
+        {!recording && (
+          <button
+            style={pillButton({ primary: true, danger: false })}
+            title={'Start recording'}
+            onClick={() => setRecording(true)}
+          >
+            <IconWaveBars />
+            Listen
+          </button>
+        )}
+        {recording && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              style={pillButton({ primary: !paused, danger: paused })}
+              title={paused ? 'Resume' : 'Pause'}
+              onClick={() => setPaused((p) => !p)}
+            >
+              {paused ? 'Resume' : 'Pause'}
+            </button>
+            <button
+              style={pillButton({ primary: false, danger: true })}
+              title={'Stop recording'}
+              onClick={() => {
+                setRecording(false);
+                setPaused(false);
+              }}
+            >
+              <IconMicOff color={theme.color.text()} />
+              {timeLabel}
+            </button>
+          </div>
+        )}
 
         {/* Ask (toggle ask panel) */}
         <button

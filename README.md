@@ -65,6 +65,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Regenerate on completed page**: After an answer finishes, a Regenerate button appears. Clicking it resends the original question for that page using only the prior conversation context (excluding that page), producing a new answer in place without creating a new page.
 - **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up/Down = Cmd/Ctrl+Up/Down, Prev/Next Page = Cmd/Ctrl+Shift+Up/Down
+ - **Listen controls**: While recording, you can Pause/Resume live transcript without stopping the session, or Stop to end recording.
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear / Interrupt**: Press Cmd/Ctrl+R anytime to abort an in‑progress AI answer, clear the Ask bubble and conversation history, and start a brand‑new session instantly
