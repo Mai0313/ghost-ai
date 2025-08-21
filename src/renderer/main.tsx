@@ -57,6 +57,9 @@ function App() {
   const activeUnsubRef = useRef<null | (() => void)>(null);
   const lastDeltaRef = useRef<string | null>(null);
   const activeSessionIdForRequestRef = useRef<string | null>(null);
+  // Models for Ask footer selector
+  const [models, setModels] = useState<string[]>([]);
+  const [model, setModel] = useState<string>('');
   // BlockNote editor for rendering Markdown answers without syntax highlighting
   const bnEditor = useCreateBlockNote({
     codeBlock: {
@@ -240,6 +243,27 @@ function App() {
         setTimeout(() => askInputRef.current?.focus(), 0);
       }
     });
+  }, []);
+
+  // Load available models and current model once (and when API config changes elsewhere)
+  useEffect(() => {
+    (async () => {
+      try {
+        const api: any = (window as any).ghostAI;
+
+        if (!api) return;
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
+        ]);
+
+        if (Array.isArray(list) && list.length) setModels(list);
+        const cfgModel = (cfg && (cfg as any).model) || '';
+
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
+        else setModel('');
+      } catch {}
+    })();
   }, []);
 
   // Auto-focus whenever Ask is shown and ensure input is enabled
@@ -1171,6 +1195,43 @@ function App() {
                   }
                 }}
               />
+              {/* Model selector next to the Ask input */}
+              <select
+                disabled={busy || streaming || !models.length}
+                id="ask-model-select"
+                style={{
+                  background: '#141414',
+                  border: '1px solid #2a2a2a',
+                  color: 'white',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  outline: 'none',
+                  maxWidth: 220,
+                }}
+                value={model}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setModel(val);
+                  try {
+                    const api: any = (window as any).ghostAI;
+
+                    // Update in-memory immediately and persist to disk
+                    await api?.updateOpenAIConfigVolatile?.({ model: val });
+                    await api?.updateOpenAIConfig?.({ model: val });
+                  } catch {}
+                }}
+              >
+                {(!models.length || !model) && (
+                  <option disabled value="">
+                    {models.length ? 'Select a model' : 'Loading models…'}
+                  </option>
+                )}
+                {models.map((m) => (
+                  <option key={m} style={{ background: '#141414' }} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         )}

@@ -144,34 +144,7 @@ export function Settings() {
           onChange={(e) => setBaseURL(e.target.value)}
         />
 
-        <label htmlFor="openai-model" style={{ fontSize: 12, color: '#BDBDBD' }}>
-          Model
-        </label>
-        <select
-          disabled={!models.length}
-          id="openai-model"
-          style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            color: 'white',
-            padding: '10px 12px',
-            borderRadius: 10,
-            outline: 'none',
-          }}
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-        >
-          {(!models.length || !model) && (
-            <option disabled value="">
-              {models.length ? 'Select a model' : 'Loading models…'}
-            </option>
-          )}
-          {models.map((m) => (
-            <option key={m} style={{ background: '#141414' }} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+        {/* Model selection moved next to Ask input. Keep internal state for Test, but hide UI here. */}
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
