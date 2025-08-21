@@ -301,6 +301,34 @@ function App() {
         else gotoNextPage();
       } catch {}
     });
+
+    // Local fallback: handle Ctrl/Cmd+Left/Right when overlay is visible and input not focused
+    const onKeyDown = (e: KeyboardEvent) => {
+      try {
+        if (!visible) return;
+        // Allow paging regardless of focused element
+        const hasCtrlOrMeta = e.ctrlKey || e.metaKey;
+        const noAltOrShift = !e.altKey && !e.shiftKey;
+
+        if (hasCtrlOrMeta && noAltOrShift) {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            e.stopPropagation();
+            gotoPrevPage();
+
+            return;
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            e.stopPropagation();
+            gotoNextPage();
+
+            return;
+          }
+        }
+      } catch {}
+    };
+    window.addEventListener('keydown', onKeyDown, true);
     // Initialize and watch top-level session
     try {
       api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
@@ -357,6 +385,9 @@ function App() {
       } catch {}
       try {
         if (typeof offPaginate === 'function') offPaginate();
+      } catch {}
+      try {
+        window.removeEventListener('keydown', onKeyDown, true);
       } catch {}
     };
   }, []);
