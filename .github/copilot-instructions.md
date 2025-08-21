@@ -251,6 +251,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
     - `import '@blocknote/core/fonts/inter.css'`
     - `import '@blocknote/mantine/style.css'`
     - The viewer component is `<BlockNoteView editor={editor} editable={false} />`.
+  - Scrollbar styling for the AI answer panel lives in `src/renderer/styles/blocknote-custom.css` under `.bn-markdown-viewer` with both WebKit (::-webkit-scrollbar) and Firefox (scrollbar-width/color) rules to match the dark panel aesthetics.
 
 ## Screenshot Capture
 

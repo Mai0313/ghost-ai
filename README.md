@@ -70,6 +70,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
+ - **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/renderer/styles/blocknote-custom.css`.
 
 ### 🏗️ **Modern Architecture**
 
