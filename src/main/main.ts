@@ -439,8 +439,23 @@ ipcMain.on(
       // If payload.history is provided (regeneration), use it as the prior history override;
       // otherwise use the current conversationHistoryText.
       const priorPlain = (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
-      const combinedTextPrompt = priorPlain
-        ? `Previous conversation (plain text):\n${priorPlain}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+      // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
+      const initialPromptPrefix = (() => {
+        try {
+          const idx = conversationHistoryText.indexOf('Q: ');
+
+          if (idx > 0) return conversationHistoryText.slice(0, idx);
+
+          return '';
+        } catch {
+          return '';
+        }
+      })();
+      const priorWithInitial = (typeof payload.history === 'string')
+        ? `${initialPromptPrefix}${priorPlain || ''}`
+        : priorPlain;
+      const combinedTextPrompt = priorWithInitial
+        ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
 
       // Load active prompt content only for the first turn of the current session
@@ -513,7 +528,8 @@ ipcMain.on(
         if (typeof payload.history === 'string') {
           // payload.history already excludes the current page's Q/A
           const base = payload.history || '';
-          conversationHistoryText = base + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
+          const rebuilt = `${initialPromptPrefix}${base}`;
+          conversationHistoryText = rebuilt + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
         } else {
           if (question || answer) {
             conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;

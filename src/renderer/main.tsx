@@ -968,6 +968,32 @@ function App() {
     };
   }, [canRegenerate, historyIndex, lastPageIndex, assistantAnswerIndices, history, makePlainHistoryText]);
 
+  const onDeleteCurrentAnswer = useCallback(() => {
+    if (busy || streaming) return;
+    const pageIdx = historyIndex === null ? lastPageIndex : historyIndex;
+    const assistantIdx = assistantAnswerIndices[pageIdx] ?? -1;
+
+    if (assistantIdx < 0) return;
+    const wasLive = historyIndex === null;
+    const prevCount = assistantAnswerIndices.length;
+
+    setHistory((prev) => {
+      const copy = prev.slice();
+      copy.splice(assistantIdx, 1);
+
+      return copy;
+    });
+
+    if (prevCount <= 1) {
+      setHistoryIndex(null);
+      setResult('');
+    } else {
+      const nextIdx = pageIdx > 0 ? pageIdx - 1 : 0;
+      setHistoryIndex(nextIdx);
+      if (wasLive) setResult('');
+    }
+  }, [busy, streaming, historyIndex, lastPageIndex, assistantAnswerIndices]);
+
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const minutes = Math.floor(totalSeconds / 60)
@@ -1131,6 +1157,18 @@ function App() {
 
         {tab === 'ask' && (
           <div style={askCard}>
+            {/* Top-right controls for the Ask card */}
+            {hasPages && !busy && !streaming && (
+              <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 6 }}>
+                <button
+                  style={iconButton}
+                  title="Delete this answer (remove only the current assistant message)"
+                  onClick={onDeleteCurrentAnswer}
+                >
+                  <IconX />
+                </button>
+              </div>
+            )}
             <div
               className="bn-markdown-viewer"
               style={{
