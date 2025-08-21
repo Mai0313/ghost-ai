@@ -13,12 +13,12 @@ const api = {
     textPrompt: string,
     customPrompt: string,
     handlers: {
-      onStart?: (payload: { requestId: string }) => void;
-      onDelta?: (payload: { requestId: string; delta: string }) => void;
-      onDone?: (payload: AnalysisResult) => void;
-      onError?: (payload: { requestId?: string; error: string }) => void;
+      onStart?: (payload: { requestId: string; sessionId?: string }) => void;
+      onDelta?: (payload: { requestId: string; delta: string; sessionId?: string }) => void;
+      onDone?: (payload: AnalysisResult & { sessionId?: string }) => void;
+      onError?: (payload: { requestId?: string; error: string; sessionId?: string }) => void;
     },
-    history?: any[],
+    history?: string | null,
   ) => {
     // Register one-time listeners per call; return unsubscribe function
     let activeRequestId: string | null = null;
@@ -40,7 +40,7 @@ const api = {
       if (activeRequestId && data.requestId !== activeRequestId) return;
       handlers.onDelta?.(data);
     };
-    const doneHandler = (_: any, data: AnalysisResult) => {
+    const doneHandler = (_: any, data: AnalysisResult & { sessionId?: string }) => {
       if (activeRequestId && (data as any)?.requestId !== activeRequestId) return;
       try {
         handlers.onDone?.(data);

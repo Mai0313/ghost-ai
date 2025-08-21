@@ -32,9 +32,11 @@ const defaultPrompt = (() => {
 - Plain-text `Q:`/`A:` history is maintained in the main process as a single string and is appended after each successful request.
 - On each new request, `combinedTextPrompt` is composed as:
 
-```410:412:src/main/main.ts
-const combinedTextPrompt = conversationHistoryText
-  ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+```420:446:src/main/main.ts
+// Use override if provided (regeneration), otherwise use accumulated history
+const priorPlain = (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
+const combinedTextPrompt = priorPlain
+  ? `Previous conversation (plain text):\n${priorPlain}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
   : (payload.textPrompt ?? '').trim();
 ```
 
@@ -94,7 +96,7 @@ interface GhostAPI {
       onDone?: (p: AnalysisResult) => void;
       onError?: (p: { requestId?: string; error: string }) => void;
     },
-    history?: any[], // deprecated: ignored by main; history is managed in main as plain text
+    history?: string | null, // optional plain-text Q/A prior-context override (used for regeneration)
   ): () => void; // unsubscribe
   // Realtime transcription (WS)
   startTranscription(options: { model?: string }): Promise<{ ok: boolean }>;
@@ -215,6 +217,12 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Error handling: when an error occurs (from streaming or fallback), the UI writes an inline message to the same bubble in the form `Error: <message>` and re-enables input so the user can retry immediately.
   - Clear conversation: `Cmd/Ctrl+R` clears renderer `history` + `result` and also clears main-process conversation context.
   - Renderer `history` is for UI navigation only; model memory/context is managed in main.
+  - Regeneration flow: after an answer finishes, the Ask footer shows a `↻ Regenerate` button. Clicking it:
+    - Identifies the page to regenerate (current page if paged; otherwise the latest completed page)
+    - Extracts that page's original user message from `history`
+    - Builds a plain-text `Q:`/`A:` history string from all pairs before that page
+    - Calls `analyzeCurrentScreenStream(userMessage, customPrompt, handlers, priorPlain)` where `priorPlain` is the string above
+    - On completion, replaces the assistant content for that page in-place (does not append a new page)
   - Ask input placeholder: shows `Thinking…` while busy/streaming; otherwise `Type your question…`.
 
 ### Overlay click-through policy

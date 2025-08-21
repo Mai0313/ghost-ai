@@ -422,7 +422,10 @@ ipcMain.handle('openai:list-models', async () => {
 // Streaming analyze (sends start/delta/done/error events)
 ipcMain.on(
   'capture:analyze-stream',
-  async (evt, payload: { textPrompt: string; customPrompt: string; history?: any[] }) => {
+  async (
+    evt,
+    payload: { textPrompt: string; customPrompt: string; history?: string | null },
+  ) => {
     // Record the sessionId at the start of this analysis to prevent race conditions with Ctrl+R
     const analysisSessionId = currentSessionId;
     try {
@@ -433,9 +436,11 @@ ipcMain.on(
       evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: analysisSessionId });
 
       // Inject prior plain-text history into the text prompt for simple continuity.
-      // We keep renderer history for UI navigation only; model context is driven here.
-      const combinedTextPrompt = conversationHistoryText
-        ? `Previous conversation (plain text):\n${conversationHistoryText}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+      // If payload.history is provided (regeneration), use it as the prior history override;
+      // otherwise use the current conversationHistoryText.
+      const priorPlain = (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
+      const combinedTextPrompt = priorPlain
+        ? `Previous conversation (plain text):\n${priorPlain}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
 
       // Load active prompt content only for the first turn of the current session
@@ -499,13 +504,20 @@ ipcMain.on(
       // to prevent interrupted conversations from being written to the wrong session
       if (!controller.signal.aborted && analysisSessionId === currentSessionId) {
         // Only write to log if not aborted AND the session hasn't changed during analysis
-        
-        // Append to plain-text conversation history
+        // Append to plain-text conversation history.
+        // If this was a regeneration (payload.history provided), rebuild from that base
+        // to avoid duplicating the previous answer.
         const question = (payload.textPrompt ?? '').trim();
         const answer = (result?.content ?? '').trim();
 
-        if (question || answer) {
-          conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
+        if (typeof payload.history === 'string') {
+          // payload.history already excludes the current page's Q/A
+          const base = payload.history || '';
+          conversationHistoryText = base + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
+        } else {
+          if (question || answer) {
+            conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
+          }
         }
         // Persist current conversation history for this request for debugging/inspection
         try {

@@ -160,6 +160,11 @@ function App() {
     setHistoryIndex(null);
   }, [hasPages, historyIndex, lastPageIndex]);
 
+  // Whether the UI is on the latest completed page (or Live) and idle
+  const canRegenerate = useMemo(() => {
+    return assistantAnswerIndices.length > 0 && !busy && !streaming;
+  }, [assistantAnswerIndices.length, busy, streaming]);
+
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
@@ -796,7 +801,7 @@ function App() {
             }
           },
         },
-        history,
+        undefined,
       );
       // Streaming is mandatory now; if wrapper didn't return a function, treat as error
       if (typeof unsubscribe !== 'function') throw new Error('Streaming unavailable');
@@ -828,6 +833,140 @@ function App() {
       }
     };
   }, []);
+
+  const makePlainHistoryText = useCallback((hist: { role: 'user' | 'assistant'; content: string }[]) => {
+    let out = '';
+
+    for (let i = 0; i < hist.length - 1; i += 2) {
+      const u = hist[i];
+      const a = hist[i + 1];
+
+      if (u?.role === 'user' && a?.role === 'assistant') {
+        const q = (u.content || '').trim();
+        const ans = (a.content || '').trim();
+
+        if (q || ans) {
+          out += `Q: ${q}\nA: ${ans}\n\n`;
+        }
+      }
+    }
+
+    return out;
+  }, []);
+
+  const onRegenerate = useCallback(async () => {
+    if (!canRegenerate) return;
+    // Determine the page to regenerate: latest completed page
+    const pageIdx = historyIndex === null ? lastPageIndex : historyIndex;
+    const assistantIdx = assistantAnswerIndices[pageIdx] ?? -1;
+    const userIdx = assistantIdx - 1;
+
+    if (assistantIdx < 0 || userIdx < 0) return;
+    const userMessage = history[userIdx]?.content || '';
+    // Build prior plain-text history (exclude the current page's Q/A)
+    const priorPairs = history.slice(0, userIdx);
+    const priorPlain = makePlainHistoryText(priorPairs);
+
+    // Ensure previous stream listeners are removed before starting a new one
+    if (activeUnsubRef.current) {
+      try {
+        activeUnsubRef.current();
+      } catch {}
+      activeUnsubRef.current = null;
+    }
+
+    lastDeltaRef.current = null;
+    activeSessionIdForRequestRef.current = null;
+    setBusy(true);
+    setStreaming(true);
+    // Keep current page selection; do not force to Live
+    // Show streaming in Live view
+    setHistoryIndex(null);
+    setResult('');
+
+    let unsubscribe: (() => void) | null = null;
+
+    try {
+      const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
+      const basePrompt = (cfg as any)?.customPrompt ?? '';
+      const effectiveCustomPrompt = basePrompt;
+
+      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
+        userMessage,
+        effectiveCustomPrompt,
+        {
+          onStart: ({ requestId: rid, sessionId: sid }: { requestId: string; sessionId?: string }) => {
+            if (sid) {
+              activeSessionIdForRequestRef.current = sid;
+              setSessionId(sid);
+            }
+            setRequestId(rid);
+          },
+          onDelta: ({ delta, sessionId: sid }: { requestId: string; delta: string; sessionId?: string }) => {
+            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+            if (!delta) return;
+            if (lastDeltaRef.current === delta) return;
+            lastDeltaRef.current = delta;
+            setResult((prev) => prev + delta);
+          },
+          onDone: ({ content, sessionId: sid }: { requestId: string; content: string; sessionId?: string }) => {
+            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+            setResult(content ?? '');
+            setStreaming(false);
+            setRequestId(null);
+            lastDeltaRef.current = null;
+            activeSessionIdForRequestRef.current = null;
+            // Replace the assistant content for the regenerated page, do not append a new page
+            setHistory((prev) => {
+              const copy = prev.slice();
+
+              if (assistantIdx >= 0 && assistantIdx < copy.length) {
+                copy[assistantIdx] = { role: 'assistant', content: content ?? '' } as any;
+              }
+
+              return copy;
+            });
+            // Keep current page selection
+            if (activeUnsubRef.current) {
+              try {
+                activeUnsubRef.current();
+              } catch {}
+              activeUnsubRef.current = null;
+            }
+          },
+          onError: ({ error, sessionId: sid }: { requestId?: string; error: string; sessionId?: string }) => {
+            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+            setStreaming(false);
+            setRequestId(null);
+            setResult(`Error: ${error || 'Unknown error'}`);
+            lastDeltaRef.current = null;
+            activeSessionIdForRequestRef.current = null;
+            if (activeUnsubRef.current) {
+              try {
+                activeUnsubRef.current();
+              } catch {}
+              activeUnsubRef.current = null;
+            }
+          },
+        },
+        // Pass prior history as plain text so main can exclude the current page from context
+        priorPlain,
+      );
+
+      if (typeof unsubscribe !== 'function') throw new Error('Streaming unavailable');
+      activeUnsubRef.current = unsubscribe;
+    } catch (e) {
+      setStreaming(false);
+      setRequestId(null);
+      setResult(`Error: ${String((e as any)?.message ?? e ?? 'regenerate failed')}`);
+    } finally {
+      setBusy(false);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [canRegenerate, historyIndex, lastPageIndex, assistantAnswerIndices, history, makePlainHistoryText]);
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -1025,6 +1164,15 @@ function App() {
                   >
                     Next ▶
                   </button>
+                  {canRegenerate && (
+                    <button
+                      style={ghostButton}
+                      title="Regenerate this answer (re-sends the same question using only prior context)"
+                      onClick={() => void onRegenerate()}
+                    >
+                      ↻ Regenerate
+                    </button>
+                  )}
                 </div>
               )}
               {(busy || streaming) && (

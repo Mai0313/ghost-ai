@@ -15,7 +15,7 @@ declare global {
           onDone?: (payload: { requestId: string; content: string; sessionId?: string }) => void;
           onError?: (payload: { requestId?: string; error: string; sessionId?: string }) => void;
         },
-        history?: any[],
+        history?: string | null,
       ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
       updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
