@@ -38,7 +38,7 @@ function App() {
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number | null>(null); // null = latest
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null); // null = latest/live
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
@@ -108,16 +108,71 @@ function App() {
   const transcriptModeRef = useRef<boolean>(false);
   const transcriptBufferRef = useRef<string>('');
 
+  // Indices of assistant answers within history; used for pagination
+  const assistantAnswerIndices = useMemo(() => {
+    const indices: number[] = [];
+
+    for (let i = 0; i < history.length; i++) {
+      if (history[i]?.role === 'assistant') indices.push(i);
+    }
+
+    return indices;
+  }, [history]);
+
+  // Derive the content to display: historical page (if selected) or live `result`
+  const displayMarkdown = useMemo(() => {
+    if (historyIndex !== null) {
+      const histIdx = assistantAnswerIndices[historyIndex] ?? null;
+
+      if (histIdx !== null && histIdx >= 0) {
+        return history[histIdx]?.content ?? '';
+      }
+    }
+
+    return result;
+  }, [historyIndex, assistantAnswerIndices, history, result]);
+
+  const hasPages = assistantAnswerIndices.length > 0;
+  const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
+  const currentPageLabel = historyIndex === null
+    ? hasPages
+      ? `${assistantAnswerIndices.length}/${assistantAnswerIndices.length}`
+      : `0/0`
+    : `${(historyIndex ?? 0) + 1}/${assistantAnswerIndices.length}`;
+
+  const gotoPrevPage = useCallback(() => {
+    if (!hasPages) return;
+    // If not on a page yet, jump to the latest (last)
+    if (historyIndex === null) {
+      setHistoryIndex(lastPageIndex);
+
+      return;
+    }
+    if (historyIndex > 0) setHistoryIndex(historyIndex - 1);
+  }, [hasPages, historyIndex, lastPageIndex]);
+
+  const gotoNextPage = useCallback(() => {
+    if (!hasPages) return;
+    if (historyIndex === null) return; // already at live/latest
+    if (historyIndex < lastPageIndex) {
+      setHistoryIndex(historyIndex + 1);
+
+      return;
+    }
+    // From last page, go back to live view
+    setHistoryIndex(null);
+  }, [hasPages, historyIndex, lastPageIndex]);
+
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
-  // Update BlockNote content whenever `result` (Markdown) changes
+  // Update BlockNote content whenever the display Markdown changes (live or paged)
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const blocks = await bnEditor.tryParseMarkdownToBlocks(result || '');
+        const blocks = await bnEditor.tryParseMarkdownToBlocks(displayMarkdown || '');
 
         if (!cancelled) {
           bnEditor.replaceBlocks(bnEditor.document, blocks);
@@ -128,7 +183,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [result, bnEditor]);
+  }, [displayMarkdown, bnEditor]);
   // Global hover detection to toggle native click-through dynamically
   useEffect(() => {
     const onMove = (ev: MouseEvent) => {
@@ -223,22 +278,8 @@ function App() {
     const offScroll = api?.onAskScroll?.(({ direction }: { direction: 'up' | 'down' }) => {
       try {
         setVisible(true);
-        // Prefer Ask tab container if visible; otherwise fallback to transcript bubble
-        const containers = Array.from(
-          document.querySelectorAll<HTMLDivElement>('.bn-markdown-viewer'),
-        );
-        const target = containers.find((el) => {
-          const style = window.getComputedStyle(el);
-
-          return style.display !== 'none' && el.offsetParent !== null;
-        });
-        const area = target ?? null;
-
-        if (!area) return;
-        const step = Math.max(80, Math.round(area.clientHeight * 0.25));
-        const delta = direction === 'up' ? -step : step;
-
-        area.scrollBy({ top: delta, behavior: 'smooth' });
+        if (direction === 'up') gotoPrevPage();
+        else gotoNextPage();
       } catch {}
     });
     // Initialize and watch top-level session
@@ -593,6 +634,8 @@ function App() {
     activeSessionIdForRequestRef.current = null;
     setBusy(true);
     setStreaming(true);
+    // Ensure the viewer shows live content for the new streaming turn
+    setHistoryIndex(null);
     // Merge Ask input with any transcript captured so far
     const transcript = transcriptBufferRef.current || '';
     const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
@@ -894,11 +937,39 @@ function App() {
           <div style={askCard}>
             <div
               className="bn-markdown-viewer"
-              style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }}
+              style={{
+                ...askResultArea,
+                whiteSpace: 'normal',
+                display: displayMarkdown ? 'block' : 'none',
+              }}
             >
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>
             <div style={askFooter}>
+              {/* Pagination controls for in-session answers */}
+              {hasPages && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
+                  <button
+                    style={ghostButton}
+                    title="Previous answer"
+                    onClick={gotoPrevPage}
+                    disabled={streaming || (!hasPages ? true : historyIndex === 0)}
+                  >
+                    ◀ Prev
+                  </button>
+                  <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
+                    {currentPageLabel}
+                  </div>
+                  <button
+                    style={ghostButton}
+                    title="Next answer (or Latest)"
+                    onClick={gotoNextPage}
+                    disabled={streaming || !hasPages}
+                  >
+                    Next ▶
+                  </button>
+                </div>
+              )}
               {(busy || streaming) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
                   <ThinkingIndicator size={8} dots={4} />
@@ -926,11 +997,15 @@ function App() {
         )}
 
         {/* Transcript-only bubble (no input). Visible when not in Ask/Settings and recording, or when last content came from transcript mode. */}
-        {!tab && (recording || (result && transcriptModeRef.current)) && (
+        {!tab && (recording || (displayMarkdown && transcriptModeRef.current)) && (
           <div style={askCard}>
             <div
               className="bn-markdown-viewer"
-              style={{ ...askResultArea, whiteSpace: 'normal', display: result ? 'block' : 'none' }}
+              style={{
+                ...askResultArea,
+                whiteSpace: 'normal',
+                display: displayMarkdown ? 'block' : 'none',
+              }}
             >
               <BlockNoteView className="bn-readonly" editable={false} editor={bnEditor} />
             </div>

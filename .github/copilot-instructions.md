@@ -149,7 +149,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
   - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }`
   - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }`
   - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }`
-  - `ask:scroll` with `{ direction: 'up' | 'down' }` to scroll the Ask result area when the user presses `Cmd/Ctrl+Up` or `Cmd/Ctrl+Down`.
+  - `ask:scroll` with `{ direction: 'up' | 'down' }` to navigate Ask pagination when the user presses `Cmd/Ctrl+Up` or `Cmd/Ctrl+Down`.
 
 Streaming cancellation (interrupt):
 
@@ -205,7 +205,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - Component: `src/renderer/main.tsx` maintains `text`, `result`, `busy`, `streaming` states.
   - On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
   - Appends deltas to `result` in real time.
-  - Streamed answers are rendered as Markdown using a read-only BlockNote editor. On each `result` change, the renderer converts Markdown with `editor.tryParseMarkdownToBlocks(result)` and replaces content via `editor.replaceBlocks(editor.document, blocks)`.
+  - Streamed answers are rendered as Markdown using a read-only BlockNote editor. The renderer derives a `displayMarkdown` value showing either the live streamed content or the selected historical page (assistant answer). On each `displayMarkdown` change, the renderer converts Markdown with `editor.tryParseMarkdownToBlocks(displayMarkdown)` and replaces content via `editor.replaceBlocks(editor.document, blocks)`.
   - Code blocks are rendered without syntax highlighting. We removed the Shiki-based highlighter to simplify dependencies.
   - Shows the streamed response bubble ABOVE the input field.
   - Disables the input while streaming.
@@ -509,9 +509,9 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - 若 Renderer 傳入的 `textPrompt` 為空字串，主程序仍會送出請求；在 SDK 呼叫前，會以預設文字 `'Please analyze this screenshot.'` 進行補齊，確保串流能正常返回。
 - 啟用中的自定義提示詞（從 `prompts-manager` 讀取）會以 `system` 角色附加，提供全域指示；避免使用 `assistant` 角色以免影響模型行為。
 
-- `Cmd/Ctrl+Up`：查看上一則回答
-- `Cmd/Ctrl+Down`：查看下一則回答
-  - 目前行為：在 Renderer 端對 `.bn-markdown-viewer` 滾動容器進行平滑滾動（各 25% 容器高度，最少 80px），IPC 事件為 `ask:scroll`，由 Preload 暴露 `window.ghostAI.onAskScroll(handler)` 供 Renderer 訂閱。
+– `Cmd/Ctrl+Up`：切換到上一頁（上一則助理回答）
+– `Cmd/Ctrl+Down`：切換到下一頁（下一則助理回答；在最後一頁時返回到「最新/直播」視圖）
+  - 行為更新：Renderer 將同一個 `sessionId` 的所有回合集中於單一泡泡中，使用分頁檢視歷史回答；`ask:scroll` 事件由 Preload 暴露 `window.ghostAI.onAskScroll(handler)`，Renderer 端據此在頁面間切換。
 
 ### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
 
