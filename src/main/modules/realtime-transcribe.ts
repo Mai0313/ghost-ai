@@ -43,7 +43,7 @@ export class RealtimeTranscribeManager {
     ws.on('open', () => {
       console.log('[WS] open', { wcId });
       // Configure session: pcm16 + server_vad + specific model
-      const model = opts.model || 'gpt-4o-mini-transcribe';
+      const model = opts.model || 'gpt-4o-realtime-preview-2025-06-03';
       const cfg = {
         type: 'transcription_session.update',
         session: {
