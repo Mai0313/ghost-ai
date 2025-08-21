@@ -135,15 +135,14 @@ function App() {
   const hasPages = assistantAnswerIndices.length > 0;
   const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
   const currentPageLabel = historyIndex === null
-    ? 'Latest'
+    ? `${assistantAnswerIndices.length}/${assistantAnswerIndices.length}`
     : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
 
   const gotoPrevPage = useCallback(() => {
     if (!hasPages) return;
-    // If not on a page yet, jump to the latest (last)
     if (historyIndex === null) {
       setHistoryIndex(lastPageIndex);
-
+      
       return;
     }
     if (historyIndex > 0) setHistoryIndex(historyIndex - 1);
@@ -151,10 +150,12 @@ function App() {
 
   const gotoNextPage = useCallback(() => {
     if (!hasPages) return;
-    if (historyIndex === null) return; // live view: do nothing
-    if (historyIndex < lastPageIndex) {
-      setHistoryIndex(historyIndex + 1);
+    if (historyIndex === null) {
+      setHistoryIndex(lastPageIndex);
+
+      return;
     }
+    if (historyIndex < lastPageIndex) setHistoryIndex(historyIndex + 1);
   }, [hasPages, historyIndex, lastPageIndex]);
 
   useEffect(() => {
@@ -702,6 +703,8 @@ function App() {
             if (lastDeltaRef.current === delta) return; // de-dup identical consecutive chunks
             lastDeltaRef.current = delta;
             setResult((prev) => prev + delta);
+            // When we see first delta for a new turn, ensure we're in live view
+            if (historyIndex !== null) setHistoryIndex(null);
           },
           onDone: ({
             content,
