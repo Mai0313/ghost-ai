@@ -153,7 +153,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
   - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }`
   - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }`
   - `ask:scroll` with `{ direction: 'up' | 'down' }` to scroll the Ask/Transcript content (Ctrl/Cmd+Up/Down).
-  - `ask:paginate` with `{ direction: 'up' | 'down' }` to change pages (Ctrl/Cmd+Shift+Up/Down) within the current session’s assistant answers. Additionally, Ctrl/Cmd+Left = previous page, Ctrl/Cmd+Right = next page.
+  - `ask:paginate` with `{ direction: 'up' | 'down' }` to change pages (Ctrl/Cmd+Shift+Up/Down) within the current session’s assistant answers.
 
 Streaming cancellation (interrupt):
 

@@ -9,8 +9,6 @@ export interface HotkeyHandlers {
   onScrollDown: () => void | Promise<void>;
   onPagePrev: () => void | Promise<void>;
   onPageNext: () => void | Promise<void>;
-  onPageLeft: () => void | Promise<void>;
-  onPageRight: () => void | Promise<void>;
 
 }
 
@@ -23,8 +21,6 @@ const SCROLL_UP_HOTKEY = 'CommandOrControl+Up';
 const SCROLL_DOWN_HOTKEY = 'CommandOrControl+Down';
 const PAGE_PREV_HOTKEY = 'CommandOrControl+Shift+Up';
 const PAGE_NEXT_HOTKEY = 'CommandOrControl+Shift+Down';
-const PAGE_LEFT_HOTKEY = 'CommandOrControl+Left';
-const PAGE_RIGHT_HOTKEY = 'CommandOrControl+Right';
 
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
@@ -79,18 +75,6 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
     globalShortcut.register(PAGE_NEXT_HOTKEY, () => void handlers.onPageNext());
   } catch {
     failures.push(PAGE_NEXT_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(PAGE_LEFT_HOTKEY, () => void handlers.onPageLeft());
-  } catch {
-    failures.push(PAGE_LEFT_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(PAGE_RIGHT_HOTKEY, () => void handlers.onPageRight());
-  } catch {
-    failures.push(PAGE_RIGHT_HOTKEY);
   }
 
 

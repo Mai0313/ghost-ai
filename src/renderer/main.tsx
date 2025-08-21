@@ -306,34 +306,7 @@ function App() {
         else gotoNextPage();
       } catch {}
     });
-
-    // Local fallback: handle Ctrl/Cmd+Left/Right when overlay is visible and input not focused
-    const onKeyDown = (e: KeyboardEvent) => {
-      try {
-        if (!visible) return;
-        // Allow paging regardless of focused element
-        const hasCtrlOrMeta = e.ctrlKey || e.metaKey;
-        const noAltOrShift = !e.altKey && !e.shiftKey;
-
-        if (hasCtrlOrMeta && noAltOrShift) {
-          if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            e.stopPropagation();
-            gotoPrevPage();
-
-            return;
-          }
-          if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            e.stopPropagation();
-            gotoNextPage();
-
-            return;
-          }
-        }
-      } catch {}
-    };
-    window.addEventListener('keydown', onKeyDown, true);
+    
     // Initialize and watch top-level session
     try {
       api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
@@ -391,9 +364,7 @@ function App() {
       try {
         if (typeof offPaginate === 'function') offPaginate();
       } catch {}
-      try {
-        window.removeEventListener('keydown', onKeyDown, true);
-      } catch {}
+      
     };
   }, []);
 
@@ -1150,7 +1121,7 @@ function App() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
                   <button
                     style={ghostButton}
-                    title="Previous answer (Ctrl/Cmd+Shift+Up or Ctrl/Cmd+Left)"
+                    title="Previous answer (Ctrl/Cmd+Shift+Up)"
                     onClick={gotoPrevPage}
                     disabled={!hasPages || historyIndex === 0}
                   >
@@ -1161,7 +1132,7 @@ function App() {
                   </div>
                   <button
                     style={ghostButton}
-                    title="Next answer / Latest (Ctrl/Cmd+Shift+Down or Ctrl/Cmd+Right)"
+                    title="Next answer / Latest (Ctrl/Cmd+Shift+Down)"
                     onClick={gotoNextPage}
                     disabled={!hasPages || historyIndex === null}
                   >
