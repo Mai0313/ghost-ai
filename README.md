@@ -282,6 +282,11 @@ Configure your OpenAI API settings through the application's settings interface:
 
 All settings are encrypted and stored locally - no external services required.
 
+### Realtime Transcription Language
+
+- In Settings → Transcription, you can choose the transcription language: **English (en)** or **中文 (zh)**. Default is **en**.
+- This hint is sent to the realtime transcription session to reduce garbled characters when speaking Chinese (e.g., avoid outputs like `��得到嗎?`).
+
 ### UI customization (opacity and colors)
 
 - To adjust overall opacity (both background and text), change the theme opacity in `src/renderer/styles/theme.ts`:

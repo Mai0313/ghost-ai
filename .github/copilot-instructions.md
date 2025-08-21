@@ -190,6 +190,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - Main module: `src/main/modules/realtime-transcribe.ts`
   - Opens `wss://api.openai.com/v1/realtime?intent=transcription`
   - Sends `transcription_session.update` with `input_audio_format: "pcm16"`, `turn_detection: { type: "server_vad", threshold: 0.5, silence_duration_ms: 350, prefix_padding_ms: 150 }`, and `input_audio_transcription.model: "gpt-4o-mini-transcribe"`
+  - Language hint: `input_audio_transcription.language` is set from user settings (`en` or `zh`), default `en`, to avoid garbled Chinese output
   - Accepts `input_audio_buffer.append` events with base64 PCM16 mono @ 24kHz
   - Emits to renderer:
     - `transcribe:start`, `transcribe:delta` (streaming deltas), `transcribe:done` (sentence completed), `transcribe:error`, `transcribe:closed`
@@ -263,6 +264,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - Persisted with `electron-store` and `safeStorage` (encrypts the OpenAI config blob).
 - `Settings.tsx` reads and updates config via `window.ghostAI`.
+- New: `settings:get`/`settings:update` now persist user preferences, including `transcribeLanguage: 'en' | 'zh'` (default `'en'`). Renderer shows a dropdown under Settings → Transcription.
 
 ## Coding Guidelines
 

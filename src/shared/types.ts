@@ -35,4 +35,6 @@ export interface UserSettings {
   rememberHideState: boolean;
   openaiConfig: OpenAIConfig;
   isFirstRun: boolean;
+  // Preferred language for realtime transcription (UI: en or zh)
+  transcribeLanguage?: 'en' | 'zh';
 }

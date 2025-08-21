@@ -7,6 +7,7 @@ interface RealtimeSessionOptions {
   baseURL?: string; // not used by WS
   model?: string; // default gpt-4o-mini-transcribe
   sessionId?: string;
+  language?: 'en' | 'zh';
 }
 
 export class RealtimeTranscribeManager {
@@ -44,7 +45,7 @@ export class RealtimeTranscribeManager {
       console.log('[WS] open', { wcId });
       // Configure session: pcm16 + server_vad + specific model
       const model = opts.model || 'gpt-4o-realtime-preview-2025-06-03';
-      const cfg = {
+      const cfg: any = {
         type: 'transcription_session.update',
         session: {
           input_audio_format: 'pcm16',
@@ -57,6 +58,12 @@ export class RealtimeTranscribeManager {
           input_audio_transcription: { model },
         },
       };
+      // Language hint to reduce garbled text; default to en
+      const lang = (opts.language === 'zh' ? 'zh' : 'en');
+      try {
+        // Some backends accept BCP-47; keep minimal 'en'/'zh' per requirement
+        cfg.session.input_audio_transcription.language = lang;
+      } catch {}
 
       ws.send(JSON.stringify(cfg));
       try {

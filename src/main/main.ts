@@ -10,7 +10,7 @@ import { openAIClient } from '@shared/openai-client';
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
-import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings } from './modules/settings-manager';
+import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings, saveUserSettings } from './modules/settings-manager';
 import {
   ensureDefaultPrompt,
   listPrompts,
@@ -299,8 +299,8 @@ app.whenReady().then(async () => {
   // Dynamic hotkey updates are disabled by design (fixed hotkeys)
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
-    // No-op persistence (we do not store arbitrary userSettings anymore)
-    return { ...loadUserSettings(), ...partial };
+    saveUserSettings(partial);
+    return loadUserSettings();
   });
 
   // Prompts IPC
@@ -579,12 +579,14 @@ ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
 // Realtime transcription IPC (global handlers)
 ipcMain.handle('transcribe:start', async (evt, options: { model?: string }) => {
   const cfg = loadOpenAIConfig();
+  const user = loadUserSettings();
 
   if (!cfg?.apiKey) throw new Error('Missing OpenAI API key');
   realtimeTranscribeManager.start(evt.sender, {
     apiKey: cfg.apiKey,
     model: options?.model,
     sessionId: currentSessionId,
+    language: (user as any)?.transcribeLanguage === 'zh' ? 'zh' : 'en',
   });
 
   return { ok: true };

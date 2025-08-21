@@ -15,7 +15,7 @@ try {
   fs.mkdirSync(configDir, { recursive: true });
 } catch {}
 
-const store = new Store<{ encryptedOpenAI?: string; baseURL?: string; model?: string }>({
+const store = new Store<{ encryptedOpenAI?: string; baseURL?: string; model?: string; userSettings?: Partial<UserSettings> }>({
   cwd: configDir,
   name: 'config',
   fileExtension: 'json',
@@ -61,12 +61,24 @@ export function loadOpenAIConfig(): OpenAIConfig | null {
 }
 
 export function saveUserSettings(partial: Partial<UserSettings>) {
-  // No-op: userSettings are not persisted anymore
+  try {
+    const current = (store.get('userSettings') || {}) as Partial<UserSettings>;
+    const merged = { ...current, ...partial } as Partial<UserSettings>;
+    store.set('userSettings', merged);
+  } catch {}
 }
 
 export function loadUserSettings(): Partial<UserSettings> {
-  // No-op: return empty; nothing persisted
-  return {};
+  try {
+    const ret = (store.get('userSettings') || {}) as Partial<UserSettings>;
+    // Provide sensible defaults without forcing a full schema
+    if (typeof (ret as any).transcribeLanguage !== 'string') {
+      (ret as any).transcribeLanguage = 'en';
+    }
+    return ret;
+  } catch {
+    return { transcribeLanguage: 'en' } as any;
+  }
 }
 
 export function saveHiddenState(hidden: boolean) {

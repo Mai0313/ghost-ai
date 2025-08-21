@@ -9,6 +9,8 @@ export function Settings() {
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
+  // Transcription language
+  const [transcribeLanguage, setTranscribeLanguage] = useState<'en' | 'zh'>('en');
   // Prompts manager state
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
@@ -21,10 +23,11 @@ export function Settings() {
       if (!api) return;
 
       try {
-        const [cfg, list, promptsInfo] = await Promise.all([
+        const [cfg, list, promptsInfo, userSettings] = await Promise.all([
           api.getOpenAIConfig(),
           api.listOpenAIModels(),
           api.listPrompts?.(),
+          api.getUserSettings?.(),
         ]);
 
         if (cfg) {
@@ -42,6 +45,11 @@ export function Settings() {
         } else {
           setModel('');
         }
+        // Language
+        try {
+          const lang = (userSettings && (userSettings as any).transcribeLanguage) || 'en';
+          setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
+        } catch {}
         // Prompts
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
@@ -59,6 +67,9 @@ export function Settings() {
 
     if (!api) return alert('Preload not ready. Please restart the app.');
     await api.updateOpenAIConfig({ apiKey, baseURL, model } as any);
+    try {
+      await api.updateUserSettings?.({ transcribeLanguage });
+    } catch {}
     alert('Saved OpenAI settings');
   };
 
@@ -145,6 +156,31 @@ export function Settings() {
         />
 
         {/* Model selection moved next to Ask input. Keep internal state for Test, but hide UI here. */}
+      </div>
+      <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Transcription</div>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <label htmlFor="transcribe-language" style={{ fontSize: 12, color: '#BDBDBD' }}>
+            Language
+          </label>
+          <select
+            id="transcribe-language"
+            style={{
+              background: '#141414',
+              border: '1px solid #2a2a2a',
+              color: 'white',
+              padding: '10px 12px',
+              borderRadius: 10,
+              outline: 'none',
+              width: '100%',
+            }}
+            value={transcribeLanguage}
+            onChange={(e) => setTranscribeLanguage((e.target.value as 'en' | 'zh') || 'en')}
+          >
+            <option value="en" style={{ background: '#141414' }}>English (en)</option>
+            <option value="zh" style={{ background: '#141414' }}>中文 (zh)</option>
+          </select>
+        </div>
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
