@@ -61,18 +61,18 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
 - **Unified Ask card with pagination (streaming‑only)**: The AI response and the input are combined into one card. Within the same session, past answers are shown as pages with Prev/Next controls and a page indicator (e.g., `2/5`). While streaming, you can stay on an older page; use Next to jump back to Live at any time.
- - **Unified rendering for answers and transcripts**: Both analyze responses and realtime transcripts stream into the same reply area using a shared render sink (append/finish). This ensures identical behavior and formatting for both sources.
+- **Unified rendering for answers and transcripts**: Both analyze responses and realtime transcripts stream into the same reply area using a shared render sink (append/finish). This ensures identical behavior and formatting for both sources.
 - **Regenerate on completed page**: After an answer finishes, a Regenerate button appears. Clicking it resends the original question for that page using only the prior conversation context (excluding that page), producing a new answer in place without creating a new page.
 - **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
 - **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up/Down = Cmd/Ctrl+Up/Down, Prev/Next Page = Cmd/Ctrl+Shift+Up/Down
- - **Listen controls**: While recording, you can Pause/Resume live transcript without stopping the session, or Stop to end recording.
+- **Listen controls**: While recording, you can Pause/Resume live transcript without stopping the session, or Stop to end recording.
 - **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
 - **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
 - **Quick clear / Interrupt**: Press Cmd/Ctrl+R anytime to abort an in‑progress AI answer, clear the Ask bubble and conversation history, and start a brand‑new session instantly
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
- - **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/renderer/styles/blocknote-custom.css`.
+- **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/renderer/styles/blocknote-custom.css`.
 
 ### 🏗️ **Modern Architecture**
 
@@ -279,7 +279,7 @@ Configure your OpenAI API settings through the application's settings interface:
 - **Model**: Choose from available models (dynamically fetched from OpenAI)
 - Note: The app does not set temperature or max tokens by default to maximize compatibility across models. If your selected model supports these, you can customize behavior by changing models or your prompts.
   - `OpenAIConfig.maxTokens` is retained in settings as a convenience and is typed as `number | null`. The default is `null`, which means "use the model's default/maximum tokens." This value is not sent to the API unless you explicitly re‑enable token limits in code; when `maxTokens` is `null` or `undefined`, omit the API parameter entirely.
- - For `gpt-5` only, the app automatically sets `reasoning_effort: "low"` to reduce latency/cost. This parameter is not sent for other models to maintain compatibility.
+- For `gpt-5` only, the app automatically sets `reasoning_effort: "low"` to reduce latency/cost. This parameter is not sent for other models to maintain compatibility.
 
 All settings are encrypted and stored locally - no external services required.
 

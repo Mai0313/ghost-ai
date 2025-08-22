@@ -48,6 +48,7 @@ export function Settings() {
         // Language
         try {
           const lang = (userSettings && (userSettings as any).transcribeLanguage) || 'en';
+
           setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
         } catch {}
         // Prompts
@@ -177,8 +178,12 @@ export function Settings() {
             value={transcribeLanguage}
             onChange={(e) => setTranscribeLanguage((e.target.value as 'en' | 'zh') || 'en')}
           >
-            <option value="en" style={{ background: '#141414' }}>English (en)</option>
-            <option value="zh" style={{ background: '#141414' }}>中文 (zh)</option>
+            <option style={{ background: '#141414' }} value="en">
+              English (en)
+            </option>
+            <option style={{ background: '#141414' }} value="zh">
+              中文 (zh)
+            </option>
           </select>
         </div>
       </div>

@@ -79,7 +79,7 @@ function App() {
         php: { name: 'PHP' },
         json: { name: 'JSON' },
         text: { name: 'Text' },
-      }
+      },
     },
   });
 
@@ -124,6 +124,7 @@ function App() {
   }, []);
   const finalizeLive = useCallback((opts?: { content?: string; appendNewline?: boolean }) => {
     const contentProvided = typeof opts?.content === 'string';
+
     if (contentProvided) {
       setResult(opts!.content || '');
     }
@@ -158,15 +159,14 @@ function App() {
 
   const hasPages = assistantAnswerIndices.length > 0;
   const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
-  const currentPageLabel = historyIndex === null
-    ? 'Live'
-    : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
+  const currentPageLabel =
+    historyIndex === null ? 'Live' : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
 
   const gotoPrevPage = useCallback(() => {
     if (!hasPages) return;
     if (historyIndex === null) {
       setHistoryIndex(lastPageIndex);
-      
+
       return;
     }
     if (historyIndex > 0) setHistoryIndex(historyIndex - 1);
@@ -273,10 +273,7 @@ function App() {
         const api: any = (window as any).ghostAI;
 
         if (!api) return;
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
 
         if (Array.isArray(list) && list.length) setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || '';
@@ -294,19 +291,20 @@ function App() {
     if (!api?.onOpenAIConfigUpdated) return;
     const off = api.onOpenAIConfigUpdated(async () => {
       try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
+
         if (Array.isArray(list) && list.length) setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || '';
+
         if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
         else if (Array.isArray(list) && list.length) setModel(list[0] ?? '');
       } catch {}
     });
 
     return () => {
-      try { off && off(); } catch {}
+      try {
+        off && off();
+      } catch {}
     };
   }, []);
 
@@ -374,7 +372,7 @@ function App() {
         else gotoNextPage();
       } catch {}
     });
-    
+
     // Initialize and watch top-level session
     try {
       api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
@@ -421,7 +419,6 @@ function App() {
       transcriptBufferRef.current = '';
     });
 
-
     return () => {
       try {
         if (typeof offSession === 'function') offSession();
@@ -432,7 +429,6 @@ function App() {
       try {
         if (typeof offPaginate === 'function') offPaginate();
       } catch {}
-      
     };
   }, []);
 
@@ -626,6 +622,7 @@ function App() {
         }
         const merged = new Uint8Array(batchBytes);
         let offset = 0;
+
         for (const c of batchChunks) {
           merged.set(c, offset);
           offset += c.byteLength;
@@ -633,6 +630,7 @@ function App() {
         batchChunks = [];
         batchBytes = 0;
         const b64 = btoa(String.fromCharCode(...merged));
+
         try {
           (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
         } catch (e) {
@@ -682,12 +680,14 @@ function App() {
               const toSend = buf.subarray(0, CHUNK_SAMPLES);
               // Shift remaining
               const remain = used - CHUNK_SAMPLES;
+
               if (remain > 0) buf.copyWithin(0, CHUNK_SAMPLES, used);
               used = remain;
 
               // Convert to PCM16 bytes and append to batch
               const pcm16 = floatTo16BitPCM(toSend);
               const bytes = new Uint8Array(pcm16.buffer);
+
               batchChunks.push(bytes);
               batchBytes += bytes.byteLength;
               // Flush conditions
@@ -926,25 +926,28 @@ function App() {
     };
   }, []);
 
-  const makePlainHistoryText = useCallback((hist: { role: 'user' | 'assistant'; content: string }[]) => {
-    let out = '';
+  const makePlainHistoryText = useCallback(
+    (hist: { role: 'user' | 'assistant'; content: string }[]) => {
+      let out = '';
 
-    for (let i = 0; i < hist.length - 1; i += 2) {
-      const u = hist[i];
-      const a = hist[i + 1];
+      for (let i = 0; i < hist.length - 1; i += 2) {
+        const u = hist[i];
+        const a = hist[i + 1];
 
-      if (u?.role === 'user' && a?.role === 'assistant') {
-        const q = (u.content || '').trim();
-        const ans = (a.content || '').trim();
+        if (u?.role === 'user' && a?.role === 'assistant') {
+          const q = (u.content || '').trim();
+          const ans = (a.content || '').trim();
 
-        if (q || ans) {
-          out += `Q: ${q}\nA: ${ans}\n\n`;
+          if (q || ans) {
+            out += `Q: ${q}\nA: ${ans}\n\n`;
+          }
         }
       }
-    }
 
-    return out;
-  }, []);
+      return out;
+    },
+    [],
+  );
 
   const onRegenerate = useCallback(async () => {
     if (!canRegenerate) return;
@@ -987,22 +990,52 @@ function App() {
         userMessage,
         effectiveCustomPrompt,
         {
-          onStart: ({ requestId: rid, sessionId: sid }: { requestId: string; sessionId?: string }) => {
+          onStart: ({
+            requestId: rid,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            sessionId?: string;
+          }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
             }
             setRequestId(rid);
           },
-          onDelta: ({ delta, sessionId: sid }: { requestId: string; delta: string; sessionId?: string }) => {
-            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+          onDelta: ({
+            delta,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            delta: string;
+            sessionId?: string;
+          }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             if (!delta) return;
             if (lastDeltaRef.current === delta) return;
             lastDeltaRef.current = delta;
             appendLive(delta);
           },
-          onDone: ({ content, sessionId: sid }: { requestId: string; content: string; sessionId?: string }) => {
-            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+          onDone: ({
+            content,
+            sessionId: sid,
+          }: {
+            requestId: string;
+            content: string;
+            sessionId?: string;
+          }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             finalizeLive({ content: content ?? '' });
             setStreaming(false);
             setRequestId(null);
@@ -1026,8 +1059,20 @@ function App() {
               activeUnsubRef.current = null;
             }
           },
-          onError: ({ error, sessionId: sid }: { requestId?: string; error: string; sessionId?: string }) => {
-            if (sid && activeSessionIdForRequestRef.current && sid !== activeSessionIdForRequestRef.current) return;
+          onError: ({
+            error,
+            sessionId: sid,
+          }: {
+            requestId?: string;
+            error: string;
+            sessionId?: string;
+          }) => {
+            if (
+              sid &&
+              activeSessionIdForRequestRef.current &&
+              sid !== activeSessionIdForRequestRef.current
+            )
+              return;
             setStreaming(false);
             setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
@@ -1058,8 +1103,14 @@ function App() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [canRegenerate, historyIndex, lastPageIndex, assistantAnswerIndices, history, makePlainHistoryText]);
-
+  }, [
+    canRegenerate,
+    historyIndex,
+    lastPageIndex,
+    assistantAnswerIndices,
+    history,
+    makePlainHistoryText,
+  ]);
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -1265,10 +1316,10 @@ function App() {
               {hasPages && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
                   <button
+                    disabled={!hasPages || historyIndex === 0}
                     style={ghostButton}
                     title="Previous answer (Ctrl/Cmd+Shift+Up)"
                     onClick={gotoPrevPage}
-                    disabled={!hasPages || historyIndex === 0}
                   >
                     ◀ Prev
                   </button>
@@ -1276,10 +1327,10 @@ function App() {
                     {currentPageLabel}
                   </div>
                   <button
+                    disabled={!hasPages || historyIndex === null}
                     style={ghostButton}
                     title="Next answer / Latest (Ctrl/Cmd+Shift+Down)"
                     onClick={gotoNextPage}
-                    disabled={!hasPages || historyIndex === null}
                   >
                     Next ▶
                   </button>
@@ -1296,7 +1347,7 @@ function App() {
               )}
               {(busy || streaming) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
-                  <ThinkingIndicator size={8} dots={4} />
+                  <ThinkingIndicator dots={4} size={8} />
                 </div>
               )}
               <input
@@ -1332,6 +1383,7 @@ function App() {
                 value={model}
                 onChange={async (e) => {
                   const val = e.target.value;
+
                   setModel(val);
                   try {
                     const api: any = (window as any).ghostAI;

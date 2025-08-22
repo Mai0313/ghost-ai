@@ -59,7 +59,8 @@ export class RealtimeTranscribeManager {
         },
       };
       // Language hint to reduce garbled text; default to en
-      const lang = (opts.language === 'zh' ? 'zh' : 'en');
+      const lang = opts.language === 'zh' ? 'zh' : 'en';
+
       try {
         // Some backends accept BCP-47; keep minimal 'en'/'zh' per requirement
         cfg.session.input_audio_transcription.language = lang;

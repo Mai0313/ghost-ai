@@ -3,11 +3,13 @@ Ghost AI – Developer Instructions
 This document captures technical notes relevant to contributors.
 
 Model list loading and config updates
+
 - A renderer-side model selector lives in `src/renderer/main.tsx` (next to the Ask input).
 - Models are fetched through `window.ghostAI.listOpenAIModels()` which bridges to `ipcMain.handle('openai:list-models')` and ultimately `src/shared/openai-client.ts#listModels`.
 - To avoid the selector getting stuck on "Loading models…" when the API key is missing or invalid, `listModels()` now returns a sensible default list even on errors.
 
 IPC updates
+
 - New broadcast event: `openai:config-updated`.
   - Emitted by main after both `openai:update-config` (persisted) and `openai:update-config-volatile` (in-memory) updates.
   - Main implementation lives in `src/main/main.ts`.
@@ -15,16 +17,19 @@ IPC updates
   - Renderer subscribes and refreshes the model list when config changes (see `src/renderer/main.tsx`).
 
 OpenAI client behavior
+
 - `src/shared/openai-client.ts#listModels()`:
   - Tries to call `client.models.list()`.
   - Filters to an allowed ordering when available.
   - On any exception, returns the same default allowed order so the UI remains usable.
 
 Renderer notes
+
 - The Ask footer model selector now refreshes automatically when settings change, via `onOpenAIConfigUpdated`.
 - Settings screen (`src/renderer/components/Settings.tsx`) still updates models eagerly when API key/Base URL inputs change.
 
 Troubleshooting
+
 - If requests fail after selecting a model, verify that your OpenAI API key has access to that model and that `baseURL` is correct.
 - Use the Settings screen "Test" button to validate API connectivity.
 
@@ -105,7 +110,7 @@ Notes:
 - The project pins neither OpenAI SDK version nor strict types (uses `@ts-ignore` at call-sites as the SDK frequently changes). Keep the mapping minimal and guarded.
 - Vision is implemented through `chat.completions.create` with a `content` array of `[text, image_url]`.
 - To maximize model compatibility, we DO NOT set `temperature` or `max_tokens`/`max_completion_tokens` in API calls. Let the model defaults apply. If you re-introduce these, guard per-model support.
- - For `gpt-5` only, we set `reasoning_effort: 'low'` on chat completion requests. Do not send `reasoning_effort` to non‑`gpt-5` models as many do not support it.
+- For `gpt-5` only, we set `reasoning_effort: 'low'` on chat completion requests. Do not send `reasoning_effort` to non‑`gpt-5` models as many do not support it.
 
 Type notes (OpenAIConfig):
 
@@ -565,7 +570,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 – `Cmd/Ctrl+Down`：向下捲動內容
 – `Cmd/Ctrl+Shift+Up`：切換到上一頁（上一則助理回答）
 – `Cmd/Ctrl+Shift+Down`：切換到下一頁（下一則助理回答；在最後一頁時返回到「最新/直播」視圖）
-  - 更新：Renderer 改以 `ask:paginate` 事件（由 Preload 暴露 `window.ghostAI.onAskPaginate(handler)`）處理分頁切換；`ask:scroll` 恢復為內容滾動。
+
+- 更新：Renderer 改以 `ask:paginate` 事件（由 Preload 暴露 `window.ghostAI.onAskPaginate(handler)`）處理分頁切換；`ask:scroll` 恢復為內容滾動。
 
 ### 選單快捷鍵（避免與 Renderer 清除快捷鍵衝突）
 

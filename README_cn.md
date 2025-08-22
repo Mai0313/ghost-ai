@@ -70,7 +70,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **可自訂設定**: 個人化熱鍵、預設提示和行為
 - **跨平台**: 在 Windows、macOS 和 Linux 上無縫運作
 - **邊緣友善的覆蓋層**：覆蓋層預設為全螢幕且可點擊穿透；只有當滑鼠懸停在 HUD 或泡泡上時才會接收滑鼠事件，避免「透明視窗擋住」的情況，讓控制列可拖到最上/下緣。
- - **滾動條樣式**：AI 回答區使用與面板風格一致的薄型圓角滾動條，可在 `src/renderer/styles/blocknote-custom.css` 進一步調整。
+- **滾動條樣式**：AI 回答區使用與面板風格一致的薄型圓角滾動條，可在 `src/renderer/styles/blocknote-custom.css` 進一步調整。
 
 ## 提示詞目錄
 
@@ -285,7 +285,7 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
 - **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）
   注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
   - `OpenAIConfig.maxTokens` 仍保留於設定中以供需要時使用，型別為 `number | null`。預設為 `null`，代表「使用模型的預設/最大 token」。此欄位預設不會被送到 API；若在程式中重新啟用 token 上限，當 `maxTokens` 為 `null` 或 `undefined` 時，請完全省略該 API 參數。
- - 僅在選擇 `gpt-5` 時，應用會自動附加 `reasoning_effort: "low"` 以降低延遲/成本；為避免相容性問題，其餘模型均不會傳送此參數。
+- 僅在選擇 `gpt-5` 時，應用會自動附加 `reasoning_effort: "low"` 以降低延遲/成本；為避免相容性問題，其餘模型均不會傳送此參數。
 
 所有設定都經過加密並本地儲存 - 無需外部服務。
 

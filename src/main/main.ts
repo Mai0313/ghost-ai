@@ -10,7 +10,12 @@ import { openAIClient } from '@shared/openai-client';
 import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
 import { captureScreen } from './modules/screenshot-manager';
 import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
-import { loadOpenAIConfig, saveOpenAIConfig, loadUserSettings, saveUserSettings } from './modules/settings-manager';
+import {
+  loadOpenAIConfig,
+  saveOpenAIConfig,
+  loadUserSettings,
+  saveUserSettings,
+} from './modules/settings-manager';
 import {
   ensureDefaultPrompt,
   listPrompts,
@@ -246,6 +251,7 @@ app.whenReady().then(async () => {
       try {
         await logManager.writeConversationLog(currentSessionId, '');
         const json = sessionStore.toJSON();
+
         await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
       } catch {}
       try {
@@ -282,8 +288,6 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send('ask:paginate', { direction: 'down' });
     },
-    
-
   });
 
   // If no OpenAI config yet, guide user by showing the overlay
@@ -300,6 +304,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
     saveUserSettings(partial);
+
     return loadUserSettings();
   });
 
@@ -356,6 +361,7 @@ app.whenReady().then(async () => {
     try {
       await logManager.writeConversationLog(currentSessionId, '');
       const json = sessionStore.toJSON();
+
       await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
     } catch {}
 
@@ -387,7 +393,9 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
   try {
     // Notify renderers that OpenAI config has changed so they can refresh models
     for (const bw of BrowserWindow.getAllWindows()) {
-      try { bw.webContents.send('openai:config-updated'); } catch {}
+      try {
+        bw.webContents.send('openai:config-updated');
+      } catch {}
     }
   } catch {}
 
@@ -401,7 +409,9 @@ ipcMain.handle('openai:update-config-volatile', async (_evt, config: Partial<Ope
     try {
       // Notify renderers that OpenAI config has changed in-memory
       for (const bw of BrowserWindow.getAllWindows()) {
-        try { bw.webContents.send('openai:config-updated'); } catch {}
+        try {
+          bw.webContents.send('openai:config-updated');
+        } catch {}
       }
     } catch {}
 
@@ -426,12 +436,10 @@ ipcMain.handle('openai:list-models', async () => {
 // Streaming analyze (sends start/delta/done/error events)
 ipcMain.on(
   'capture:analyze-stream',
-  async (
-    evt,
-    payload: { textPrompt: string; customPrompt: string; history?: string | null },
-  ) => {
+  async (evt, payload: { textPrompt: string; customPrompt: string; history?: string | null }) => {
     // Record the sessionId at the start of this analysis to prevent race conditions with Ctrl+R
     const analysisSessionId = currentSessionId;
+
     try {
       ensureHiddenOnCapture();
       const image = await hideAllWindowsDuring(async () => captureScreen());
@@ -442,7 +450,8 @@ ipcMain.on(
       // Inject prior plain-text history into the text prompt for simple continuity.
       // If payload.history is provided (regeneration), use it as the prior history override;
       // otherwise use the current conversationHistoryText.
-      const priorPlain = (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
+      const priorPlain =
+        (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
       // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
       const initialPromptPrefix = (() => {
         try {
@@ -455,9 +464,10 @@ ipcMain.on(
           return '';
         }
       })();
-      const priorWithInitial = (typeof payload.history === 'string')
-        ? `${initialPromptPrefix}${priorPlain || ''}`
-        : priorPlain;
+      const priorWithInitial =
+        typeof payload.history === 'string'
+          ? `${initialPromptPrefix}${priorPlain || ''}`
+          : priorPlain;
       const combinedTextPrompt = priorWithInitial
         ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
@@ -533,7 +543,9 @@ ipcMain.on(
           // payload.history already excludes the current page's Q/A
           const base = payload.history || '';
           const rebuilt = `${initialPromptPrefix}${base}`;
-          conversationHistoryText = rebuilt + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
+
+          conversationHistoryText =
+            rebuilt + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
         } else {
           if (question || answer) {
             conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;

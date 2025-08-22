@@ -7,11 +7,11 @@ export function ThinkingIndicator({ size = 10, dots = 3 }: { size?: number; dots
 
   return (
     <div
+      aria-label="Thinking"
       className="thinking-dots"
       role="status"
-      aria-label="Thinking"
-      title="Thinking"
       style={{ color: theme.color.primary(1, 1) }}
+      title="Thinking"
     >
       {items.map((_, idx) => (
         <span key={idx} style={{ width: size, height: size }} />
@@ -19,5 +19,3 @@ export function ThinkingIndicator({ size = 10, dots = 3 }: { size?: number; dots
     </div>
   );
 }
-
-

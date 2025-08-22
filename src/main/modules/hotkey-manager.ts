@@ -9,7 +9,6 @@ export interface HotkeyHandlers {
   onScrollDown: () => void | Promise<void>;
   onPagePrev: () => void | Promise<void>;
   onPageNext: () => void | Promise<void>;
-
 }
 
 // Fixed hotkeys (Cmd on macOS, Ctrl on others)
@@ -21,7 +20,6 @@ const SCROLL_UP_HOTKEY = 'CommandOrControl+Up';
 const SCROLL_DOWN_HOTKEY = 'CommandOrControl+Down';
 const PAGE_PREV_HOTKEY = 'CommandOrControl+Shift+Up';
 const PAGE_NEXT_HOTKEY = 'CommandOrControl+Shift+Down';
-
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   ok: boolean;
@@ -76,8 +74,6 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   } catch {
     failures.push(PAGE_NEXT_HOTKEY);
   }
-
-
 
   return { ok: failures.length === 0, failed: failures };
 }

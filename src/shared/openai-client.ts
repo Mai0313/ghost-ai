@@ -1,14 +1,17 @@
-import { ChatCompletionCreateParamsStreaming } from 'openai/resources.js';
 import type { AnalysisResult, OpenAIConfig } from './types';
-
-import OpenAI from 'openai';
 import type {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions';
-import type { ResponseCreateParams, ResponseStreamEvent } from 'openai/resources/responses/responses';
+import type {
+  ResponseCreateParams,
+  ResponseStreamEvent,
+} from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
+
+import OpenAI from 'openai';
+import { ChatCompletionCreateParamsStreaming } from 'openai/resources.js';
 import { ResponseCreateParamsStreaming } from 'openai/resources/responses/responses.js';
 
 export class OpenAIClient {
@@ -48,13 +51,30 @@ export class OpenAIClient {
     try {
       const list = await client.models.list();
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
-      const allowedOrder = ['chatgpt-4o-latest', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o4-mini-2025-04-16', 'gpt-5', 'gpt-5-mini'];
+      const allowedOrder = [
+        'chatgpt-4o-latest',
+        'gpt-4o',
+        'gpt-4o-mini',
+        'gpt-4.1',
+        'o4-mini-2025-04-16',
+        'gpt-5',
+        'gpt-5-mini',
+      ];
       const filtered = allowedOrder.filter((id) => ids.includes(id));
 
       return filtered.length ? filtered : allowedOrder;
     } catch {
       // Return a sensible default order so the UI doesn't get stuck in "Loading models…"
-      const allowedOrder = ['chatgpt-4o-latest', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o4-mini-2025-04-16', 'gpt-5', 'gpt-5-mini'];
+      const allowedOrder = [
+        'chatgpt-4o-latest',
+        'gpt-4o',
+        'gpt-4o-mini',
+        'gpt-4.1',
+        'o4-mini-2025-04-16',
+        'gpt-5',
+        'gpt-5-mini',
+      ];
+
       return allowedOrder;
     }
   }
@@ -78,7 +98,8 @@ export class OpenAIClient {
       // Use system role for custom prompt/instructions to guide the model
       messages.push({ role: 'system', content: customPrompt.trim() });
     }
-    const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
+    const effectiveText =
+      textPrompt?.trim() || 'Response to the question based on the info or image you have.';
     const content: Exclude<ChatCompletionMessageParam['content'], string | null> = [
       { type: 'text', text: effectiveText },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
@@ -86,16 +107,19 @@ export class OpenAIClient {
 
     messages.push({ role: 'user', content });
 
-    const request: ChatCompletionCreateParams & { stream: true } = ({
+    const request: ChatCompletionCreateParams & { stream: true } = {
       model: config.model,
       messages,
       stream: true,
-    } as ChatCompletionCreateParamsStreaming);
+    } as ChatCompletionCreateParamsStreaming;
+
     if (config.model === 'gpt-5') {
       request.reasoning_effort = 'low';
     }
     // Pass AbortSignal so callers can cancel mid-stream
-    const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, { signal });
+    const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, {
+      signal,
+    });
 
     let finalContent = '';
 
@@ -135,9 +159,11 @@ export class OpenAIClient {
     const client = this.client!;
     const base64 = imageBuffer.toString('base64');
 
-    const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
+    const effectiveText =
+      textPrompt?.trim() || 'Response to the question based on the info or image you have.';
 
     const input: any[] = [];
+
     if (customPrompt?.trim()) {
       input.push({ role: 'system', content: customPrompt.trim() });
     }
@@ -149,14 +175,13 @@ export class OpenAIClient {
       ],
     });
 
-    const request: ResponseCreateParams & { stream: true } = ({
+    const request: ResponseCreateParams & { stream: true } = {
       model: config.model,
       input: input,
-      tools: [
-        { type: 'web_search_preview' },
-      ],
+      tools: [{ type: 'web_search_preview' }],
       stream: true,
-    } as ResponseCreateParamsStreaming);
+    } as ResponseCreateParamsStreaming;
+
     if (config.model === 'gpt-5') {
       // Responses API uses nested reasoning config
       request.reasoning = { effort: 'low' };
@@ -165,6 +190,7 @@ export class OpenAIClient {
 
     let finalContent = '';
     let response_id = '';
+
     for await (const event of stream) {
       try {
         // Get the response ID
@@ -184,7 +210,6 @@ export class OpenAIClient {
           finalContent = event.text;
           continue;
         }
-
       } catch {
         // ignore malformed events
       }
