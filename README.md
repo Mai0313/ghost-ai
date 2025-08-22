@@ -7,12 +7,12 @@
 [![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![OpenAI](https://img.shields.io/badge/-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
 [![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![tests](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml)
-[![code-quality](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml)
-[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost_ai/tree/master?tab=License-1-ov-file)
-[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Mai0313/ghost_ai/pulls)
-[![Privacy](https://img.shields.io/badge/Privacy-First-purple?logo=shield&logoColor=white)](https://github.com/Mai0313/ghost_ai)
-[![Cross Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron&logoColor=white)](https://github.com/Mai0313/ghost_ai)
+[![tests](https://github.com/Mai0313/ghost-ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost-ai/actions/workflows/test.yml)
+[![code-quality](https://github.com/Mai0313/ghost-ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost-ai/actions/workflows/code-quality-check.yml)
+[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost-ai/tree/master?tab=License-1-ov-file)
+[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Mai0313/ghost-ai/pulls)
+[![Privacy](https://img.shields.io/badge/Privacy-First-purple?logo=shield&logoColor=white)](https://github.com/Mai0313/ghost-ai)
+[![Cross Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron&logoColor=white)](https://github.com/Mai0313/ghost-ai)
 
 </center>
 
@@ -29,13 +29,13 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Ghost Mode**: Completely invisible during screenshots and screen sharing
 - **Stealth Hotkeys**: Low-level keyboard hooks that avoid detection by monitoring software
 - **Hidden Process**: Disguised process names and window titles for maximum privacy
-- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per session under `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` for debugging/inspection.
+- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per session under `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for debugging/inspection.
 
 ### ⚡ **Lightning Fast Capture**
 
 - **Global Hotkeys**: Trigger screenshots from any application with customizable key combinations
 - **Instant Analysis**: Real-time image analysis using OpenAI's Vision API
-- **Smart Prompting**: Store prompt files under `~/.ghost_ai/prompts` and switch the active prompt in Settings (editing is done outside the app)
+- **Smart Prompting**: Store prompt files under `~/.ghost-ai/prompts` and switch the active prompt in Settings (editing is done outside the app)
 - **Multiple Capture Modes**: Full screen, active window, or custom region selection
 
 ### 🤖 **AI-Powered Intelligence**
@@ -44,15 +44,15 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
-- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`.
-- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost_ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history.
-- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
-  - A structured Session Store is also maintained in memory and persisted to `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
+- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
+- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost-ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history.
+- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
+  - A structured Session Store is also maintained in memory and persisted to `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
 
 ### 🔒 **Privacy & Security**
 
 - **Images never persisted**: Screenshots are processed in RAM only and are not saved to disk
-- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` after each analyze request completes. This fix ensures new sessions create proper separate log paths without mixing with previous sessions. Interrupted conversations (via Ctrl+R) are not logged to prevent race conditions.
+- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` after each analyze request completes. This fix ensures new sessions create proper separate log paths without mixing with previous sessions. Interrupted conversations (via Ctrl+R) are not logged to prevent race conditions.
 - **Encrypted Communication**: All API calls use HTTPS with certificate pinning
 - **Keylogger Detection**: Warns users about potential privacy risks from monitoring software
 - **Automatic Cleanup**: Memory and network traces are automatically cleared
@@ -101,8 +101,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/Mai0313/ghost_ai.git
-   cd ghost_ai
+   git clone https://github.com/Mai0313/ghost-ai.git
+   cd ghost-ai
    ```
 
 2. **Install dependencies**
@@ -147,7 +147,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 1. Press your configured hotkey to capture a screenshot
 2. Use the top control bar to switch between Ask and Settings
-3. Enter your question and click Send. The active prompt from `~/.ghost_ai/prompts` is applied automatically on the first turn of a session.
+3. Enter your question and click Send. The active prompt from `~/.ghost-ai/prompts` is applied automatically on the first turn of a session.
 4. View the AI response inside the bubble. Answers are rendered as Markdown with proper formatting. Code blocks are shown without syntax highlighting.
 
 ## 📁 Project Structure
@@ -235,7 +235,7 @@ npm run dist
 5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
-8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`.
+8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
 
 ### Privacy Protection
 
@@ -333,8 +333,8 @@ interface PrivacySettings {
 
 ### Prompts Directory
 
-- Ghost AI loads prompts from `~/.ghost_ai/prompts`.
-- The app always reads from `~/.ghost_ai/prompts/default.txt` as the effective prompt.
+- Ghost AI loads prompts from `~/.ghost-ai/prompts`.
+- The app always reads from `~/.ghost-ai/prompts/default.txt` as the effective prompt.
 - Using the Settings panel to select a prompt will copy that file's content into `default.txt`.
 - If `default.txt` does not exist, the app creates an empty `default.txt` on first run.
 - To create or edit prompts, manage files directly in your editor (e.g., `general.txt`, `ui-review.md`).
@@ -394,7 +394,7 @@ We welcome contributions! Please feel free to:
 
 ## 📖 Documentation
 
-For detailed documentation, visit: [https://mai0313.github.io/ghost_ai/](https://mai0313.github.io/ghost_ai/)
+For detailed documentation, visit: [https://mai0313.github.io/ghost-ai/](https://mai0313.github.io/ghost-ai/)
 
 ## 🛡️ Security
 
@@ -402,7 +402,7 @@ If you discover a security vulnerability, please send an email to the maintainer
 
 ## 👥 Contributors
 
-[![Contributors](https://contrib.rocks/image?repo=Mai0313/ghost_ai)](https://github.com/Mai0313/ghost_ai/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=Mai0313/ghost-ai)](https://github.com/Mai0313/ghost-ai/graphs/contributors)
 
 Made with [contrib.rocks](https://contrib.rocks)
 

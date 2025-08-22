@@ -5,7 +5,7 @@ import os from 'node:os';
 function resolveLogsDir(): string {
   const home = os.homedir();
 
-  return path.join(home, '.ghost_ai', 'logs');
+  return path.join(home, '.ghost-ai', 'logs');
 }
 
 export async function writeConversationLog(sessionId: string, content: string): Promise<string> {

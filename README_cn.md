@@ -7,12 +7,12 @@
 [![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![OpenAI](https://img.shields.io/badge/-OpenAI-412991?logo=openai&logoColor=white)](https://openai.com/)
 [![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![tests](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/test.yml)
-[![code-quality](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost_ai/actions/workflows/code-quality-check.yml)
-[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost_ai/tree/master?tab=License-1-ov-file)
-[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Mai0313/ghost_ai/pulls)
-[![Privacy](https://img.shields.io/badge/Privacy-First-purple?logo=shield&logoColor=white)](https://github.com/Mai0313/ghost_ai)
-[![Cross Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron&logoColor=white)](https://github.com/Mai0313/ghost_ai)
+[![tests](https://github.com/Mai0313/ghost-ai/actions/workflows/test.yml/badge.svg)](https://github.com/Mai0313/ghost-ai/actions/workflows/test.yml)
+[![code-quality](https://github.com/Mai0313/ghost-ai/actions/workflows/code-quality-check.yml/badge.svg)](https://github.com/Mai0313/ghost-ai/actions/workflows/code-quality-check.yml)
+[![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/Mai0313/ghost-ai/tree/master?tab=License-1-ov-file)
+[![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Mai0313/ghost-ai/pulls)
+[![Privacy](https://img.shields.io/badge/Privacy-First-purple?logo=shield&logoColor=white)](https://github.com/Mai0313/ghost-ai)
+[![Cross Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?logo=electron&logoColor=white)](https://github.com/Mai0313/ghost-ai)
 
 </center>
 
@@ -29,13 +29,13 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **幽靈模式**: 在截圖和螢幕分享時完全隱形
 - **隱蔽熱鍵**: 使用低層級鍵盤鉤子避免被監控軟體偵測
 - **隱藏程序**: 偽裝程序名稱和視窗標題以獲得最大隱私保護
-- **圖片僅在記憶體處理**: 圖片僅在 RAM 中處理，不會寫入磁碟。純文字 Q/A 對話在每次請求完成後，會寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log` 以便除錯/檢視。
+- **圖片僅在記憶體處理**: 圖片僅在 RAM 中處理，不會寫入磁碟。純文字 Q/A 對話在每次請求完成後，會寫入 `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` 以便除錯/檢視。
 
 ### ⚡ **閃電般快速捕獲**
 
 - **全域熱鍵**: 透過可自訂的按鍵組合從任何應用程式觸發截圖
 - **即時分析**: 使用 OpenAI Vision API 進行即時圖片分析
-- **智慧提示詞**: 提示詞檔案存放於 `~/.ghost_ai/prompts`，可在設定中選擇啟用的提示詞（內容編輯請於檔案系統中操作）
+- **智慧提示詞**: 提示詞檔案存放於 `~/.ghost-ai/prompts`，可在設定中選擇啟用的提示詞（內容編輯請於檔案系統中操作）
 - **多種捕獲模式**: 全螢幕、活動視窗或自訂區域選擇
 
 ### 🤖 **AI 驅動智能**
@@ -44,13 +44,13 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **情境感知**: 提供自訂提示以獲得關於截圖的特定洞察
 - **錯誤處理**: 強健的重試機制和優雅的錯誤恢復
 - **速率限制**: 內建 API 配額管理和請求最佳化
-- **簡易對話記憶**: 應用在主程序以純文字維持 Q/A 歷史用於提示組合；每次請求完成後，也會將目前對話文字寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`。
-- **預設提示詞僅首輪注入**：每個會話（session）的第一輪才會注入 `~/.ghost_ai/prompts/default.txt` 的內容；後續各輪只會帶上您的新問題與純文字對話歷史。
+- **簡易對話記憶**: 應用在主程序以純文字維持 Q/A 歷史用於提示組合；每次請求完成後，也會將目前對話文字寫入 `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`。
+- **預設提示詞僅首輪注入**：每個會話（session）的第一輪才會注入 `~/.ghost-ai/prompts/default.txt` 的內容；後續各輪只會帶上您的新問題與純文字對話歷史。
 
 ### 🔒 **隱私與安全**
 
 - **圖片不持久化**: 截圖僅在 RAM 中處理，不會寫入磁碟
-- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost_ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, ai_output }`。此修復確保新 session 會正確建立新的日誌路徑，而不會與先前的 session 混合。被中斷的對話（透過 Ctrl+R）不會寫入日誌，以避免競爭條件問題。
+- **對話日誌**: 為方便除錯，應用會在每次分析請求完成後，將目前純文字 Q/A 對話寫入 `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`；同時會輸出 `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`，包含每筆送出的 `{ index, requestId, log_path, text_input, ai_output }`。此修復確保新 session 會正確建立新的日誌路徑，而不會與先前的 session 混合。被中斷的對話（透過 Ctrl+R）不會寫入日誌，以避免競爭條件問題。
 - **加密通訊**: 所有 API 呼叫使用 HTTPS 和憑證固定
 - **鍵盤記錄器偵測**: 警告使用者監控軟體的潛在隱私風險
 - **自動清理**: 記憶體和網路痕跡自動清除
@@ -74,8 +74,8 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 
 ## 提示詞目錄
 
-- 應用會從 `~/.ghost_ai/prompts` 載入提示詞。
-- 系統一律從 `~/.ghost_ai/prompts/default.txt` 讀取作為實際使用的提示詞。
+- 應用會從 `~/.ghost-ai/prompts` 載入提示詞。
+- 系統一律從 `~/.ghost-ai/prompts/default.txt` 讀取作為實際使用的提示詞。
 - 在設定面板選擇提示詞時，會將所選檔案內容複製到 `default.txt`。
 - 若 `default.txt` 不存在，首次執行會自動建立為空檔。
 - 建立或編輯提示詞請直接在檔案系統中操作（例如 `general.txt`, `ui-review.md`）。
@@ -107,8 +107,8 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 1. **複製儲存庫**
 
    ```bash
-   git clone https://github.com/Mai0313/ghost_ai.git
-   cd ghost_ai
+   git clone https://github.com/Mai0313/ghost-ai.git
+   cd ghost-ai
    ```
 
 2. **安裝依賴**
@@ -241,7 +241,7 @@ npm run dist
 5. **AI 分析**: 圖片和提示發送到 OpenAI Vision API（僅支援串流）
 6. **結果顯示**: 回答以串流方式在輸入框上方顯示；若發生錯誤，會在同一泡泡顯示 `Error: ...`，可立即重試。應用程式已全面改為串流流程，過去的非串流聊天路徑已移除。
 7. **記憶體清理**: 所有痕跡自動從記憶體中清除
-8. **對話記憶**: 每次回答後會將 `Q:`/`A:` 內容附加到主程序的記憶體字串；下一輪會連同新問題一併送出。此外，會把目前對話文字寫入 `~/.ghost_ai/logs/<sessionId>/<sessionId>.log`。
+8. **對話記憶**: 每次回答後會將 `Q:`/`A:` 內容附加到主程序的記憶體字串；下一輪會連同新問題一併送出。此外，會把目前對話文字寫入 `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`。
 
 ### 隱私保護
 
@@ -378,11 +378,11 @@ npm run dist
 
 ## 📖 文檔
 
-詳細文檔請訪問：[https://mai0313.github.io/ghost_ai/](https://mai0313.github.io/ghost_ai/)
+詳細文檔請訪問：[https://mai0313.github.io/ghost-ai/](https://mai0313.github.io/ghost-ai/)
 
 ## 👥 貢獻者
 
-[![Contributors](https://contrib.rocks/image?repo=Mai0313/ghost_ai)](https://github.com/Mai0313/ghost_ai/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=Mai0313/ghost-ai)](https://github.com/Mai0313/ghost-ai/graphs/contributors)
 
 Made with [contrib.rocks](https://contrib.rocks)
 

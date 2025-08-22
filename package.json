@@ -1,5 +1,5 @@
 {
-  "name": "ghost_ai",
+  "name": "ghost-ai",
   "version": "1.0.0",
   "description": "Ghost AI - Invisible AI-powered desktop assistant (Electron + React + TypeScript)",
   "main": "dist/main.js",

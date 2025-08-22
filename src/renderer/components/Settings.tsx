@@ -186,7 +186,7 @@ export function Settings() {
         <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
         <div style={{ display: 'grid', gap: 10 }}>
           <label htmlFor="prompt-select" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Default prompt file (stored under ~/.ghost_ai/prompts){' '}
+            Default prompt file (stored under ~/.ghost-ai/prompts){' '}
             {defaultPrompt ? `— current: ${defaultPrompt}` : ''}
           </label>
           <div style={{ display: 'flex', gap: 8 }}>

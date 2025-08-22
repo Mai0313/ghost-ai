@@ -7,9 +7,9 @@ import path from 'node:path';
 import { safeStorage } from 'electron';
 import Store from 'electron-store';
 
-// Persist to ~/.ghost_ai/config.json across platforms
+// Persist to ~/.ghost-ai/config.json across platforms
 const homeDir = os.homedir();
-const configDir = path.join(homeDir, '.ghost_ai');
+const configDir = path.join(homeDir, '.ghost-ai');
 
 try {
   fs.mkdirSync(configDir, { recursive: true });

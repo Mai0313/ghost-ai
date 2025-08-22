@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const homeDir = os.homedir();
-const baseDir = path.join(homeDir, '.ghost_ai');
+const baseDir = path.join(homeDir, '.ghost-ai');
 
 export const promptsDir = path.join(baseDir, 'prompts');
 
