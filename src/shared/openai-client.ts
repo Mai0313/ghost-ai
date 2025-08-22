@@ -117,7 +117,7 @@ export class OpenAIClient {
       content: finalContent,
       model: config.model,
       timestamp: new Date().toISOString(),
-      sessionId,
+      sessionId: sessionId,
     };
   }
 
@@ -152,6 +152,9 @@ export class OpenAIClient {
     const request: ResponseCreateParams & { stream: true } = ({
       model: config.model,
       input: input,
+      tools: [
+        { type: 'web_search_preview' },
+      ],
       stream: true,
     } as ResponseCreateParamsStreaming);
     if (config.model === 'gpt-5') {
@@ -161,8 +164,14 @@ export class OpenAIClient {
     const stream: Stream<ResponseStreamEvent> = await client.responses.create(request, { signal });
 
     let finalContent = '';
+    let response_id = '';
     for await (const event of stream) {
       try {
+        // Get the response ID
+        if (event.type === 'response.in_progress') {
+          response_id = event.response.id;
+        }
+
         // Prefer granular delta events
         if (event.type === 'response.output_text.delta') {
           finalContent += event.delta;
@@ -170,7 +179,7 @@ export class OpenAIClient {
           continue;
         }
 
-        // Some SDK versions emit chunks with output_text directly
+        // Ensure we get the final text
         if (event.type === 'response.output_text.done') {
           finalContent = event.text;
           continue;
