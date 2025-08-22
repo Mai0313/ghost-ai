@@ -68,7 +68,6 @@ export class OpenAIClient {
       const allowedOrder = [
         'chatgpt-4o-latest',
         'gpt-4o',
-        'gpt-4o-mini',
         'gpt-4.1',
         'o4-mini-2025-04-16',
         'gpt-5',
