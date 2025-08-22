@@ -1,3 +1,4 @@
+import { ChatCompletionCreateParamsStreaming } from 'openai/resources.js';
 import type { AnalysisResult, OpenAIConfig } from './types';
 
 import OpenAI from 'openai';
@@ -6,7 +7,9 @@ import type {
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions';
+import type { ResponseCreateParams, ResponseStreamEvent } from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
+import { ResponseCreateParamsStreaming } from 'openai/resources/responses/responses.js';
 
 export class OpenAIClient {
   private client: OpenAI | null = null;
@@ -77,7 +80,7 @@ export class OpenAIClient {
     }
     const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
     const content: Exclude<ChatCompletionMessageParam['content'], string | null> = [
-      { type: 'text', text: `${effectiveText}\nYou MUST reply in both English and Traditional Chinese line by line` },
+      { type: 'text', text: effectiveText },
       { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
@@ -87,7 +90,7 @@ export class OpenAIClient {
       model: config.model,
       messages,
       stream: true,
-    } as any);
+    } as ChatCompletionCreateParamsStreaming);
     if (config.model === 'gpt-5') {
       request.reasoning_effort = 'low';
     }
@@ -98,7 +101,7 @@ export class OpenAIClient {
 
     for await (const chunk of stream) {
       try {
-        const delta = chunk?.choices?.[0]?.delta?.content ?? '';
+        const delta = chunk.choices[0].delta.content ?? '';
 
         if (delta) {
           finalContent += delta;
@@ -141,46 +144,38 @@ export class OpenAIClient {
     input.push({
       role: 'user',
       content: [
-        { type: 'input_text', text: `${effectiveText}\nYou MUST reply in both English and Traditional Chinese line by line` },
+        { type: 'input_text', text: effectiveText },
         { type: 'input_image', image_url: `data:image/png;base64,${base64}` },
       ],
     });
 
-    const request: any = {
+    const request: ResponseCreateParams & { stream: true } = ({
       model: config.model,
-      input,
+      input: input,
       stream: true,
-    } as any;
+    } as ResponseCreateParamsStreaming);
     if (config.model === 'gpt-5') {
       // Responses API uses nested reasoning config
-      (request as any).reasoning = { effort: 'low' };
+      request.reasoning = { effort: 'low' };
     }
-
-    const stream: any = await (client as any).responses.create(request, { signal });
+    const stream: Stream<ResponseStreamEvent> = await client.responses.create(request, { signal });
 
     let finalContent = '';
-    for await (const event of stream as AsyncIterable<any>) {
+    for await (const event of stream) {
       try {
         // Prefer granular delta events
-        if (event?.type === 'response.output_text.delta' && typeof event.delta === 'string') {
+        if (event.type === 'response.output_text.delta') {
           finalContent += event.delta;
           onDelta(event.delta);
           continue;
         }
 
         // Some SDK versions emit chunks with output_text directly
-        if (event?.type === 'response.output_text' && typeof event.text === 'string') {
-          finalContent += event.text;
-          onDelta(event.text);
+        if (event.type === 'response.output_text.done') {
+          finalContent = event.text;
           continue;
         }
 
-        // Fallback: accumulate any textual delta field
-        const possibleDelta = event?.delta ?? event?.text ?? '';
-        if (typeof possibleDelta === 'string' && possibleDelta) {
-          finalContent += possibleDelta;
-          onDelta(possibleDelta);
-        }
       } catch {
         // ignore malformed events
       }

@@ -491,7 +491,7 @@ ipcMain.on(
 
       activeAnalyzeControllers.set(wcId, controller);
 
-      const result = await openAIClient.completionWithTextStream(
+      const result = await openAIClient.responseImageWithTextStream(
         image,
         combinedTextPrompt,
         defaultPrompt,
