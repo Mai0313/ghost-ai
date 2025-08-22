@@ -50,7 +50,9 @@ export class OpenAIClient {
 
       return filtered.length ? filtered : allowedOrder;
     } catch {
-      return [];
+      // Return a sensible default order so the UI doesn't get stuck in "Loading models…"
+      const allowedOrder = ['chatgpt-4o-latest', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o4-mini-2025-04-16', 'gpt-5', 'gpt-5-mini'];
+      return allowedOrder;
     }
   }
 

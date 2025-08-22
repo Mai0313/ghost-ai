@@ -384,6 +384,13 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
 
   saveOpenAIConfig(merged);
 
+  try {
+    // Notify renderers that OpenAI config has changed so they can refresh models
+    for (const bw of BrowserWindow.getAllWindows()) {
+      try { bw.webContents.send('openai:config-updated'); } catch {}
+    }
+  } catch {}
+
   return true;
 });
 
@@ -391,6 +398,12 @@ ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) 
 ipcMain.handle('openai:update-config-volatile', async (_evt, config: Partial<OpenAIConfig>) => {
   try {
     openAIClient.updateConfig(config);
+    try {
+      // Notify renderers that OpenAI config has changed in-memory
+      for (const bw of BrowserWindow.getAllWindows()) {
+        try { bw.webContents.send('openai:config-updated'); } catch {}
+      }
+    } catch {}
 
     return true;
   } catch {

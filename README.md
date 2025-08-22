@@ -282,6 +282,13 @@ Configure your OpenAI API settings through the application's settings interface:
 
 All settings are encrypted and stored locally - no external services required.
 
+### Troubleshooting
+
+- If the model selector next to the Ask input stays on "Loading models…":
+  - Open Settings and enter a valid OpenAI API key and Base URL.
+  - The app now falls back to a default model list even when the API key is missing/invalid, so you can still pick a model. If requests later fail, verify your account has access to the selected model.
+  - Changing settings triggers an automatic refresh in the Ask panel.
+
 ### Realtime Transcription Language
 
 - In Settings → Transcription, you can choose the transcription language: **English (en)** or **中文 (zh)**. Default is **en**.

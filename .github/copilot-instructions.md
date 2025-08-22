@@ -1,3 +1,33 @@
+Ghost AI – Developer Instructions
+
+This document captures technical notes relevant to contributors.
+
+Model list loading and config updates
+- A renderer-side model selector lives in `src/renderer/main.tsx` (next to the Ask input).
+- Models are fetched through `window.ghostAI.listOpenAIModels()` which bridges to `ipcMain.handle('openai:list-models')` and ultimately `src/shared/openai-client.ts#listModels`.
+- To avoid the selector getting stuck on "Loading models…" when the API key is missing or invalid, `listModels()` now returns a sensible default list even on errors.
+
+IPC updates
+- New broadcast event: `openai:config-updated`.
+  - Emitted by main after both `openai:update-config` (persisted) and `openai:update-config-volatile` (in-memory) updates.
+  - Main implementation lives in `src/main/main.ts`.
+  - Preload exposes a convenience listener: `onOpenAIConfigUpdated(handler)` in `src/main/preload.ts`.
+  - Renderer subscribes and refreshes the model list when config changes (see `src/renderer/main.tsx`).
+
+OpenAI client behavior
+- `src/shared/openai-client.ts#listModels()`:
+  - Tries to call `client.models.list()`.
+  - Filters to an allowed ordering when available.
+  - On any exception, returns the same default allowed order so the UI remains usable.
+
+Renderer notes
+- The Ask footer model selector now refreshes automatically when settings change, via `onOpenAIConfigUpdated`.
+- Settings screen (`src/renderer/components/Settings.tsx`) still updates models eagerly when API key/Base URL inputs change.
+
+Troubleshooting
+- If requests fail after selecting a model, verify that your OpenAI API key has access to that model and that `baseURL` is correct.
+- Use the Settings screen "Test" button to validate API connectivity.
+
 ## Ghost AI – Developer Notes
 
 This document explains technical behaviors relevant to contributors.

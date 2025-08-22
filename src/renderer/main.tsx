@@ -287,6 +287,29 @@ function App() {
     })();
   }, []);
 
+  // Refresh models when OpenAI config is updated from Settings (persisted or volatile)
+  useEffect(() => {
+    const api: any = (window as any).ghostAI;
+
+    if (!api?.onOpenAIConfigUpdated) return;
+    const off = api.onOpenAIConfigUpdated(async () => {
+      try {
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
+        ]);
+        if (Array.isArray(list) && list.length) setModels(list);
+        const cfgModel = (cfg && (cfg as any).model) || '';
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
+        else if (Array.isArray(list) && list.length) setModel(list[0] ?? '');
+      } catch {}
+    });
+
+    return () => {
+      try { off && off(); } catch {}
+    };
+  }, []);
+
   // Auto-focus whenever Ask is shown and ensure input is enabled
   useEffect(() => {
     if (visible && tab === 'ask') {

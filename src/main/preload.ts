@@ -166,6 +166,14 @@ const api = {
 
     return () => ipcRenderer.off('transcribe:closed', fn);
   },
+  // Notify renderers when OpenAI config changes (persisted or volatile)
+  onOpenAIConfigUpdated: (handler: () => void) => {
+    const fn = () => handler();
+
+    ipcRenderer.on('openai:config-updated', fn);
+
+    return () => ipcRenderer.off('openai:config-updated', fn);
+  },
   // Control whether the overlay window ignores mouse events (click-through)
   setMouseIgnore: (ignore: boolean) => ipcRenderer.invoke('hud:set-mouse-ignore', ignore),
   // Debug helper: dump current session data (list-dict)
