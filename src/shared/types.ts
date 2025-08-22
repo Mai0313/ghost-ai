@@ -6,7 +6,7 @@ export interface OpenAIConfig {
   baseURL: string;
   model: string;
   timeout: number;
-  maxTokens?: number;
+  maxTokens?: number | null;
   temperature?: number;
 }
 

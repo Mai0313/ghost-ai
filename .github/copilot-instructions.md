@@ -107,6 +107,14 @@ Notes:
 - To maximize model compatibility, we DO NOT set `temperature` or `max_tokens`/`max_completion_tokens` in API calls. Let the model defaults apply. If you re-introduce these, guard per-model support.
  - For `gpt-5` only, we set `reasoning_effort: 'low'` on chat completion requests. Do not send `reasoning_effort` to non‑`gpt-5` models as many do not support it.
 
+Type notes (OpenAIConfig):
+
+- `src/shared/types.ts` defines `OpenAIConfig`.
+- Field `maxTokens` is kept for configurability but not sent to the API by default.
+- Type: `maxTokens?: number | null`.
+- Default: `null` (see `src/main/main.ts#initializeOpenAI`). Treat `null` as "use model default / maximum".
+- If you re-introduce explicit token limits at call sites, only include the parameter when `typeof maxTokens === 'number'`; when `null` or `undefined`, omit the param entirely to preserve model defaults.
+
 ## IPC Contracts
 
 Preload exposes `window.ghostAI` via `src/main/preload.ts`:

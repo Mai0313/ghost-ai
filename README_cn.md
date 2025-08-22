@@ -284,6 +284,7 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
 - **基礎 URL**: 自訂 API 端點（預設為 https://api.openai.com/v1）
 - **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）
   注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
+  - `OpenAIConfig.maxTokens` 仍保留於設定中以供需要時使用，型別為 `number | null`。預設為 `null`，代表「使用模型的預設/最大 token」。此欄位預設不會被送到 API；若在程式中重新啟用 token 上限，當 `maxTokens` 為 `null` 或 `undefined` 時，請完全省略該 API 參數。
  - 僅在選擇 `gpt-5` 時，應用會自動附加 `reasoning_effort: "low"` 以降低延遲/成本；為避免相容性問題，其餘模型均不會傳送此參數。
 
 所有設定都經過加密並本地儲存 - 無需外部服務。

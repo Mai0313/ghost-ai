@@ -134,7 +134,7 @@ async function initializeOpenAI() {
     baseURL: 'https://api.openai.com/v1',
     model: '',
     timeout: 60000,
-    maxTokens: 1000,
+    maxTokens: null,
     temperature: 0.7,
   };
   const persisted = loadOpenAIConfig();
