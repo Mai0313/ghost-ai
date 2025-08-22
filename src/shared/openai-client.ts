@@ -115,6 +115,83 @@ export class OpenAIClient {
       sessionId,
     };
   }
+
+  async responseImageWithTextStream(
+    imageBuffer: Buffer,
+    textPrompt: string,
+    customPrompt: string,
+    requestId: string,
+    onDelta: (textDelta: string) => void,
+    sessionId: string,
+    signal?: AbortSignal,
+  ): Promise<AnalysisResult> {
+    this.ensureClient();
+    const config = this.config!;
+    const client = this.client!;
+    const base64 = imageBuffer.toString('base64');
+
+    const effectiveText = textPrompt?.trim() || 'Response to the question based on the info or image you have.';
+
+    const input: any[] = [];
+    if (customPrompt?.trim()) {
+      input.push({ role: 'system', content: customPrompt.trim() });
+    }
+    input.push({
+      role: 'user',
+      content: [
+        { type: 'input_text', text: `${effectiveText}\nYou MUST reply in both English and Traditional Chinese line by line` },
+        { type: 'input_image', image_url: `data:image/png;base64,${base64}` },
+      ],
+    });
+
+    const request: any = {
+      model: config.model,
+      input,
+      stream: true,
+    } as any;
+    if (config.model === 'gpt-5') {
+      // Responses API uses nested reasoning config
+      (request as any).reasoning = { effort: 'low' };
+    }
+
+    const stream: any = await (client as any).responses.create(request, { signal });
+
+    let finalContent = '';
+    for await (const event of stream as AsyncIterable<any>) {
+      try {
+        // Prefer granular delta events
+        if (event?.type === 'response.output_text.delta' && typeof event.delta === 'string') {
+          finalContent += event.delta;
+          onDelta(event.delta);
+          continue;
+        }
+
+        // Some SDK versions emit chunks with output_text directly
+        if (event?.type === 'response.output_text' && typeof event.text === 'string') {
+          finalContent += event.text;
+          onDelta(event.text);
+          continue;
+        }
+
+        // Fallback: accumulate any textual delta field
+        const possibleDelta = event?.delta ?? event?.text ?? '';
+        if (typeof possibleDelta === 'string' && possibleDelta) {
+          finalContent += possibleDelta;
+          onDelta(possibleDelta);
+        }
+      } catch {
+        // ignore malformed events
+      }
+    }
+
+    return {
+      requestId,
+      content: finalContent,
+      model: config.model,
+      timestamp: new Date().toISOString(),
+      sessionId,
+    };
+  }
 }
 
 export const openAIClient = new OpenAIClient();
