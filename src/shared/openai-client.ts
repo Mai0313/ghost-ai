@@ -79,7 +79,7 @@ export class OpenAIClient {
     }
   }
 
-  async completionWithTextStream(
+  async completionStream(
     imageBuffer: Buffer,
     textPrompt: string,
     customPrompt: string,
@@ -155,7 +155,7 @@ export class OpenAIClient {
     };
   }
 
-  async responseImageWithTextStream(
+  async responseStream(
     imageBuffer: Buffer,
     textPrompt: string,
     customPrompt: string,
