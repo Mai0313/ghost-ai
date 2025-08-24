@@ -167,8 +167,11 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 │   │   ├── audio-manager.ts     # Voice recording
 │   │   └── hide-manager.ts      # Stealth interface
 │   ├── renderer/           # React renderer process
-│   │   ├── components/     # UI components
-│   │   └── pages/          # Application pages
+│   │   ├── App.tsx               # Top-level UI state and wiring
+│   │   ├── main.tsx              # Slim entry that renders <App />
+│   │   ├── components/           # UI components (HUDBar, AskPanel, TranscriptBubble, MarkdownViewer, Settings, Icons)
+│   │   ├── hooks/                # Custom hooks (useTranscription)
+│   │   └── styles/               # Theme and styles
 │   ├── shared/             # Shared utilities
 │   │   ├── openai-client.ts     # OpenAI API integration
 │   │   └── types.ts             # TypeScript definitions

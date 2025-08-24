@@ -4,7 +4,7 @@ This document captures technical notes relevant to contributors.
 
 Model list loading and config updates
 
-- A renderer-side model selector lives in `src/renderer/main.tsx` (next to the Ask input).
+- A renderer-side model selector lives in `src/renderer/components/AskPanel.tsx` (next to the Ask input).
 - Models are fetched through `window.ghostAI.listOpenAIModels()` which bridges to `ipcMain.handle('openai:list-models')` and ultimately `src/shared/openai-client.ts#listModels`.
 - To avoid the selector getting stuck on "Loading models…" when the API key is missing or invalid, `listModels()` now returns a sensible default list even on errors.
 
@@ -14,7 +14,7 @@ IPC updates
   - Emitted by main after both `openai:update-config` (persisted) and `openai:update-config-volatile` (in-memory) updates.
   - Main implementation lives in `src/main/main.ts`.
   - Preload exposes a convenience listener: `onOpenAIConfigUpdated(handler)` in `src/main/preload.ts`.
-  - Renderer subscribes and refreshes the model list when config changes (see `src/renderer/main.tsx`).
+  - Renderer subscribes and refreshes the model list when config changes (see `src/renderer/components/AskPanel.tsx`).
 
 OpenAI client behavior
 
@@ -304,10 +304,9 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
     - Edit base colors in `palette` (RGB tuples) to adjust text/background/primary/danger etc.
   - `styles.ts`: component styles (bar, settings card, ask card, buttons) consume `theme.color.*()` so most customization is done via `theme.ts`.
   - Prefer per-component tweaks via multipliers (e.g., `theme.color.panelBg(0.9)`) rather than hard-coded rgba.
-  - Markdown viewer assets are imported in `src/renderer/main.tsx`:
-    - `import '@blocknote/core/fonts/inter.css'`
-    - `import '@blocknote/mantine/style.css'`
-    - The viewer component is `<BlockNoteView editor={editor} editable={false} />`.
+  - Markdown viewer encapsulated in `src/renderer/components/MarkdownViewer.tsx`.
+    - Assets are imported in `src/renderer/main.tsx` (global CSS imports).
+    - Use `<MarkdownViewer markdown={displayMarkdown} />` to render.
   - Scrollbar styling for the AI answer panel lives in `src/renderer/styles/blocknote-custom.css` under `.bn-markdown-viewer` with both WebKit (::-webkit-scrollbar) and Firefox (scrollbar-width/color) rules to match the dark panel aesthetics.
 
 ## Screenshot Capture

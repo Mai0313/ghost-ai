@@ -173,8 +173,11 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 │   │   ├── audio-manager.ts     # 語音錄音
 │   │   └── hide-manager.ts      # 隱蔽界面
 │   ├── renderer/           # React 渲染程序
-│   │   ├── components/     # UI 組件
-│   │   └── pages/          # 應用程式頁面
+│   │   ├── App.tsx               # 頂層 UI 狀態與接線
+│   │   ├── main.tsx              # 精簡入口，僅渲染 <App />
+│   │   ├── components/           # UI 組件（HUDBar、AskPanel、TranscriptBubble、MarkdownViewer、Settings、Icons）
+│   │   ├── hooks/                # 自訂 Hook（useTranscription）
+│   │   └── styles/               # 主題與樣式
 │   ├── shared/             # 共用工具
 │   │   ├── openai-client.ts     # OpenAI API 整合
 │   │   └── types.ts             # TypeScript 定義
