@@ -1,7 +1,9 @@
 import React, { useRef } from 'react';
-import { IconEyeOff, IconGear, IconMicOff, IconText, IconWaveBars } from './Icons';
+
 import { barStyle, ghostButton, iconButton, pillButton } from '../styles/styles';
 import { theme } from '../styles/theme';
+
+import { IconEyeOff, IconGear, IconMicOff, IconText, IconWaveBars } from './Icons';
 
 type HUDBarProps = {
   barRef: React.RefObject<HTMLDivElement>;
@@ -151,5 +153,3 @@ export const HUDBar: React.FC<HUDBarProps> = ({
     </div>
   );
 };
-
-

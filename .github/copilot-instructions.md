@@ -72,15 +72,14 @@ if (defaultPrompt) initialPromptBySession.set(analysisSessionId, defaultPrompt);
 ```ts
 // Use override if provided (regeneration), otherwise use accumulated history
 const priorPlain =
-  (typeof payload.history === 'string' ? payload.history : null)
-  ?? (conversationHistoryBySession.get(analysisSessionId) ?? '');
+  (typeof payload.history === 'string' ? payload.history : null) ??
+  conversationHistoryBySession.get(analysisSessionId) ??
+  '';
 
 const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
 
 const priorWithInitial =
-  typeof payload.history === 'string'
-    ? `${initialPromptPrefix}${priorPlain || ''}`
-    : priorPlain;
+  typeof payload.history === 'string' ? `${initialPromptPrefix}${priorPlain || ''}` : priorPlain;
 
 const combinedTextPrompt = priorWithInitial
   ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`

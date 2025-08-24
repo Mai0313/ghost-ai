@@ -357,5 +357,3 @@ export function useTranscription({
     transcriptBufferRef,
   } as const;
 }
-
-

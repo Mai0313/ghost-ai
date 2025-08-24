@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+import { askCard, askFooter, askInput, askResultArea, ghostButton } from '../styles/styles';
+
 import { MarkdownViewer } from './MarkdownViewer';
 import { ThinkingIndicator } from './ThinkingIndicator';
-import { askCard, askFooter, askInput, askResultArea, ghostButton } from '../styles/styles';
 
 type AskPanelProps = {
   displayMarkdown: string;
@@ -191,5 +193,3 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     </div>
   );
 };
-
-

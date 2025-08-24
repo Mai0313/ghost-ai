@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
-import { MarkdownViewer } from './MarkdownViewer';
+
 import { askCard, askResultArea } from '../styles/styles';
+
+import { MarkdownViewer } from './MarkdownViewer';
 
 type TranscriptBubbleProps = {
   markdown: string;
@@ -24,5 +26,3 @@ export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({ markdown }) 
     </div>
   );
 };
-
-

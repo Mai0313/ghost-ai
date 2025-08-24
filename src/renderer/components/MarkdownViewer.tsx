@@ -54,5 +54,3 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ markdown, classN
     </div>
   );
 };
-
-

@@ -456,9 +456,9 @@ ipcMain.on(
       // If payload.history is provided (regeneration), use it as the prior history override;
       // otherwise use the current session's accumulated history.
       const priorPlain =
-        (typeof payload.history === 'string'
-          ? payload.history
-          : null) ?? (conversationHistoryBySession.get(analysisSessionId) ?? '');
+        (typeof payload.history === 'string' ? payload.history : null) ??
+        conversationHistoryBySession.get(analysisSessionId) ??
+        '';
       // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
       const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
       const priorWithInitial =
@@ -481,6 +481,7 @@ ipcMain.on(
           return '';
         }
       })();
+
       if (defaultPrompt) {
         // Cache the initial prompt used for this session so we can reuse it during regen
         initialPromptBySession.set(analysisSessionId, defaultPrompt);
@@ -546,12 +547,14 @@ ipcMain.on(
           const rebuilt = `${initialPromptPrefix}${base}`;
           const appended = question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '';
           const updated = rebuilt + appended;
+
           conversationHistoryBySession.set(analysisSessionId, updated);
         } else {
           if (question || answer) {
             const existing = conversationHistoryBySession.get(analysisSessionId) ?? '';
-            const prefix = existing ? '' : (defaultPrompt ? `${defaultPrompt}\n` : '');
+            const prefix = existing ? '' : defaultPrompt ? `${defaultPrompt}\n` : '';
             const updated = existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
+
             conversationHistoryBySession.set(analysisSessionId, updated);
           }
         }
