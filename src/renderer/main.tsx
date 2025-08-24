@@ -522,8 +522,21 @@ function App() {
           ({ content, sessionId: sid }: { content: string; sessionId?: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!content) return;
-            finalizeLive({ appendNewline: true });
-            if (!transcriptBufferRef.current.endsWith('\n')) transcriptBufferRef.current += '\n';
+            // Unify finalize behavior with analyze: set final content explicitly
+            finalizeLive({ content });
+            // Keep local transcript buffer consistent with the finalized content, append a newline for readability
+            try {
+              transcriptBufferRef.current = content.endsWith('\n') ? content : content + '\n';
+            } catch {}
+            // Persist this transcript segment into history as a paginated page (user + assistant pair).
+            // The assistant content initially mirrors the transcript so the page is viewable; it can be regenerated later to produce an AI answer in place.
+            setHistory((prev) => [
+              ...prev,
+              { role: 'user', content },
+              { role: 'assistant', content },
+            ]);
+            // Stay on Live unless the user switches pages explicitly
+            setHistoryIndex(null);
           },
         );
 

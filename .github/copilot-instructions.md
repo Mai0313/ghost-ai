@@ -255,7 +255,8 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - Captures microphone via `getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } })`
   - Attempts to capture system audio via `getDisplayMedia({ audio:true })` and discards video tracks
   - Mixes sources in `AudioContext`, downsamples to 24 kHz mono, converts to 16‑bit PCM, and performs client-side batching: flush every ~220 ms or at ~32 KB of PCM16 bytes. This reduces WS overhead and improves transcription stability with minimal latency.
-  - Sends batches via `appendTranscriptionAudio` and renders transcript deltas via the same unified render sink used by analyze streaming: `appendLive(delta)` and `finalizeLive({ appendNewline: true })`
+  - Sends batches via `appendTranscriptionAudio` and renders transcript deltas via the same unified render sink used by analyze streaming: `appendLive(delta)` and `finalizeLive({ content })`
+  - On each transcription completion, the renderer appends a pair into its local `history`: `{ role: 'user', content: <transcript> }` and `{ role: 'assistant', content: <transcript> }`, making each transcript segment a paginated page. You can Regenerate on such a page to analyze that transcript; the assistant content for that page is replaced in place while the user transcript is preserved.
   - Pause/Resume support: renderer gates both the elapsed timer and audio processing/delta application when paused (no IPC changes required)
   - On stop: sends `endTranscription` and `stopTranscription`, closes audio graph, stops tracks, and clears timers
   - Logs: microphone/system audio permission results and audio processing errors
@@ -265,7 +266,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - Component: `src/renderer/main.tsx` maintains `text`, `result`, `busy`, `streaming` states.
   - On Enter key: calls `ghostAI.analyzeCurrentScreenStream(...)`.
   - Appends deltas to `result` in real time.
-  - Streamed answers are rendered as Markdown using a read-only BlockNote editor. The renderer derives a `displayMarkdown` value showing either the live streamed content or the selected historical page (assistant answer). On each `displayMarkdown` change, the renderer converts Markdown with `editor.tryParseMarkdownToBlocks(displayMarkdown)` and replaces content via `editor.replaceBlocks(editor.document, blocks)`.
+  - Streamed content is rendered as Markdown using a read-only BlockNote editor. The renderer derives a `displayMarkdown` value showing either the live streamed content or the selected historical page. Historical pages include both assistant answers and transcript pages (transcripts are inserted as `{user, assistant}` where assistant initially mirrors the transcript). On each `displayMarkdown` change, the renderer converts Markdown with `editor.tryParseMarkdownToBlocks(displayMarkdown)` and replaces content via `editor.replaceBlocks(editor.document, blocks)`.
   - Code blocks are rendered without syntax highlighting. We removed the Shiki-based highlighter to simplify dependencies.
   - Shows the streamed response bubble ABOVE the input field.
   - Disables the input while streaming.
