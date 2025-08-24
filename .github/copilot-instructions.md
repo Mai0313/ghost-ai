@@ -109,6 +109,8 @@ This document describes important technical details for contributors. Update thi
 - Renderer (`src/renderer/*`) is a lightweight HUD and settings UI built with React
 - Shared types and the OpenAI client are in `src/shared/*`
 
+- Maintenance: Removed unused stubs `src/services/audio-processor.ts` and `src/services/image-processor.ts`.
+
 ## OpenAI Integration
 
 - Wrapper class: `src/shared/openai-client.ts`

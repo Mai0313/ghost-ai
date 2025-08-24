@@ -189,6 +189,8 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 └── README.md
 ```
 
+註：已移除未使用的服務檔案 `src/services/audio-processor.ts`、`src/services/image-processor.ts`。
+
 ## 🛠️ 可用命令
 
 ### 開發命令

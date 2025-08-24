@@ -183,6 +183,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 └── README.md
 ```
 
+Note: Removed unused service stubs `src/services/audio-processor.ts` and `src/services/image-processor.ts`.
+
 ## 🛠️ Available Commands
 
 ### Development Commands
