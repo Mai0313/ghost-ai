@@ -95,6 +95,10 @@ const api = {
   setDefaultPrompt: (name: string): Promise<string> =>
     ipcRenderer.invoke('prompts:set-default', name),
   getDefaultPrompt: (): Promise<string | null> => ipcRenderer.invoke('prompts:get-default'),
+  // Active prompt name persisted in settings
+  getActivePromptName: (): Promise<string | null> => ipcRenderer.invoke('prompts:get-active'),
+  setActivePromptName: (name: string): Promise<string> =>
+    ipcRenderer.invoke('prompts:set-active', name),
   // Settings (user preferences)
   getUserSettings: (): Promise<any> => ipcRenderer.invoke('settings:get'),
   updateUserSettings: (partial: Partial<any>) => ipcRenderer.invoke('settings:update', partial),

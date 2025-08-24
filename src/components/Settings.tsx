@@ -24,11 +24,12 @@ export function Settings() {
       if (!api) return;
 
       try {
-        const [cfg, list, promptsInfo, userSettings] = await Promise.all([
+        const [cfg, list, promptsInfo, userSettings, activePromptName] = await Promise.all([
           api.getOpenAIConfig(),
           api.listOpenAIModels(),
           api.listPrompts?.(),
           api.getUserSettings?.(),
+          api.getActivePromptName?.(),
         ]);
 
         if (cfg) {
@@ -59,8 +60,13 @@ export function Settings() {
         // Prompts
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
-          setDefaultPrompt(promptsInfo.defaultPrompt || null);
-          const initial = promptsInfo.defaultPrompt || promptsInfo.prompts[0] || null;
+          const current =
+            (typeof activePromptName === 'string' && activePromptName) ||
+            promptsInfo.defaultPrompt ||
+            null;
+
+          setDefaultPrompt(current);
+          const initial = current || promptsInfo.prompts[0] || null;
 
           setSelectedPrompt(initial);
         }
@@ -231,9 +237,9 @@ export function Settings() {
                 setSelectedPrompt(name);
                 try {
                   if (name) {
-                    const ret = await (window as any).ghostAI?.setDefaultPrompt?.(name);
+                    const ret = await (window as any).ghostAI?.setActivePromptName?.(name);
 
-                    setDefaultPrompt(ret || 'default.txt');
+                    setDefaultPrompt(ret || name);
                   }
                 } catch {}
               }}

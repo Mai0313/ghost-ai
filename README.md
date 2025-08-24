@@ -42,7 +42,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 
 - **Global Hotkeys**: Trigger screenshots from any application with customizable key combinations
 - **Instant Analysis**: Real-time image analysis using OpenAI's Vision API
-- **Smart Prompting**: Store prompt files under `~/.ghost-ai/prompts` and switch the active prompt in Settings (editing is done outside the app)
+- **Smart Prompting**: Store prompt files under `~/.ghost-ai/prompts`. The active prompt selection is persisted in settings and applied automatically (editing is done outside the app)
 - **Multiple Capture Modes**: Full screen, active window, or custom region selection
 
 ### 🤖 **AI-Powered Intelligence**
@@ -52,7 +52,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
 - **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory per session for prompt composition; after each request completes, the current session’s conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost-ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history. Regeneration preserves the original first‑turn prompt in prior context.
+- **Default Prompt Injection (first turn only)**: The active prompt is persisted in settings and mirrored to `~/.ghost-ai/prompts/default.txt`. It is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history. Regeneration preserves the original first‑turn prompt in prior context.
 - **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
   - A structured Session Store is also maintained in memory and persisted to `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
 
@@ -374,11 +374,11 @@ interface PrivacySettings {
 }
 ```
 
-### Prompts Directory
+### Prompts Directory (Read-only)
 
 - Ghost AI loads prompts from `~/.ghost-ai/prompts`.
-- The app always reads from `~/.ghost-ai/prompts/default.txt` as the effective prompt.
-- Using the Settings panel to select a prompt will copy that file's content into `default.txt`.
+- Ghost AI never writes or overwrites your prompt files. The app only reads from the prompts directory.
+- The active prompt name is persisted in settings; there is no fallback to `default.txt`. You must select one in Settings → Prompts.
 - If `default.txt` does not exist, the app creates an empty `default.txt` on first run.
 - To create or edit prompts, manage files directly in your editor (e.g., `general.txt`, `ui-review.md`).
 

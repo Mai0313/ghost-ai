@@ -22,6 +22,8 @@ import {
   readPrompt,
   setDefaultPromptFrom,
   getDefaultPromptName,
+  getActivePromptName,
+  setActivePromptName,
 } from './modules/prompts-manager';
 import { realtimeTranscribeManager } from './modules/realtime-transcribe';
 import { logManager } from './modules/log-manager';
@@ -317,6 +319,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('prompts:read', (_evt, name?: string) => readPrompt(name));
   ipcMain.handle('prompts:set-default', (_evt, name: string) => setDefaultPromptFrom(name));
   ipcMain.handle('prompts:get-default', () => getDefaultPromptName());
+  // New: active prompt name persisted in settings
+  ipcMain.handle('prompts:get-active', () => getActivePromptName());
+  ipcMain.handle('prompts:set-active', (_evt, name: string) => setActivePromptName(name));
 
   // HUD IPC
   ipcMain.handle('hud:toggle-hide', async () => {
@@ -479,18 +484,25 @@ ipcMain.on(
         ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
         : (payload.textPrompt ?? '').trim();
 
-      // Load active prompt content only for the first turn of the current session
-      const defaultPrompt = (() => {
+      // Load active prompt content only for the first turn of the current session.
+      // Required: user must select an active prompt; do not fallback to default.txt or write files.
+      const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
+      let defaultPrompt = '';
+      if (isFirstTurn) {
         try {
-          const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
-
-          if (!isFirstTurn) return '';
-
-          return readPrompt() || '';
+          const activeName = getActivePromptName();
+          if (!activeName) {
+            evt.sender.send('capture:analyze-stream:error', {
+              error: 'No active prompt selected. Open Settings → Prompts to select one.',
+              sessionId: requestSessionId,
+            });
+            return;
+          }
+          defaultPrompt = readPrompt(activeName) || '';
         } catch {
-          return '';
+          defaultPrompt = '';
         }
-      })();
+      }
 
       if (defaultPrompt) {
         // Cache the initial prompt used for this session so we can reuse it during regen

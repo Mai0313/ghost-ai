@@ -307,6 +307,16 @@ export function App() {
     activeSessionIdForRequestRef.current = null;
     setBusy(true);
     setStreaming(true);
+    // Require an active prompt selection; avoid relying on any default file
+    try {
+      const activePromptName = await (window as any).ghostAI?.getActivePromptName?.();
+      if (!activePromptName) {
+        setStreaming(false);
+        setBusy(false);
+        setResult('Error: No active prompt selected. Open Settings → Prompts to select one.');
+        return;
+      }
+    } catch {}
     const transcript = transcriptBufferRef.current || '';
     const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
     const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();

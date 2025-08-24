@@ -2,6 +2,8 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { loadUserSettings, saveUserSettings } from './settings-manager';
+
 const homeDir = os.homedir();
 const baseDir = path.join(homeDir, '.ghost-ai');
 
@@ -36,10 +38,17 @@ export function listPrompts(): { prompts: string[]; defaultPrompt: string | null
       return [] as string[];
     }
   })();
-  // Default prompt is always 'default.txt' if it exists
-  const def = fs.existsSync(path.join(promptsDir, 'default.txt')) ? 'default.txt' : null;
+  // Try to read active prompt name from user settings if available
+  let active: string | null = null;
 
-  return { prompts: files, defaultPrompt: def };
+  try {
+    const s = loadUserSettings() as any;
+    const name = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+
+    if (name && files.includes(name)) active = name;
+  } catch {}
+  // Return active selection (or null) as `defaultPrompt` for UI display
+  return { prompts: files, defaultPrompt: active } as any;
 }
 
 export function getDefaultPromptName(): string | null {
@@ -52,26 +61,30 @@ export function getDefaultPromptName(): string | null {
 }
 
 export function setDefaultPromptFrom(name: string): string {
-  // Selection sets the content of 'default.txt' to the content of the chosen file.
+  // Persist selection by name only (do not write any prompt files)
   ensureDirs();
   const sourceName = normalizeName(name);
-  const sourceFull = path.join(promptsDir, sourceName);
-  const targetFull = path.join(promptsDir, 'default.txt');
-
   try {
-    const content = fs.existsSync(sourceFull) ? fs.readFileSync(sourceFull, 'utf8') : '';
-
-    fs.writeFileSync(targetFull, content ?? '', 'utf8');
+    saveUserSettings({ defaultPrompt: sourceName } as any);
   } catch {}
-
-  return 'default.txt';
+  return sourceName;
 }
 
 export function readPrompt(name?: string): string {
   ensureDirs();
-  const fileName = name ? normalizeName(name) : 'default.txt';
+  let fileName: string | null = null;
+  if (name) fileName = normalizeName(name);
+  else {
+    try {
+      const s = loadUserSettings() as any;
+      const n = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+      fileName = n || null;
+    } catch {
+      fileName = null;
+    }
+  }
+  if (!fileName) return '';
   const full = path.join(promptsDir, fileName);
-
   try {
     return fs.readFileSync(full, 'utf8');
   } catch {
@@ -79,20 +92,35 @@ export function readPrompt(name?: string): string {
   }
 }
 
-export function ensureDefaultPrompt(defaultContent?: string): {
+export function ensureDefaultPrompt(_defaultContent?: string): {
   created: boolean;
   defaultPrompt: string;
 } {
+  // No-op: do not create or write any prompt files.
   ensureDirs();
-  const full = path.join(promptsDir, 'default.txt');
-  let created = false;
+  return { created: false, defaultPrompt: 'default.txt' };
+}
 
+// New helpers for active prompt persistence and retrieval
+export function getActivePromptName(): string | null {
   try {
-    if (!fs.existsSync(full)) {
-      fs.writeFileSync(full, defaultContent ?? '', 'utf8');
-      created = true;
-    }
-  } catch {}
+    const s = loadUserSettings() as any;
+    const name = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
 
-  return { created, defaultPrompt: 'default.txt' };
+    if (!name) return null;
+    const full = path.join(promptsDir, name);
+
+    return fs.existsSync(full) ? name : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setActivePromptName(name: string): string {
+  ensureDirs();
+  const norm = normalizeName(name);
+  try {
+    saveUserSettings({ defaultPrompt: norm } as any);
+  } catch {}
+  return norm;
 }

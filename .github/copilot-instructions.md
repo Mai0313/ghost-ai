@@ -208,26 +208,30 @@ interface GhostAPI {
 }
 ```
 
-## Prompts Management
+## Prompts Management (Read-only)
 
 - Prompts are stored under `~/.ghost-ai/prompts`.
-- The app always reads `~/.ghost-ai/prompts/default.txt` as the effective prompt.
-- Selecting a prompt in Settings copies the selected file's content into `default.txt` (no in-app editing).
+- The app NEVER writes or overwrites any prompt files. Selection is persisted by name in user settings (`defaultPrompt`).
+- There is NO fallback to `default.txt`. An active prompt must be selected in Settings → Prompts; otherwise analyze is blocked with an explicit error.
 - Main module: `src/main/modules/prompts-manager.ts`
-  - `listPrompts()`, `readPrompt(name?)`, `setdefaultPromptName(name)`, `getdefaultPromptName()`, `ensureDefaultPrompt()`
-- IPC handlers in main: `prompts:list`, `prompts:read`, `prompts:set-active`, `prompts:get-active`
-- Preload exposes selection-only surface:
+  - `listPrompts()`, `readPrompt(name?)` (reads selected or explicit name)
+  - `setDefaultPromptFrom(name)` and `setActivePromptName(name)` now only persist the selected name (no file writes)
+  - `getActivePromptName()` returns the persisted name; `getDefaultPromptName()` is legacy
+- IPC handlers in main: `prompts:list`, `prompts:read`, `prompts:set-default`, `prompts:get-default`, `prompts:get-active`, `prompts:set-active`
+- Preload surface:
 
 ```ts
-listPrompts(): Promise<{ prompts: string[]; active: string | null }>;
+listPrompts(): Promise<{ prompts: string[]; defaultPrompt: string | null }>;
 readPrompt(name?: string): Promise<string>;
-setdefaultPrompt(name: string): Promise<string>; // returns 'default.txt'
-getdefaultPrompt(): Promise<string | null>;
+setDefaultPrompt(name: string): Promise<string>; // persist name only
+getDefaultPrompt(): Promise<string | null>;
+getActivePromptName(): Promise<string | null>;
+setActivePromptName(name: string): Promise<string>;
 ```
 
-Renderer Settings UI lists available files and sets the active prompt; creating/editing/deleting prompt files is done outside the app (file system/editor). If `default.txt` is missing, `ensureDefaultPrompt` creates an empty `default.txt`.
+Renderer Settings UI lists available files and sets the active prompt; creating/editing/deleting prompt files is done outside the app.
 
-Analyze flow: main loads `default.txt` and passes it to `openAIClient.completionStream(...)` as the `customPrompt`.
+Analyze flow: on first turn only, main reads the selected prompt by name and injects it. If none is selected, main emits an error and aborts the analyze request.
 
 Main-side handlers in `src/main/main.ts` (streaming only):
 

@@ -31,6 +31,8 @@ declare global {
       readPrompt: (name?: string) => Promise<string>;
       setDefaultPrompt: (name: string) => Promise<string>;
       getDefaultPrompt: () => Promise<string | null>;
+      getActivePromptName: () => Promise<string | null>;
+      setActivePromptName: (name: string) => Promise<string>;
       getUserSettings: () => Promise<any>;
       updateUserSettings: (partial: Partial<any>) => Promise<any>;
       onTextInputShow: (handler: () => void) => void;
