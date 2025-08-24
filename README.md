@@ -23,6 +23,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 **Other Languages**: [English](README.md) | [繁體中文](README_cn.md)
 
 > ID model simplified
+>
 > - sessionId: single conversation identifier (UUID). Required on all analyze/transcribe events.
 > - requestId: single streaming request identifier.
 > - requestSessionId: snapshot of sessionId at request start (internal; avoids race with Clear).

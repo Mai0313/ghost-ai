@@ -14,7 +14,9 @@ export function App() {
   const [result, setResult] = useState('');
   const [reasoning, setReasoning] = useState('');
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
-  const [webSearchStatus, setWebSearchStatus] = useState<'idle' | 'in_progress' | 'searching' | 'completed'>('idle');
+  const [webSearchStatus, setWebSearchStatus] = useState<
+    'idle' | 'in_progress' | 'searching' | 'completed'
+  >('idle');
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -361,14 +363,20 @@ export function App() {
             // Web search indicator
             if ((channel ?? 'answer') === 'web_search') {
               const type = String(eventType || '');
+
               if (type.endsWith('in_progress')) setWebSearchStatus('in_progress');
               else if (type.endsWith('searching')) setWebSearchStatus('searching');
               else if (type.endsWith('completed')) setWebSearchStatus('completed');
+
               return;
             }
             // Reasoning channel
             if ((channel ?? 'answer') === 'reasoning') {
-              const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+              const piece =
+                (typeof fullText === 'string' && fullText) ||
+                (typeof delta === 'string' && delta) ||
+                '';
+
               if (!piece) return;
               if (eventType === 'response.reasoning_summary_text.done') {
                 setReasoning(piece);
@@ -378,9 +386,14 @@ export function App() {
                 lastReasoningDeltaRef.current = piece;
                 appendReasoning(piece);
               }
+
               return;
             }
-            const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+            const piece =
+              (typeof fullText === 'string' && fullText) ||
+              (typeof delta === 'string' && delta) ||
+              '';
+
             if (!piece) return;
             if (lastDeltaRef.current === piece) return;
             lastDeltaRef.current = piece;
@@ -571,13 +584,19 @@ export function App() {
               return;
             if ((channel ?? 'answer') === 'web_search') {
               const type = String(eventType || '');
+
               if (type.endsWith('in_progress')) setWebSearchStatus('in_progress');
               else if (type.endsWith('searching')) setWebSearchStatus('searching');
               else if (type.endsWith('completed')) setWebSearchStatus('completed');
+
               return;
             }
             if ((channel ?? 'answer') === 'reasoning') {
-              const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+              const piece =
+                (typeof fullText === 'string' && fullText) ||
+                (typeof delta === 'string' && delta) ||
+                '';
+
               if (!piece) return;
               if (eventType === 'response.reasoning_summary_text.done') {
                 setReasoning(piece);
@@ -587,9 +606,14 @@ export function App() {
                 lastReasoningDeltaRef.current = piece;
                 appendReasoning(piece);
               }
+
               return;
             }
-            const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+            const piece =
+              (typeof fullText === 'string' && fullText) ||
+              (typeof delta === 'string' && delta) ||
+              '';
+
             if (!piece) return;
             if (lastDeltaRef.current === piece) return;
             lastDeltaRef.current = piece;
@@ -748,12 +772,12 @@ export function App() {
             hasPages={hasPages}
             historyIndex={historyIndex}
             inputRef={askInputRef as React.RefObject<HTMLInputElement>}
+            reasoningMarkdown={reasoning}
             setText={setText}
             streaming={streaming}
             text={text}
             onRegenerate={() => void onRegenerate()}
             onSubmit={() => void onSubmit()}
-            reasoningMarkdown={reasoning}
           />
         )}
 
@@ -764,5 +788,3 @@ export function App() {
     </div>
   );
 }
-
-

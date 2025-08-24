@@ -153,5 +153,3 @@ export const HUDBar: React.FC<HUDBarProps> = ({
     </div>
   );
 };
-
-

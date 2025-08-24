@@ -115,5 +115,3 @@ export const askInput: CSSProperties = {
   border: '1px solid #2a2a2a',
   outline: 'none',
 };
-
-

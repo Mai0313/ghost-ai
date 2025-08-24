@@ -109,7 +109,15 @@ export const AskPanel: React.FC<AskPanelProps> = ({
         }}
       >
         {isWebSearching && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, opacity: 0.85 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8,
+              opacity: 0.85,
+            }}
+          >
             <ThinkingIndicator dots={3} size={6} />
             <div style={{ fontSize: 12, opacity: 0.8 }}>正在搜尋網路…</div>
           </div>
@@ -120,9 +128,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             <MarkdownViewer markdown={reasoningMarkdown} />
           </div>
         )}
-        {!!displayMarkdown && (
-          <div style={{ marginBottom: 4, opacity: 0.7 }}>Answer</div>
-        )}
+        {!!displayMarkdown && <div style={{ marginBottom: 4, opacity: 0.7 }}>Answer</div>}
         <MarkdownViewer markdown={displayMarkdown} />
       </div>
       <div style={askFooter}>
@@ -220,5 +226,3 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     </div>
   );
 };
-
-

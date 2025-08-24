@@ -96,5 +96,3 @@ export function makeTheme(opacity = 0.85): ThemeSpec {
 }
 
 export const theme = makeTheme(0.595);
-
-

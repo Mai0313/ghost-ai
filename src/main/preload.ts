@@ -53,6 +53,7 @@ const api = {
         delta: data.delta,
         text: data.text,
       };
+
       handlers.onDelta?.(payload);
     };
     const doneHandler = (_: any, data: AnalysisResult & { sessionId: string }) => {

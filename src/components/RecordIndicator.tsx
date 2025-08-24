@@ -16,5 +16,3 @@ export function RecordIndicator({ active }: { active: boolean }) {
     </div>
   );
 }
-
-

@@ -19,5 +19,3 @@ export function ThinkingIndicator({ size = 10, dots = 3 }: { size?: number; dots
     </div>
   );
 }
-
-

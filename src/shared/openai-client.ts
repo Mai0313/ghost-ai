@@ -84,7 +84,12 @@ export class OpenAIClient {
     textPrompt: string,
     customPrompt: string,
     requestId: string,
-    onDelta: (update: { channel: 'answer'; delta?: string; text?: string; eventType: string }) => void,
+    onDelta: (update: {
+      channel: 'answer';
+      delta?: string;
+      text?: string;
+      eventType: string;
+    }) => void,
     sessionId: string,
     signal?: AbortSignal,
   ): Promise<AnalysisResult> {
@@ -187,7 +192,7 @@ export class OpenAIClient {
       role: 'user',
       content: [
         { type: 'input_text', text: effectiveText },
-        { type: 'input_image', image_url: `data:image/png;base64,${base64}` , detail: 'auto' },
+        { type: 'input_image', image_url: `data:image/png;base64,${base64}`, detail: 'auto' },
       ],
     });
 
@@ -211,11 +216,13 @@ export class OpenAIClient {
         // Reasoning stream (models with reasoning support)
         if (event.type === 'response.reasoning_summary_text.delta') {
           const d = event.delta as string;
+
           if (d) onDelta({ channel: 'reasoning', delta: d, eventType: event.type });
           continue;
         }
         if (event.type === 'response.reasoning_summary_text.done') {
           const t = event.text as string;
+
           onDelta({ channel: 'reasoning', text: t, eventType: event.type });
           continue;
         }
@@ -240,6 +247,7 @@ export class OpenAIClient {
         // Prefer granular answer delta events
         if (event.type === 'response.output_text.delta') {
           const d = event.delta as string;
+
           if (d) {
             finalContent += d;
             onDelta({ channel: 'answer', delta: d, eventType: event.type });
@@ -250,6 +258,7 @@ export class OpenAIClient {
         // Ensure we get the final answer text
         if (event.type === 'response.output_text.done') {
           const t = event.text as string;
+
           if (typeof t === 'string') finalContent = t;
           onDelta({ channel: 'answer', text: t, eventType: event.type });
           continue;
