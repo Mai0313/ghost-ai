@@ -66,7 +66,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **浮動控制列**: 螢幕上方置中的現代 HUD（預設僅顯示控制列），含 Listen、Ask、Hide、Settings
 - **統一 Ask 卡片 + 分頁（僅串流）**：AI 回應與輸入框整合在同一張卡片中。在同一個會話中，歷史回答會顯示為分頁，提供「上一頁/下一頁」按鈕與頁碼（如 `2/5`）。串流期間你可以留在舊頁面查看，隨時點「下一頁」回到「Live」觀看即時輸出。
 - **統一渲染流程（回答與逐字稿一致）**：分析回應與即時語音轉錄都透過同一套渲染流程（追加/完成），在同一個回覆區域一致呈現，行為與格式完全一致。逐字稿片段也會以 `{ user, assistant }` 形式加入與 AI 回答相同的分頁歷史（assistant 初始內容與逐字稿相同），可與 AI 回答一樣翻頁瀏覽。
-- **Reasoning 顯示**：若所選模型支援 reasoning，系統會在主回答下方顯示一塊較小、較透明的「Reasoning」區塊，用以區分思維過程與最終結果。支援事件類型包含 `response.reasoning_summary_text.delta/.done` 與 `response.reasoning_summary_part.added/.done`。
+ - **Reasoning 顯示**：若所選模型支援 reasoning，系統會「即時串流」顯示較小、較透明的「Reasoning」區塊，並放在「最終答案的上方」。支援事件類型包含 `response.reasoning_summary_text.delta/.done` 與 `response.reasoning_summary_part.added/.done`。
  - **網路搜尋指示**：當模型觸發網路搜尋（`response.web_search_call.in_progress/searching/completed`）時，回答區上方會顯示「正在搜尋網路…」的細微載入指示。
 - **逐字稿頁面可重生**：選中某一則逐字稿頁面後點擊 Regenerate，會以該逐字稿做為問題重新分析，並就地覆蓋該頁的 assistant 內容；原始逐字稿會保留在前一條 user 訊息中以供上下文使用。
 - **完成後可重生 (Regenerate)**：當某一頁的回答輸出完畢，會顯示「Regenerate」按鈕。點擊後會以「該頁的原始問題 + 之前（不包含該頁）的所有對話」作為上下文重新請求，並就地覆蓋該頁的回答，不會新增新頁面。

@@ -114,13 +114,13 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             <div style={{ fontSize: 12, opacity: 0.8 }}>正在搜尋網路…</div>
           </div>
         )}
-        <MarkdownViewer markdown={displayMarkdown} />
         {!!reasoningMarkdown && (
           <div style={{ marginTop: 8, fontSize: 12, opacity: 0.55 }}>
             <div style={{ marginBottom: 4, opacity: 0.7 }}>Reasoning</div>
             <MarkdownViewer markdown={reasoningMarkdown} />
           </div>
         )}
+        <MarkdownViewer markdown={displayMarkdown} />
       </div>
       <div style={askFooter}>
         {hasPages && (

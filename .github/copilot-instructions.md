@@ -127,7 +127,7 @@ This document describes important technical details for contributors. Update thi
     `response.web_search_call.in_progress|searching|completed`.
   - Main relays these via `capture:analyze-stream:delta` with the same fields.
   - Preload preserves the fields for renderer `onDelta`.
-  - Renderer renders reasoning in a smaller, translucent area below the main answer.
+  - Renderer renders reasoning in a smaller, translucent area above the main answer and streams it live.
 
 Notes:
 
