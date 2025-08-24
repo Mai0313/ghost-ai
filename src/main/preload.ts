@@ -35,10 +35,25 @@ const api = {
     };
     const deltaHandler = (
       _: any,
-      data: { requestId: string; delta: string; sessionId: string },
+      data: {
+        requestId: string;
+        sessionId: string;
+        channel?: 'answer' | 'reasoning' | 'web_search';
+        eventType?: string;
+        delta?: string;
+        text?: string;
+      },
     ) => {
       if (activeRequestId && data.requestId !== activeRequestId) return;
-      handlers.onDelta?.(data);
+      const payload: any = {
+        requestId: data.requestId,
+        sessionId: data.sessionId,
+        channel: data.channel ?? 'answer',
+        eventType: data.eventType ?? 'response.output_text.delta',
+        delta: data.delta,
+        text: data.text,
+      };
+      handlers.onDelta?.(payload);
     };
     const doneHandler = (_: any, data: AnalysisResult & { sessionId: string }) => {
       if (activeRequestId && (data as any)?.requestId !== activeRequestId) return;

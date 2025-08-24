@@ -118,6 +118,17 @@ This document describes important technical details for contributors. Update thi
   - Streaming only: `completionWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
   - Removed legacy helpers and Conversations helpers: `chatCompletion(...)`, `analyzeWithHistoryStream(...)`, `createConversation(...)`, `retrieveConversationItems(...)`.
 
+### Reasoning stream (Responses API)
+
+- `responseImageWithTextStream` forwards reasoning events in addition to answer deltas.
+- Handled event types: `response.reasoning_summary_part.added`, `response.reasoning_summary_part.done`, `response.reasoning_summary_text.delta`, `response.reasoning_summary_text.done`.
+- The delta callback now receives `{ channel: 'answer' | 'reasoning', eventType, delta?, text? }`.
+  - Additionally supports `{ channel: 'web_search' }` with `eventType` in
+    `response.web_search_call.in_progress|searching|completed`.
+  - Main relays these via `capture:analyze-stream:delta` with the same fields.
+  - Preload preserves the fields for renderer `onDelta`.
+  - Renderer renders reasoning in a smaller, translucent area below the main answer.
+
 Notes:
 
 - The project pins neither OpenAI SDK version nor strict types (uses `@ts-ignore` at call-sites as the SDK frequently changes). Keep the mapping minimal and guarded.
@@ -148,7 +159,14 @@ interface GhostAPI {
     customPrompt: string,
     handlers: {
       onStart?: (p: { requestId: string; sessionId: string }) => void;
-      onDelta?: (p: { requestId: string; delta: string; sessionId: string }) => void;
+      onDelta?: (p: {
+        requestId: string;
+        sessionId: string;
+        channel?: 'answer' | 'reasoning';
+        eventType?: string;
+        delta?: string;
+        text?: string;
+      }) => void;
       onDone?: (p: AnalysisResult & { sessionId: string }) => void;
       onError?: (p: { requestId?: string; error: string; sessionId: string }) => void;
     },
@@ -205,7 +223,7 @@ Main-side handlers in `src/main/main.ts` (streaming only):
   - To avoid overlap with `Cmd/Ctrl+Shift+Enter` (voice), the main process suppresses Ask toggles within ~400ms after a voice toggle.
 - Emits to renderer:
   - `capture:analyze-stream:start` with `{ requestId, sessionId }` (sessionId required)
-  - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }` (sessionId required)
+  - `capture:analyze-stream:delta` with `{ requestId, sessionId, channel?, eventType?, delta?, text? }`
   - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }` (sessionId required)
   - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }` (sessionId required)
 

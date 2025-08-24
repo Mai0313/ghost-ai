@@ -12,7 +12,9 @@ export function App() {
   const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
+  const [reasoning, setReasoning] = useState('');
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [webSearchStatus, setWebSearchStatus] = useState<'idle' | 'in_progress' | 'searching' | 'completed'>('idle');
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export function App() {
   const askInputRef = useRef<HTMLInputElement | null>(null);
   const activeUnsubRef = useRef<null | (() => void)>(null);
   const lastDeltaRef = useRef<string | null>(null);
+  const lastReasoningDeltaRef = useRef<string | null>(null);
   const activeSessionIdForRequestRef = useRef<string | null>(null);
 
   const { timeLabel, transcriptModeRef, transcriptBufferRef } = useTranscription({
@@ -237,6 +240,8 @@ export function App() {
       setRequestId(null);
       setHistory([]);
       setResult('');
+      setReasoning('');
+      setWebSearchStatus('idle');
       setHistoryIndex(null);
       transcriptBufferRef.current = '';
       setRecording(false);
@@ -252,6 +257,8 @@ export function App() {
       setRequestId(null);
       setHistory([]);
       setResult('');
+      setReasoning('');
+      setWebSearchStatus('idle');
       setHistoryIndex(null);
       setText('');
       if (recording) setRecording(false);
@@ -276,6 +283,11 @@ export function App() {
     setResult((prev) => prev + delta);
   }, []);
 
+  const appendReasoning = useCallback((delta: string) => {
+    if (!delta) return;
+    setReasoning((prev) => prev + delta);
+  }, []);
+
   const finalizeLive = useCallback((opts?: { content?: string; appendNewline?: boolean }) => {
     const contentProvided = typeof opts?.content === 'string';
 
@@ -292,6 +304,7 @@ export function App() {
       activeUnsubRef.current = null;
     }
     lastDeltaRef.current = null;
+    lastReasoningDeltaRef.current = null;
     activeSessionIdForRequestRef.current = null;
     setBusy(true);
     setStreaming(true);
@@ -302,6 +315,8 @@ export function App() {
     const effectiveCustomPrompt = basePrompt;
 
     setResult('');
+    setReasoning('');
+    setWebSearchStatus('idle');
     let unsubscribe: (() => void) | null = null;
 
     try {
@@ -321,14 +336,21 @@ export function App() {
               setSessionId(sid);
             }
             setRequestId(rid);
+            setReasoning('');
           },
           onDelta: ({
+            channel,
+            eventType,
             delta,
+            text: fullText,
             sessionId: sid,
           }: {
             requestId: string;
-            delta: string;
             sessionId: string;
+            channel?: 'answer' | 'reasoning' | 'web_search';
+            eventType?: string;
+            delta?: string;
+            text?: string;
           }) => {
             if (
               sid &&
@@ -336,10 +358,33 @@ export function App() {
               sid !== activeSessionIdForRequestRef.current
             )
               return;
-            if (!delta) return;
-            if (lastDeltaRef.current === delta) return;
-            lastDeltaRef.current = delta;
-            appendLive(delta);
+            // Web search indicator
+            if ((channel ?? 'answer') === 'web_search') {
+              const type = String(eventType || '');
+              if (type.endsWith('in_progress')) setWebSearchStatus('in_progress');
+              else if (type.endsWith('searching')) setWebSearchStatus('searching');
+              else if (type.endsWith('completed')) setWebSearchStatus('completed');
+              return;
+            }
+            // Reasoning channel
+            if ((channel ?? 'answer') === 'reasoning') {
+              const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+              if (!piece) return;
+              if (eventType === 'response.reasoning_summary_text.done') {
+                setReasoning(piece);
+                lastReasoningDeltaRef.current = null;
+              } else {
+                if (lastReasoningDeltaRef.current === piece) return;
+                lastReasoningDeltaRef.current = piece;
+                appendReasoning(piece);
+              }
+              return;
+            }
+            const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+            if (!piece) return;
+            if (lastDeltaRef.current === piece) return;
+            lastDeltaRef.current = piece;
+            appendLive(piece);
           },
           onDone: ({
             content,
@@ -359,6 +404,8 @@ export function App() {
             setStreaming(false);
             setRequestId(null);
             lastDeltaRef.current = null;
+            lastReasoningDeltaRef.current = null;
+            setWebSearchStatus('idle');
             activeSessionIdForRequestRef.current = null;
             setHistory((prev) => [
               ...prev,
@@ -391,6 +438,8 @@ export function App() {
             setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
             lastDeltaRef.current = null;
+            lastReasoningDeltaRef.current = null;
+            setWebSearchStatus('idle');
             activeSessionIdForRequestRef.current = null;
             if (activeUnsubRef.current) {
               try {
@@ -474,6 +523,8 @@ export function App() {
     setStreaming(true);
     setHistoryIndex(null);
     setResult('');
+    setReasoning('');
+    setWebSearchStatus('idle');
     let unsubscribe: (() => void) | null = null;
 
     try {
@@ -499,12 +550,18 @@ export function App() {
             setRequestId(rid);
           },
           onDelta: ({
+            channel,
+            eventType,
             delta,
+            text: fullText,
             sessionId: sid,
           }: {
             requestId: string;
-            delta: string;
             sessionId: string;
+            channel?: 'answer' | 'reasoning' | 'web_search';
+            eventType?: string;
+            delta?: string;
+            text?: string;
           }) => {
             if (
               sid &&
@@ -512,10 +569,31 @@ export function App() {
               sid !== activeSessionIdForRequestRef.current
             )
               return;
-            if (!delta) return;
-            if (lastDeltaRef.current === delta) return;
-            lastDeltaRef.current = delta;
-            appendLive(delta);
+            if ((channel ?? 'answer') === 'web_search') {
+              const type = String(eventType || '');
+              if (type.endsWith('in_progress')) setWebSearchStatus('in_progress');
+              else if (type.endsWith('searching')) setWebSearchStatus('searching');
+              else if (type.endsWith('completed')) setWebSearchStatus('completed');
+              return;
+            }
+            if ((channel ?? 'answer') === 'reasoning') {
+              const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+              if (!piece) return;
+              if (eventType === 'response.reasoning_summary_text.done') {
+                setReasoning(piece);
+                lastReasoningDeltaRef.current = null;
+              } else {
+                if (lastReasoningDeltaRef.current === piece) return;
+                lastReasoningDeltaRef.current = piece;
+                appendReasoning(piece);
+              }
+              return;
+            }
+            const piece = (typeof fullText === 'string' && fullText) || (typeof delta === 'string' && delta) || '';
+            if (!piece) return;
+            if (lastDeltaRef.current === piece) return;
+            lastDeltaRef.current = piece;
+            appendLive(piece);
           },
           onDone: ({
             content,
@@ -535,6 +613,8 @@ export function App() {
             setStreaming(false);
             setRequestId(null);
             lastDeltaRef.current = null;
+            lastReasoningDeltaRef.current = null;
+            setWebSearchStatus('idle');
             activeSessionIdForRequestRef.current = null;
             setHistory((prev) => {
               const copy = prev.slice();
@@ -615,7 +695,7 @@ export function App() {
       <HUDBar
         askActive={tab === 'ask'}
         barPos={barPos}
-        barRef={barRef}
+        barRef={barRef as React.RefObject<HTMLDivElement>}
         paused={paused}
         recording={recording}
         setBarPos={setBarPos}
@@ -667,12 +747,13 @@ export function App() {
             gotoPrevPage={gotoPrevPage}
             hasPages={hasPages}
             historyIndex={historyIndex}
-            inputRef={askInputRef}
+            inputRef={askInputRef as React.RefObject<HTMLInputElement>}
             setText={setText}
             streaming={streaming}
             text={text}
             onRegenerate={() => void onRegenerate()}
             onSubmit={() => void onSubmit()}
+            reasoningMarkdown={reasoning}
           />
         )}
 

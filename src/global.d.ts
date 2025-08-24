@@ -11,7 +11,14 @@ declare global {
         customPrompt: string,
         handlers: {
           onStart?: (payload: { requestId: string; sessionId: string }) => void;
-          onDelta?: (payload: { requestId: string; delta: string; sessionId: string }) => void;
+          onDelta?: (payload: {
+            requestId: string;
+            sessionId: string;
+            channel?: 'answer' | 'reasoning' | 'web_search';
+            eventType?: string;
+            delta?: string;
+            text?: string;
+          }) => void;
           onDone?: (payload: { requestId: string; content: string; sessionId: string }) => void;
           onError?: (payload: { requestId?: string; error: string; sessionId: string }) => void;
         },

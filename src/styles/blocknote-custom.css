@@ -3,6 +3,12 @@
   background: transparent;
 }
 
+/* Subtle reasoning text styling (smaller, lighter) */
+.bn-markdown-viewer .reasoning-text {
+  font-size: 12px;
+  opacity: 0.55;
+}
+
 /* Make BlockNote's container inherit transparency and fit the card */
 .bn-readonly .bn-editor,
 .bn-readonly .bn-container,

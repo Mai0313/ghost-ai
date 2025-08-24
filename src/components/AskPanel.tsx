@@ -7,6 +7,8 @@ import { ThinkingIndicator } from './ThinkingIndicator';
 
 type AskPanelProps = {
   displayMarkdown: string;
+  reasoningMarkdown?: string;
+  webSearchStatus?: 'idle' | 'in_progress' | 'searching' | 'completed';
   hasPages: boolean;
   currentPageLabel: string;
   historyIndex: number | null;
@@ -24,6 +26,8 @@ type AskPanelProps = {
 
 export const AskPanel: React.FC<AskPanelProps> = ({
   displayMarkdown,
+  reasoningMarkdown,
+  webSearchStatus,
   hasPages,
   currentPageLabel,
   historyIndex,
@@ -85,6 +89,14 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   }, []);
 
   const markdownVisible = useMemo(() => (displayMarkdown ? 'block' : 'none'), [displayMarkdown]);
+  const reasoningVisible = useMemo(
+    () => (reasoningMarkdown ? 'block' : 'none'),
+    [reasoningMarkdown],
+  );
+  const isWebSearching = useMemo(
+    () => webSearchStatus === 'in_progress' || webSearchStatus === 'searching',
+    [webSearchStatus],
+  );
 
   return (
     <div style={askCard}>
@@ -96,7 +108,19 @@ export const AskPanel: React.FC<AskPanelProps> = ({
           display: markdownVisible,
         }}
       >
+        {isWebSearching && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, opacity: 0.85 }}>
+            <ThinkingIndicator dots={3} size={6} />
+            <div style={{ fontSize: 12, opacity: 0.8 }}>正在搜尋網路…</div>
+          </div>
+        )}
         <MarkdownViewer markdown={displayMarkdown} />
+        {!!reasoningMarkdown && (
+          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.55 }}>
+            <div style={{ marginBottom: 4, opacity: 0.7 }}>Reasoning</div>
+            <MarkdownViewer markdown={reasoningMarkdown} />
+          </div>
+        )}
       </div>
       <div style={askFooter}>
         {hasPages && (

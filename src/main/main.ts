@@ -508,12 +508,17 @@ ipcMain.on(
         combinedTextPrompt,
         defaultPrompt,
         requestId,
-        (delta) => {
-          evt.sender.send('capture:analyze-stream:delta', {
-            requestId,
-            delta,
-            sessionId: requestSessionId,
-          });
+        (update) => {
+          try {
+            evt.sender.send('capture:analyze-stream:delta', {
+              requestId,
+              sessionId: requestSessionId,
+              channel: update.channel,
+              eventType: update.eventType,
+              delta: update.delta,
+              text: update.text,
+            });
+          } catch {}
         },
         requestSessionId,
         controller.signal,
