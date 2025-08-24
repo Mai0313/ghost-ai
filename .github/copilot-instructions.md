@@ -33,6 +33,17 @@ Troubleshooting
 - If requests fail after selecting a model, verify that your OpenAI API key has access to that model and that `baseURL` is correct.
 - Use the Settings screen "Test" button to validate API connectivity.
 
+### Packaging/runtime specifics
+
+- Renderer asset base path
+  - Vite must use a relative base when serving via `file://` in Electron.
+  - Set `base: './'` in `vite.config.ts` so `dist/renderer/index.html` references assets relatively.
+- Dev/prod detection in main
+  - Use `app.isPackaged` instead of `process.env.NODE_ENV` to distinguish packaged runtime.
+  - In production, load `path.join(__dirname, 'renderer', 'index.html')`; in dev, load `http://localhost:5173`.
+- Symptom: packaged app installs but shows no UI
+  - Likely due to incorrect `base` or dev detection. Apply the two fixes above, rebuild, then repackage.
+
 ## Ghost AI – Developer Notes
 
 This document explains technical behaviors relevant to contributors.

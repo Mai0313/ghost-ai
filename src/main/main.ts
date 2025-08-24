@@ -45,7 +45,8 @@ let currentSessionId: string = crypto.randomUUID();
 // Track active analyze stream AbortControllers per renderer
 const activeAnalyzeControllers = new Map<number, AbortController>();
 
-const isDev = process.env.NODE_ENV !== 'production';
+// Detect dev/prod based on Electron packaging state to avoid relying on NODE_ENV
+const isDev = !app.isPackaged;
 
 function resolveAssetPath(assetRelativePath: string) {
   // In production, assets placed via extraResources are under process.resourcesPath

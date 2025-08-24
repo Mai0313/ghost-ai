@@ -305,6 +305,23 @@ All settings are encrypted and stored locally - no external services required.
   - The app now falls back to a default model list even when the API key is missing/invalid, so you can still pick a model. If requests later fail, verify your account has access to the selected model.
   - Changing settings triggers an automatic refresh in the Ask panel.
 
+#### Packaged app installs but no UI is visible (Windows/macOS/Linux)
+
+- Symptom: After running the installer, you only see the tray icon and process in Task Manager, but no window appears.
+- Causes and fixes:
+  1. Production resource path
+     - Ensure `vite.config.ts` sets `base: './'` so the renderer assets load correctly via `file://` in Electron.
+  2. Environment detection
+     - In `src/main/main.ts`, detect production with `app.isPackaged` instead of `process.env.NODE_ENV` to avoid trying to load `http://localhost:5173` in the packaged app.
+  3. Overlay behavior
+     - The app is an overlay and may start hidden/click‑through. Use the global hotkey `Ctrl/Cmd+Enter` or the tray menu "Show Overlay" to reveal the HUD.
+  4. Rebuild/package
+     - Rebuild and repackage after applying the fixes:
+       ```bash
+       npm run build
+       npm run dist:win   # or :mac / :linux
+       ```
+
 ### Realtime Transcription Language
 
 - In Settings → Transcription, you can choose the transcription language: **English (en)** or **中文 (zh)**. Default is **en**.
