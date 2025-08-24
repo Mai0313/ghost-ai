@@ -116,6 +116,8 @@ This document describes important technical details for contributors. Update thi
 - Wrapper class: `src/shared/openai-client.ts`
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
   - Streaming only: `completionWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
+    - `onDelta` signature: `{ channel: 'answer'; delta?: string; text?: string; eventType: string }`
+    - This path does not emit reasoning or tool events; only answer deltas/done.
   - Removed legacy helpers and Conversations helpers: `chatCompletion(...)`, `analyzeWithHistoryStream(...)`, `createConversation(...)`, `retrieveConversationItems(...)`.
 
 ### Reasoning stream (Responses API)

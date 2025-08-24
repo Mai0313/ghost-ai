@@ -83,7 +83,7 @@ export class OpenAIClient {
     textPrompt: string,
     customPrompt: string,
     requestId: string,
-    onDelta: (textDelta: string) => void,
+    onDelta: (update: { channel: 'answer'; delta?: string; text?: string; eventType: string }) => void,
     sessionId: string,
     signal?: AbortSignal,
   ): Promise<AnalysisResult> {
@@ -128,12 +128,17 @@ export class OpenAIClient {
 
         if (delta) {
           finalContent += delta;
-          onDelta(delta);
+          onDelta({ channel: 'answer', delta, eventType: 'chat.output_text.delta' });
         }
       } catch {
         // ignore malformed chunks
       }
     }
+
+    // Emit a final done event for completeness (not required by current UI)
+    try {
+      onDelta({ channel: 'answer', text: finalContent, eventType: 'chat.output_text.done' });
+    } catch {}
 
     return {
       requestId,
@@ -197,37 +202,37 @@ export class OpenAIClient {
     for await (const event of stream) {
       try {
         // Reasoning stream (models with reasoning support)
-        if ((event as any)?.type === 'response.reasoning_summary_text.delta') {
-          const d = (event as any).delta as string;
-          if (d) onDelta({ channel: 'reasoning', delta: d, eventType: (event as any).type });
+        if (event.type === 'response.reasoning_summary_text.delta') {
+          const d = event.delta as string;
+          if (d) onDelta({ channel: 'reasoning', delta: d, eventType: event.type });
           continue;
         }
-        if ((event as any)?.type === 'response.reasoning_summary_text.done') {
-          const t = (event as any).text as string;
-          onDelta({ channel: 'reasoning', text: t, eventType: (event as any).type });
+        if (event.type === 'response.reasoning_summary_text.done') {
+          const t = event.text as string;
+          onDelta({ channel: 'reasoning', text: t, eventType: event.type });
           continue;
         }
         if (
-          (event as any)?.type === 'response.reasoning_summary_part.added' ||
-          (event as any)?.type === 'response.reasoning_summary_part.done'
+          event.type === 'response.reasoning_summary_part.added' ||
+          event.type === 'response.reasoning_summary_part.done'
         ) {
-          onDelta({ channel: 'reasoning', eventType: (event as any).type });
+          onDelta({ channel: 'reasoning', eventType: event.type });
           continue;
         }
 
         // Web search lifecycle events (no full content available)
         if (
-          (event as any)?.type === 'response.web_search_call.in_progress' ||
-          (event as any)?.type === 'response.web_search_call.searching' ||
-          (event as any)?.type === 'response.web_search_call.completed'
+          event.type === 'response.web_search_call.in_progress' ||
+          event.type === 'response.web_search_call.searching' ||
+          event.type === 'response.web_search_call.completed'
         ) {
-          onDelta({ channel: 'web_search', eventType: (event as any).type });
+          onDelta({ channel: 'web_search', eventType: event.type });
           continue;
         }
 
         // Prefer granular answer delta events
         if (event.type === 'response.output_text.delta') {
-          const d = (event as any).delta as string;
+          const d = event.delta as string;
           if (d) {
             finalContent += d;
             onDelta({ channel: 'answer', delta: d, eventType: event.type });
@@ -237,7 +242,7 @@ export class OpenAIClient {
 
         // Ensure we get the final answer text
         if (event.type === 'response.output_text.done') {
-          const t = (event as any).text as string;
+          const t = event.text as string;
           if (typeof t === 'string') finalContent = t;
           onDelta({ channel: 'answer', text: t, eventType: event.type });
           continue;
