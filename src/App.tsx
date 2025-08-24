@@ -323,12 +323,7 @@ export function App() {
         userMessage,
         effectiveCustomPrompt,
         {
-          onStart: ({
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-          }) => {
+          onStart: ({ sessionId: sid }: { requestId: string; sessionId: string }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
@@ -541,12 +536,7 @@ export function App() {
         userMessage,
         effectiveCustomPrompt,
         {
-          onStart: ({
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-          }) => {
+          onStart: ({ sessionId: sid }: { requestId: string; sessionId: string }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
@@ -760,10 +750,10 @@ export function App() {
             historyIndex={historyIndex}
             inputRef={askInputRef as React.RefObject<HTMLInputElement>}
             reasoningMarkdown={reasoning}
-            webSearchStatus={webSearchStatus}
             setText={setText}
             streaming={streaming}
             text={text}
+            webSearchStatus={webSearchStatus}
             onRegenerate={() => void onRegenerate()}
             onSubmit={() => void onSubmit()}
           />
