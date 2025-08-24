@@ -89,10 +89,6 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   }, []);
 
   const markdownVisible = useMemo(() => (displayMarkdown ? 'block' : 'none'), [displayMarkdown]);
-  const reasoningVisible = useMemo(
-    () => (reasoningMarkdown ? 'block' : 'none'),
-    [reasoningMarkdown],
-  );
   const isWebSearching = useMemo(
     () => webSearchStatus === 'in_progress' || webSearchStatus === 'searching',
     [webSearchStatus],

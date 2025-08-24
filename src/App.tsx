@@ -19,7 +19,6 @@ export function App() {
   >('idle');
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [requestId, setRequestId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
   const [tab, setTab] = useState<'ask' | 'settings' | null>(null);
   const tabRef = useRef<'ask' | 'settings' | null>(null);
@@ -239,7 +238,6 @@ export function App() {
       } catch {}
       activeUnsubRef.current = null;
       setStreaming(false);
-      setRequestId(null);
       setHistory([]);
       setResult('');
       setReasoning('');
@@ -256,7 +254,6 @@ export function App() {
       } catch {}
       activeUnsubRef.current = null;
       setStreaming(false);
-      setRequestId(null);
       setHistory([]);
       setResult('');
       setReasoning('');
@@ -327,7 +324,6 @@ export function App() {
         effectiveCustomPrompt,
         {
           onStart: ({
-            requestId: rid,
             sessionId: sid,
           }: {
             requestId: string;
@@ -337,7 +333,6 @@ export function App() {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
             }
-            setRequestId(rid);
             setReasoning('');
           },
           onDelta: ({
@@ -415,7 +410,6 @@ export function App() {
               return;
             finalizeLive({ content: content ?? '' });
             setStreaming(false);
-            setRequestId(null);
             lastDeltaRef.current = null;
             lastReasoningDeltaRef.current = null;
             setWebSearchStatus('idle');
@@ -448,7 +442,6 @@ export function App() {
             )
               return;
             setStreaming(false);
-            setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
             lastDeltaRef.current = null;
             lastReasoningDeltaRef.current = null;
@@ -470,7 +463,6 @@ export function App() {
       transcriptBufferRef.current = '';
     } catch (e) {
       setStreaming(false);
-      setRequestId(null);
       setResult(`Error: ${String((e as any)?.message ?? e ?? 'analyze failed')}`);
     } finally {
       setBusy(false);
@@ -550,7 +542,6 @@ export function App() {
         effectiveCustomPrompt,
         {
           onStart: ({
-            requestId: rid,
             sessionId: sid,
           }: {
             requestId: string;
@@ -560,7 +551,6 @@ export function App() {
               activeSessionIdForRequestRef.current = sid;
               setSessionId(sid);
             }
-            setRequestId(rid);
           },
           onDelta: ({
             channel,
@@ -635,7 +625,6 @@ export function App() {
               return;
             finalizeLive({ content: content ?? '' });
             setStreaming(false);
-            setRequestId(null);
             lastDeltaRef.current = null;
             lastReasoningDeltaRef.current = null;
             setWebSearchStatus('idle');
@@ -670,7 +659,6 @@ export function App() {
             )
               return;
             setStreaming(false);
-            setRequestId(null);
             setResult(`Error: ${error || 'Unknown error'}`);
             lastDeltaRef.current = null;
             activeSessionIdForRequestRef.current = null;
@@ -688,7 +676,6 @@ export function App() {
       activeUnsubRef.current = unsubscribe;
     } catch (e) {
       setStreaming(false);
-      setRequestId(null);
       setResult(`Error: ${String((e as any)?.message ?? e ?? 'regenerate failed')}`);
     } finally {
       setBusy(false);
@@ -773,6 +760,7 @@ export function App() {
             historyIndex={historyIndex}
             inputRef={askInputRef as React.RefObject<HTMLInputElement>}
             reasoningMarkdown={reasoning}
+            webSearchStatus={webSearchStatus}
             setText={setText}
             streaming={streaming}
             text={text}

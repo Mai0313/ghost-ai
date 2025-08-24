@@ -89,7 +89,7 @@ export function loadUserSettings(): Partial<UserSettings> {
   }
 }
 
-export function saveHiddenState(hidden: boolean) {
+export function saveHiddenState(_hidden: boolean) {
   // No-op: hidden state is not persisted
 }
 

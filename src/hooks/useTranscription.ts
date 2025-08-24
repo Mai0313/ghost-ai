@@ -63,7 +63,6 @@ export function useTranscription({
       const ratio = inRate / outRate;
       const newLen = Math.floor(buffer.length / ratio);
       const out = new Float32Array(newLen);
-      let pos = 0;
 
       for (let i = 0; i < newLen; i++) {
         const index = i * ratio;
@@ -72,7 +71,6 @@ export function useTranscription({
         const frac = index - i0;
 
         out[i] = buffer[i0]! * (1 - frac) + buffer[i1]! * frac;
-        pos += ratio;
       }
 
       return out;

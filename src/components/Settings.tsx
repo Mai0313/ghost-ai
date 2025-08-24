@@ -6,7 +6,6 @@ export function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [baseURL, setBaseURL] = useState('https://api.openai.com/v1');
   const [model, setModel] = useState('');
-  const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
   // Transcription language
@@ -34,8 +33,6 @@ export function Settings() {
           setApiKey(cfg.apiKey || '');
           setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
         }
-
-        if (Array.isArray(list) && list.length) setModels(list);
 
         // Only set model after models are loaded; if cfg.model isn't in list, leave empty
         const cfgModel = (cfg && cfg.model) || '';
@@ -87,7 +84,6 @@ export function Settings() {
         const list = await api.listOpenAIModels();
 
         if (Array.isArray(list) && list.length) {
-          setModels(list);
           // If current model is empty or not in list, auto-pick first
           if (!model || !list.includes(model)) {
             setModel(list[0] ?? '');
