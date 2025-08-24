@@ -120,6 +120,9 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             <MarkdownViewer markdown={reasoningMarkdown} />
           </div>
         )}
+        {!!displayMarkdown && (
+          <div style={{ marginBottom: 4, opacity: 0.7 }}>Answer</div>
+        )}
         <MarkdownViewer markdown={displayMarkdown} />
       </div>
       <div style={askFooter}>

@@ -130,6 +130,7 @@ This document describes important technical details for contributors. Update thi
   - Main relays these via `capture:analyze-stream:delta` with the same fields.
   - Preload preserves the fields for renderer `onDelta`.
   - Renderer renders reasoning in a smaller, translucent area above the main answer and streams it live.
+  - UI labels: a small "Reasoning" label appears above the reasoning block, and a small "Answer" label appears above the final answer markdown for clarity.
 
 Notes:
 

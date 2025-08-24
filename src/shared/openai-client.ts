@@ -7,6 +7,7 @@ import type {
 import type {
   ResponseCreateParams,
   ResponseStreamEvent,
+  ResponseInput,
 } from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
 
@@ -171,22 +172,28 @@ export class OpenAIClient {
     const effectiveText =
       textPrompt?.trim() || 'Response to the question based on the info or image you have.';
 
-    const input: any[] = [];
+    // Responses API expects a single ResponseInput (array of items), not role-based messages
+    const input: ResponseInput = [];
 
     if (customPrompt?.trim()) {
-      input.push({ role: 'system', content: customPrompt.trim() });
+      input.push({
+        type: 'message',
+        role: 'system',
+        content: [{ type: 'input_text', text: customPrompt.trim() }],
+      });
     }
     input.push({
+      type: 'message',
       role: 'user',
       content: [
         { type: 'input_text', text: effectiveText },
-        { type: 'input_image', image_url: `data:image/png;base64,${base64}` },
+        { type: 'input_image', image_url: `data:image/png;base64,${base64}` , detail: 'auto' },
       ],
     });
 
     const request: ResponseCreateParams & { stream: true } = {
       model: config.model,
-      input: input,
+      input,
       tools: [{ type: 'web_search_preview' }],
       stream: true,
     } as ResponseCreateParamsStreaming;
