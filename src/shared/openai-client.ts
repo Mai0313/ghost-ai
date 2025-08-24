@@ -13,6 +13,8 @@ import type { Stream } from 'openai/streaming';
 import OpenAI from 'openai';
 import { ChatCompletionCreateParamsStreaming } from 'openai/resources.js';
 import { ResponseCreateParamsStreaming } from 'openai/resources/responses/responses.js';
+import { Conversation, ConversationCreateParams } from 'openai/resources/conversations/conversations.mjs';
+import { ConversationItem } from 'openai/resources/conversations.mjs';
 
 export class OpenAIClient {
   private client: OpenAI | null = null;
@@ -142,6 +144,28 @@ export class OpenAIClient {
       timestamp: new Date().toISOString(),
       sessionId: sessionId,
     };
+  }
+
+  async createConversation(customPrompt: string): Promise<Conversation> {
+    this.ensureClient();
+    const client = this.client!;
+    const request: ConversationCreateParams = {
+      items: [
+        {
+          role: 'system',
+          content: customPrompt,
+        }
+      ]
+    }
+    const conversation = await client.conversations.create(request, {});
+    return conversation;
+  }
+
+  async retrieveConversationItems(conversationId: string): Promise<ConversationItem[]> {
+    this.ensureClient();
+    const client = this.client!;
+    const items = await client.conversations.items.list(conversationId, {});
+    return items.data ?? [];
   }
 
   async responseImageWithTextStream(
