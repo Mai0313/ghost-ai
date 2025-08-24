@@ -74,6 +74,10 @@ declare global {
         handler: (data: { error: string; sessionId?: string }) => void,
       ) => () => void;
       onTranscribeClosed: (handler: () => void) => () => void;
+      // Notify renderers when OpenAI config changes (persisted or volatile)
+      onOpenAIConfigUpdated?: (handler: () => void) => () => void;
     };
   }
 }
+
+

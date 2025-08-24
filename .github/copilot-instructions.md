@@ -4,7 +4,7 @@ This document captures technical notes relevant to contributors.
 
 Model list loading and config updates
 
-- A renderer-side model selector lives in `src/renderer/components/AskPanel.tsx` (next to the Ask input).
+- A renderer-side model selector lives in `src/components/AskPanel.tsx` (next to the Ask input).
 - Models are fetched through `window.ghostAI.listOpenAIModels()` which bridges to `ipcMain.handle('openai:list-models')` and ultimately `src/shared/openai-client.ts#listModels`.
 - To avoid the selector getting stuck on "Loading models…" when the API key is missing or invalid, `listModels()` now returns a sensible default list even on errors.
 
@@ -14,7 +14,7 @@ IPC updates
   - Emitted by main after both `openai:update-config` (persisted) and `openai:update-config-volatile` (in-memory) updates.
   - Main implementation lives in `src/main/main.ts`.
   - Preload exposes a convenience listener: `onOpenAIConfigUpdated(handler)` in `src/main/preload.ts`.
-  - Renderer subscribes and refreshes the model list when config changes (see `src/renderer/components/AskPanel.tsx`).
+  - Renderer subscribes and refreshes the model list when config changes (see `src/components/AskPanel.tsx`).
 
 OpenAI client behavior
 
@@ -26,7 +26,7 @@ OpenAI client behavior
 Renderer notes
 
 - The Ask footer model selector now refreshes automatically when settings change, via `onOpenAIConfigUpdated`.
-- Settings screen (`src/renderer/components/Settings.tsx`) still updates models eagerly when API key/Base URL inputs change.
+- Settings screen (`src/components/Settings.tsx`) still updates models eagerly when API key/Base URL inputs change.
 
 Troubleshooting
 
@@ -106,7 +106,7 @@ This document describes important technical details for contributors. Update thi
   - OpenAI requests via `src/shared/openai-client.ts`
   - Screenshot capture via `src/main/modules/screenshot-manager.ts`
   - Settings persistence via `electron-store`
-- Renderer (`src/renderer/*`) is a lightweight HUD and settings UI built with React
+- Renderer (UI files under `src/*`) is a lightweight HUD and settings UI built with React
 - Shared types and the OpenAI client are in `src/shared/*`
 
 - Maintenance: Removed unused stubs `src/services/audio-processor.ts` and `src/services/image-processor.ts`.
@@ -299,16 +299,16 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 ## UI Theming and Styles
 
-- Centralized theme and styles live under `src/renderer/styles/`.
+- Centralized theme and styles live under `src/styles/`.
   - `theme.ts`: exports `theme` and `makeTheme(opacity?: number)`; the single `opacity` value synchronizes text/background transparency across the UI.
     - Change default opacity at the export site: `export const theme = makeTheme(0.85)`.
     - Edit base colors in `palette` (RGB tuples) to adjust text/background/primary/danger etc.
   - `styles.ts`: component styles (bar, settings card, ask card, buttons) consume `theme.color.*()` so most customization is done via `theme.ts`.
   - Prefer per-component tweaks via multipliers (e.g., `theme.color.panelBg(0.9)`) rather than hard-coded rgba.
-  - Markdown viewer encapsulated in `src/renderer/components/MarkdownViewer.tsx`.
-    - Assets are imported in `src/renderer/main.tsx` (global CSS imports).
+  - Markdown viewer encapsulated in `src/components/MarkdownViewer.tsx`.
+    - Assets are imported in `src/main.tsx` (global CSS imports).
     - Use `<MarkdownViewer markdown={displayMarkdown} />` to render.
-  - Scrollbar styling for the AI answer panel lives in `src/renderer/styles/blocknote-custom.css` under `.bn-markdown-viewer` with both WebKit (::-webkit-scrollbar) and Firefox (scrollbar-width/color) rules to match the dark panel aesthetics.
+  - Scrollbar styling for the AI answer panel lives in `src/styles/blocknote-custom.css` under `.bn-markdown-viewer` with both WebKit (::-webkit-scrollbar) and Firefox (scrollbar-width/color) rules to match the dark panel aesthetics.
 
 ## Screenshot Capture
 
@@ -329,7 +329,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 - When modifying IPC channels, update:
   - `src/main/main.ts`
   - `src/main/preload.ts`
-  - `src/renderer/global.d.ts`
+  - `src/global.d.ts`
   - This document.
 
 # Ghost AI — Copilot Instructions (需求與計畫整合)

@@ -17,7 +17,6 @@
     "types": ["vite/client"],
     "paths": {
       "@main/*": ["src/main/*"],
-      "@renderer/*": ["src/renderer/*"],
       "@shared/*": ["src/shared/*"],
       "@services/*": ["src/services/*"]
     }

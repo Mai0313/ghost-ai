@@ -149,3 +149,5 @@ export function IconXCircle({ color = '#ff4d4f' }: { color?: string }) {
     </svg>
   );
 }
+
+

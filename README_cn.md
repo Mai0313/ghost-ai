@@ -71,7 +71,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
 - **可自訂設定**: 個人化熱鍵、預設提示和行為
 - **跨平台**: 在 Windows、macOS 和 Linux 上無縫運作
 - **邊緣友善的覆蓋層**：覆蓋層預設為全螢幕且可點擊穿透；只有當滑鼠懸停在 HUD 或泡泡上時才會接收滑鼠事件，避免「透明視窗擋住」的情況，讓控制列可拖到最上/下緣。
-- **滾動條樣式**：AI 回答區使用與面板風格一致的薄型圓角滾動條，可在 `src/renderer/styles/blocknote-custom.css` 進一步調整。
+- **滾動條樣式**：AI 回答區使用與面板風格一致的薄型圓角滾動條，可在 `src/styles/blocknote-custom.css` 進一步調整。
 
 ## 提示詞目錄
 
@@ -309,9 +309,9 @@ const defaultHotkey = 'CommandOrControl+Shift+S';
 
 ### UI 客製化（透明度與顏色）
 
-- 要同時調整「字體與背景的深淺」，修改 `src/renderer/styles/theme.ts` 的主題透明度：
+- 要同時調整「字體與背景的深淺」，修改 `src/styles/theme.ts` 的主題透明度：
 
-```96:96:src/renderer/styles/theme.ts
+```96:96:src/styles/theme.ts
 export const theme = makeTheme();
 ```
 
@@ -319,7 +319,7 @@ export const theme = makeTheme();
 
 - 要更改顏色，編輯同檔案內的 `palette`：
 
-```54:65:src/renderer/styles/theme.ts
+```54:65:src/styles/theme.ts
 const palette = {
   text: [255, 255, 255],
   mutedText: [189, 189, 189],
@@ -335,7 +335,7 @@ const palette = {
 };
 ```
 
-- 元件樣式集中於 `src/renderer/styles/styles.ts` 並使用主題色，通常只需調整上述兩處即可完成外觀客製化。
+- 元件樣式集中於 `src/styles/styles.ts` 並使用主題色，通常只需調整上述兩處即可完成外觀客製化。
 
 ## 🔧 開發
 

@@ -73,7 +73,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Minimal Friction**: Prompt composer with custom prompt field and Send button
 - **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
-- **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/renderer/styles/blocknote-custom.css`.
+- **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/styles/blocknote-custom.css`.
 
 ### 🏗️ **Modern Architecture**
 
@@ -303,9 +303,9 @@ All settings are encrypted and stored locally - no external services required.
 
 ### UI customization (opacity and colors)
 
-- To adjust overall opacity (both background and text), change the theme opacity in `src/renderer/styles/theme.ts`:
+- To adjust overall opacity (both background and text), change the theme opacity in `src/styles/theme.ts`:
 
-```96:96:src/renderer/styles/theme.ts
+```96:96:src/styles/theme.ts
 export const theme = makeTheme();
 ```
 
@@ -313,7 +313,7 @@ For example, `makeTheme(0.75)` makes the UI more transparent; values are 0–1.
 
 - To change colors, edit the `palette` in the same file:
 
-```54:65:src/renderer/styles/theme.ts
+```54:65:src/styles/theme.ts
 const palette = {
   text: [255, 255, 255],
   mutedText: [189, 189, 189],
@@ -329,7 +329,7 @@ const palette = {
 };
 ```
 
-- Component styles are centralized in `src/renderer/styles/styles.ts` and consume the theme, so most tweaks should only require the edits above.
+- Component styles are centralized in `src/styles/styles.ts` and consume the theme, so most tweaks should only require the edits above.
 
 ### Privacy Settings
 

@@ -2,10 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  root: 'src/renderer',
+  root: 'src',
   plugins: [react()],
   build: {
-    outDir: '../../dist/renderer',
+    outDir: '../dist/renderer',
     emptyOutDir: true,
   },
   server: {

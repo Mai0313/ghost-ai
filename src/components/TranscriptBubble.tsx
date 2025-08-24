@@ -26,3 +26,5 @@ export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({ markdown }) 
     </div>
   );
 };
+
+

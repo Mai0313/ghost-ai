@@ -227,7 +227,7 @@ export function useTranscription({
         }, BATCH_FLUSH_MS) as unknown as number;
       };
 
-      processor.onaudioprocess = (ev: AudioProcessingEvent) => {
+      (processor as any).onaudioprocess = (ev: AudioProcessingEvent) => {
         try {
           if (pausedRef.current) return;
           const input = ev.inputBuffer;
@@ -357,3 +357,5 @@ export function useTranscription({
     transcriptBufferRef,
   } as const;
 }
+
+
