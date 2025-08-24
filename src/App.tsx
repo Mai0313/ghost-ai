@@ -314,7 +314,7 @@ export function App() {
             sessionId: sid,
           }: {
             requestId: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
@@ -328,7 +328,7 @@ export function App() {
           }: {
             requestId: string;
             delta: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&
@@ -347,7 +347,7 @@ export function App() {
           }: {
             requestId: string;
             content: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&
@@ -379,7 +379,7 @@ export function App() {
           }: {
             requestId?: string;
             error: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&
@@ -490,7 +490,7 @@ export function App() {
             sessionId: sid,
           }: {
             requestId: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (sid) {
               activeSessionIdForRequestRef.current = sid;
@@ -504,7 +504,7 @@ export function App() {
           }: {
             requestId: string;
             delta: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&
@@ -523,7 +523,7 @@ export function App() {
           }: {
             requestId: string;
             content: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&
@@ -557,7 +557,7 @@ export function App() {
           }: {
             requestId?: string;
             error: string;
-            sessionId?: string;
+            sessionId: string;
           }) => {
             if (
               sid &&

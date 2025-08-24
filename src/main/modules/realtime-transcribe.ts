@@ -6,7 +6,7 @@ interface RealtimeSessionOptions {
   apiKey: string;
   baseURL?: string; // not used by WS
   model?: string; // default gpt-4o-mini-transcribe
-  sessionId?: string;
+  sessionId: string;
   language?: 'en' | 'zh';
 }
 
@@ -17,7 +17,7 @@ export class RealtimeTranscribeManager {
       ws: WebSocket;
       webContents: WebContents;
       current: string[]; // collect current sentence parts
-      sessionId?: string;
+      sessionId: string;
     }
   >();
 

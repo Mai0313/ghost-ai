@@ -442,25 +442,25 @@ ipcMain.handle('openai:list-models', async () => {
 ipcMain.on(
   'capture:analyze-stream',
   async (evt, payload: { textPrompt: string; customPrompt: string; history?: string | null }) => {
-    // Record the sessionId at the start of this analysis to prevent race conditions with Ctrl+R
-    const analysisSessionId = currentSessionId;
+    // Snapshot the sessionId at the start of this request to prevent races with Ctrl+R
+    const requestSessionId = currentSessionId;
 
     try {
       ensureHiddenOnCapture();
       const image = await hideAllWindowsDuring(async () => captureScreen());
       const requestId = crypto.randomUUID();
 
-      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: analysisSessionId });
+      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: requestSessionId });
 
       // Inject prior plain-text history into the text prompt for simple continuity.
       // If payload.history is provided (regeneration), use it as the prior history override;
       // otherwise use the current session's accumulated history.
       const priorPlain =
         (typeof payload.history === 'string' ? payload.history : null) ??
-        conversationHistoryBySession.get(analysisSessionId) ??
+        conversationHistoryBySession.get(requestSessionId) ??
         '';
       // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
-      const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
+      const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? '';
       const priorWithInitial =
         typeof payload.history === 'string'
           ? `${initialPromptPrefix}${priorPlain || ''}`
@@ -472,7 +472,7 @@ ipcMain.on(
       // Load active prompt content only for the first turn of the current session
       const defaultPrompt = (() => {
         try {
-          const isFirstTurn = !sessionStore.hasEntries(analysisSessionId);
+          const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
 
           if (!isFirstTurn) return '';
 
@@ -484,7 +484,7 @@ ipcMain.on(
 
       if (defaultPrompt) {
         // Cache the initial prompt used for this session so we can reuse it during regen
-        initialPromptBySession.set(analysisSessionId, defaultPrompt);
+        initialPromptBySession.set(requestSessionId, defaultPrompt);
       }
 
       // Create AbortController for this renderer and abort any prior one
@@ -512,16 +512,16 @@ ipcMain.on(
           evt.sender.send('capture:analyze-stream:delta', {
             requestId,
             delta,
-            sessionId: analysisSessionId,
+            sessionId: requestSessionId,
           });
         },
-        analysisSessionId,
+        requestSessionId,
         controller.signal,
       );
 
       evt.sender.send('capture:analyze-stream:done', {
         ...result,
-        sessionId: analysisSessionId,
+        sessionId: requestSessionId,
       });
 
       // Clear controller on successful completion
@@ -533,7 +533,7 @@ ipcMain.on(
 
       // Check if this request was aborted (e.g., by Ctrl+R). If so, don't write to log
       // to prevent interrupted conversations from being written to the wrong session
-      if (!controller.signal.aborted && analysisSessionId === currentSessionId) {
+      if (!controller.signal.aborted && requestSessionId === currentSessionId) {
         // Only write to log if not aborted AND the session hasn't changed during analysis
         // Append to plain-text conversation history.
         // If this was a regeneration (payload.history provided), rebuild from that base
@@ -548,35 +548,35 @@ ipcMain.on(
           const appended = question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '';
           const updated = rebuilt + appended;
 
-          conversationHistoryBySession.set(analysisSessionId, updated);
+          conversationHistoryBySession.set(requestSessionId, updated);
         } else {
           if (question || answer) {
-            const existing = conversationHistoryBySession.get(analysisSessionId) ?? '';
+            const existing = conversationHistoryBySession.get(requestSessionId) ?? '';
             const prefix = existing ? '' : defaultPrompt ? `${defaultPrompt}\n` : '';
             const updated = existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
 
-            conversationHistoryBySession.set(analysisSessionId, updated);
+            conversationHistoryBySession.set(requestSessionId, updated);
           }
         }
         // Persist current conversation history for this request for debugging/inspection
         try {
           const logPath = await logManager.writeConversationLog(
-            analysisSessionId,
-            conversationHistoryBySession.get(analysisSessionId) ?? '',
+            requestSessionId,
+            conversationHistoryBySession.get(requestSessionId) ?? '',
           );
 
           // Track session entry
-          sessionStore.appendEntry(analysisSessionId, {
+          sessionStore.appendEntry(requestSessionId, {
             requestId,
             text_input: (payload.textPrompt ?? '').trim(),
             ai_output: answer,
           });
-          sessionStore.updateSessionLogPath(analysisSessionId, logPath);
+          sessionStore.updateSessionLogPath(requestSessionId, logPath);
           // Persist session store to JSON for debugging/inspection
           try {
             const json = sessionStore.toJSON();
 
-            await logManager.writeSessionJson(analysisSessionId, json[analysisSessionId] ?? {});
+            await logManager.writeSessionJson(requestSessionId, json[requestSessionId] ?? {});
           } catch {}
         } catch {}
       }
@@ -598,7 +598,7 @@ ipcMain.on(
       if (!isAbort) {
         // Best-effort request routing – if requestId isn't known yet, send without
         // Use the original analysis sessionId, not the current one (which might have changed due to Ctrl+R)
-        evt.sender.send('capture:analyze-stream:error', { error, sessionId: analysisSessionId });
+        evt.sender.send('capture:analyze-stream:error', { error, sessionId: requestSessionId });
       }
     }
   },

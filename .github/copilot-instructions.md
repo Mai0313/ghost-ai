@@ -46,21 +46,21 @@ This document explains technical behaviors relevant to contributors.
 Implementation details:
 
 - `src/main/modules/session-store.ts` exposes `hasEntries(sessionId: string): boolean`.
-- `src/main/main.ts` checks `!sessionStore.hasEntries(analysisSessionId)` to decide whether to read and pass the default prompt.
+- `src/main/main.ts` checks `!sessionStore.hasEntries(requestSessionId)` to decide whether to read and pass the default prompt.
 - The call site:
 
 ```ts
 // Load active prompt content only for the first turn of the current session
 const defaultPrompt = (() => {
   try {
-    const isFirstTurn = !sessionStore.hasEntries(analysisSessionId);
+    const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
     if (!isFirstTurn) return '';
     return readPrompt() || '';
   } catch {
     return '';
   }
 })();
-if (defaultPrompt) initialPromptBySession.set(analysisSessionId, defaultPrompt);
+if (defaultPrompt) initialPromptBySession.set(requestSessionId, defaultPrompt);
 ```
 
 ### Conversation Memory
@@ -73,10 +73,10 @@ if (defaultPrompt) initialPromptBySession.set(analysisSessionId, defaultPrompt);
 // Use override if provided (regeneration), otherwise use accumulated history
 const priorPlain =
   (typeof payload.history === 'string' ? payload.history : null) ??
-  conversationHistoryBySession.get(analysisSessionId) ??
+  conversationHistoryBySession.get(requestSessionId) ??
   '';
 
-const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
+const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? '';
 
 const priorWithInitial =
   typeof payload.history === 'string' ? `${initialPromptPrefix}${priorPlain || ''}` : priorPlain;
@@ -116,7 +116,7 @@ This document describes important technical details for contributors. Update thi
 - Wrapper class: `src/shared/openai-client.ts`
   - `initialize`, `updateConfig`, `validateConfig`, `listModels`
   - Streaming only: `completionWithTextStream(imageBuffer, textPrompt, customPrompt, requestId, onDelta)`
-  - Removed legacy helpers: `chatCompletion(...)` and `analyzeWithHistoryStream(...)` were deleted. The main process manages plain‑text conversation history and injects it into `textPrompt` when composing each request.
+  - Removed legacy helpers and Conversations helpers: `chatCompletion(...)`, `analyzeWithHistoryStream(...)`, `createConversation(...)`, `retrieveConversationItems(...)`.
 
 Notes:
 
@@ -147,10 +147,10 @@ interface GhostAPI {
     textPrompt: string,
     customPrompt: string,
     handlers: {
-      onStart?: (p: { requestId: string }) => void;
-      onDelta?: (p: { requestId: string; delta: string }) => void;
-      onDone?: (p: AnalysisResult) => void;
-      onError?: (p: { requestId?: string; error: string }) => void;
+      onStart?: (p: { requestId: string; sessionId: string }) => void;
+      onDelta?: (p: { requestId: string; delta: string; sessionId: string }) => void;
+      onDone?: (p: AnalysisResult & { sessionId: string }) => void;
+      onError?: (p: { requestId?: string; error: string; sessionId: string }) => void;
     },
     history?: string | null, // optional plain-text Q/A prior-context override (used for regeneration)
   ): () => void; // unsubscribe
@@ -159,10 +159,10 @@ interface GhostAPI {
   appendTranscriptionAudio(base64Pcm16: string): void;
   endTranscription(): void;
   stopTranscription(): void;
-  onTranscribeStart(handler: (p: { ok: boolean }) => void): () => void;
-  onTranscribeDelta(handler: (p: { delta: string }) => void): () => void;
-  onTranscribeDone(handler: (p: { content: string }) => void): () => void;
-  onTranscribeError(handler: (p: { error: string }) => void): () => void;
+  onTranscribeStart(handler: (p: { ok: boolean; sessionId: string }) => void): () => void;
+  onTranscribeDelta(handler: (p: { delta: string; sessionId: string }) => void): () => void;
+  onTranscribeDone(handler: (p: { content: string; sessionId: string }) => void): () => void;
+  onTranscribeError(handler: (p: { error: string; sessionId: string }) => void): () => void;
   onTranscribeClosed(handler: () => void): () => void;
   getUserSettings(): Promise<any>;
   updateUserSettings(partial: Partial<any>): Promise<any>;
@@ -204,19 +204,17 @@ Main-side handlers in `src/main/main.ts` (streaming only):
 - Hotkey handler emits `text-input:toggle` to renderer on `Cmd/Ctrl+Enter` to toggle Ask panel
   - To avoid overlap with `Cmd/Ctrl+Shift+Enter` (voice), the main process suppresses Ask toggles within ~400ms after a voice toggle.
 - Emits to renderer:
-  - `capture:analyze-stream:start` with `{ requestId, sessionId }`
-  - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }`
-  - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }`
-  - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }`
-  - `ask:scroll` with `{ direction: 'up' | 'down' }` to scroll the Ask/Transcript content (Ctrl/Cmd+Up/Down).
-  - `ask:paginate` with `{ direction: 'up' | 'down' }` to change pages (Ctrl/Cmd+Shift+Up/Down) within the current session’s assistant answers.
+  - `capture:analyze-stream:start` with `{ requestId, sessionId }` (sessionId required)
+  - `capture:analyze-stream:delta` with `{ requestId, delta, sessionId }` (sessionId required)
+  - `capture:analyze-stream:done` with final `AnalysisResult & { sessionId }` (sessionId required)
+  - `capture:analyze-stream:error` with `{ requestId?, error, sessionId }` (sessionId required)
 
 Streaming cancellation (interrupt):
 
 - The main process now tracks per-renderer AbortControllers for analyze streams. On `Cmd/Ctrl+R` (clear), main aborts the active stream for that renderer, emits `ask:clear`, resets conversation history, generates a new `sessionId`, and broadcasts `session:changed`.
 - Renderer must unsubscribe any active stream listeners upon `ask:clear` or `session:changed` and reset its UI state (`streaming=false`, clear `requestId`, `result`, input `text`, stop recording, etc.).
 - The OpenAI client (`openai-client.ts`) accepts an optional `AbortSignal` in `completionWithTextStream(..., signal?)` which is passed through to the SDK call to cancel mid-stream.
-- **Race condition fix**: To prevent interrupted conversations from being written to the wrong session log, each analysis records the `sessionId` at start (`analysisSessionId`) and only writes to log if not aborted AND the session hasn't changed during analysis (`analysisSessionId === currentSessionId`). This ensures interrupted conversations are not logged at all, rather than being written to the new session.
+- **Race condition fix**: To prevent interrupted conversations from being written to the wrong session log, each analysis records the `sessionId` at start (`requestSessionId`) and only writes to log if not aborted AND the session hasn't changed during analysis (`requestSessionId === currentSessionId`). This ensures interrupted conversations are not logged at all, rather than being written to the new session.
 
 Conversation history (main-managed):
 
@@ -230,7 +228,7 @@ Logging (new):
 - Module: `src/main/modules/log-manager.ts`
   - `writeConversationLog(sessionId: string, content: string): Promise<string>`
   - Writes plain-text conversation to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to the session’s history, call `await logManager.writeConversationLog(analysisSessionId, conversationHistoryBySession.get(analysisSessionId) ?? '')`.
+- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to the session’s history, call `await logManager.writeConversationLog(requestSessionId, conversationHistoryBySession.get(requestSessionId) ?? '')`.
 
 HUD / Hide integration:
 
@@ -526,11 +524,11 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
   - `session:get` → `{ sessionId }`
   - `session:new` → 建立新 session 並回傳 `{ sessionId }`
   - 事件：`session:changed` → `{ sessionId }`
-- 所有截圖分析串流事件都會攜帶 `sessionId`：
-  - `capture:analyze-stream:start|delta|error` payload 新增 `sessionId`
-  - `capture:analyze-stream:done` 的 `AnalysisResult` 新增 `sessionId`
-- 即時轉錄事件也會攜帶 `sessionId`：
-  - `transcribe:start|delta|done|error` payload 新增 `sessionId`
+- 所有截圖分析串流事件都會攜帶 `sessionId`（必填）：
+  - `capture:analyze-stream:start|delta|error`
+  - `capture:analyze-stream:done` 的 `AnalysisResult` 亦攜帶 `sessionId`
+- 即時轉錄事件也會攜帶 `sessionId`（必填）：
+  - `transcribe:start|delta|done|error`
 - 紀錄檔：`writeConversationLog(id, content)` 目前以 `sessionId` 為檔名並存放於資料夾 `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`。
   同時會在每次更新時輸出 `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`，包含：
   - `entries[]`: `{ index, requestId, log_path, text_input, ai_output }`
@@ -619,7 +617,7 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - [ ] 6. 自定義提示詞與API設定管理
   - [ ] 6.1 本地儲存與管理、編輯 UI 與驗證、模板與預設、匯入匯出
-    - 對應：R5.1, R5.2, R5.5
+    - 對應：R5.1, R5.2
   - [ ] 6.2 API設定管理界面：OpenAI API設定的前端配置、金鑰/URL/模型設定、驗證與測試、加密儲存、首次使用引導
     - 對應：R5.6, R5.7, R6.6
   - [ ] 6.3 與分析流程整合：組合邏輯、長度驗證與優化建議、預覽、動態替換與變數

@@ -100,7 +100,7 @@ export function useTranscription({
 
       try {
         const u1 = (window as any).ghostAI?.onTranscribeDelta?.(
-          ({ delta, sessionId: sid }: { delta: string; sessionId?: string }) => {
+          ({ delta, sessionId: sid }: { delta: string; sessionId: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!delta) return;
             if (pausedRef.current) return;
@@ -112,7 +112,7 @@ export function useTranscription({
         if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
 
         const u2 = (window as any).ghostAI?.onTranscribeDone?.(
-          ({ content, sessionId: sid }: { content: string; sessionId?: string }) => {
+          ({ content, sessionId: sid }: { content: string; sessionId: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!content) return;
             onDone(content);
@@ -125,7 +125,7 @@ export function useTranscription({
         if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
 
         const u3 = (window as any).ghostAI?.onTranscribeError?.(
-          ({ error, sessionId: sid }: { error: string; sessionId?: string }) => {
+          ({ error, sessionId: sid }: { error: string; sessionId: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
             console.error('Transcribe error', error);
             onError?.(error);

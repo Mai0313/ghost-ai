@@ -13,10 +13,10 @@ const api = {
     textPrompt: string,
     customPrompt: string,
     handlers: {
-      onStart?: (payload: { requestId: string; sessionId?: string }) => void;
-      onDelta?: (payload: { requestId: string; delta: string; sessionId?: string }) => void;
-      onDone?: (payload: AnalysisResult & { sessionId?: string }) => void;
-      onError?: (payload: { requestId?: string; error: string; sessionId?: string }) => void;
+      onStart?: (payload: { requestId: string; sessionId: string }) => void;
+      onDelta?: (payload: { requestId: string; delta: string; sessionId: string }) => void;
+      onDone?: (payload: AnalysisResult & { sessionId: string }) => void;
+      onError?: (payload: { requestId?: string; error: string; sessionId: string }) => void;
     },
     history?: string | null,
   ) => {
@@ -29,18 +29,18 @@ const api = {
       ipcRenderer.off('capture:analyze-stream:error', errorHandler);
     };
 
-    const startHandler = (_: any, data: { requestId: string; sessionId?: string }) => {
+    const startHandler = (_: any, data: { requestId: string; sessionId: string }) => {
       activeRequestId = data.requestId;
       handlers.onStart?.(data);
     };
     const deltaHandler = (
       _: any,
-      data: { requestId: string; delta: string; sessionId?: string },
+      data: { requestId: string; delta: string; sessionId: string },
     ) => {
       if (activeRequestId && data.requestId !== activeRequestId) return;
       handlers.onDelta?.(data);
     };
-    const doneHandler = (_: any, data: AnalysisResult & { sessionId?: string }) => {
+    const doneHandler = (_: any, data: AnalysisResult & { sessionId: string }) => {
       if (activeRequestId && (data as any)?.requestId !== activeRequestId) return;
       try {
         handlers.onDone?.(data);
@@ -50,7 +50,7 @@ const api = {
     };
     const errorHandler = (
       _: any,
-      data: { requestId?: string; error: string; sessionId?: string },
+      data: { requestId?: string; error: string; sessionId: string },
     ) => {
       if (activeRequestId && data.requestId && data.requestId !== activeRequestId) return;
       try {
@@ -131,29 +131,29 @@ const api = {
     ipcRenderer.send('transcribe:append', { audio: base64Pcm16 }),
   endTranscription: () => ipcRenderer.send('transcribe:end'),
   stopTranscription: () => ipcRenderer.send('transcribe:stop'),
-  onTranscribeStart: (handler: (data: { ok: boolean }) => void) => {
-    const fn = (_e: any, data: { ok: boolean }) => handler(data);
+  onTranscribeStart: (handler: (data: { ok: boolean; sessionId: string }) => void) => {
+    const fn = (_e: any, data: { ok: boolean; sessionId: string }) => handler(data);
 
     ipcRenderer.on('transcribe:start', fn);
 
     return () => ipcRenderer.off('transcribe:start', fn);
   },
-  onTranscribeDelta: (handler: (data: { delta: string }) => void) => {
-    const fn = (_e: any, data: { delta: string }) => handler(data);
+  onTranscribeDelta: (handler: (data: { delta: string; sessionId: string }) => void) => {
+    const fn = (_e: any, data: { delta: string; sessionId: string }) => handler(data);
 
     ipcRenderer.on('transcribe:delta', fn);
 
     return () => ipcRenderer.off('transcribe:delta', fn);
   },
-  onTranscribeDone: (handler: (data: { content: string }) => void) => {
-    const fn = (_e: any, data: { content: string }) => handler(data);
+  onTranscribeDone: (handler: (data: { content: string; sessionId: string }) => void) => {
+    const fn = (_e: any, data: { content: string; sessionId: string }) => handler(data);
 
     ipcRenderer.on('transcribe:done', fn);
 
     return () => ipcRenderer.off('transcribe:done', fn);
   },
-  onTranscribeError: (handler: (data: { error: string }) => void) => {
-    const fn = (_e: any, data: { error: string }) => handler(data);
+  onTranscribeError: (handler: (data: { error: string; sessionId: string }) => void) => {
+    const fn = (_e: any, data: { error: string; sessionId: string }) => handler(data);
 
     ipcRenderer.on('transcribe:error', fn);
 
@@ -179,11 +179,5 @@ const api = {
   // Debug helper: dump current session data (list-dict)
   dumpSession: () => ipcRenderer.invoke('session:dump'),
 };
-
-declare global {
-  interface Window {
-    ghostAI: typeof api;
-  }
-}
 
 contextBridge.exposeInMainWorld('ghostAI', api);
