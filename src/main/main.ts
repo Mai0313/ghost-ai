@@ -33,9 +33,11 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-// Simple in-memory Q/A history as plain text. Format:
+// Simple in-memory Q/A history per session as plain text. Format:
 // Q: <question>\nA: <answer>\n\n ...
-let conversationHistoryText: string = '';
+const conversationHistoryBySession = new Map<string, string>();
+// Store the initial (default) prompt actually used for the session's first turn
+const initialPromptBySession = new Map<string, string>();
 // Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
 let lastAudioToggleAt = 0;
 // Top-level session identifier (resets on app start and when user clears)
@@ -231,8 +233,9 @@ app.whenReady().then(async () => {
         }
       } catch {}
       mainWindow.webContents.send('ask:clear');
-      // Also clear main-process conversation history
-      conversationHistoryText = '';
+      // Also clear main-process conversation history for all sessions
+      conversationHistoryBySession.clear();
+      initialPromptBySession.clear();
       // Clear global session entries
       try {
         sessionStore.clearAll();
@@ -341,7 +344,9 @@ app.whenReady().then(async () => {
   // Session IPC
   ipcMain.handle('session:get', () => ({ sessionId: currentSessionId }));
   ipcMain.handle('session:new', async () => {
-    conversationHistoryText = '';
+    // Clear any in-memory conversation history and initial prompt cache
+    conversationHistoryBySession.clear();
+    initialPromptBySession.clear();
     try {
       sessionStore.clearAll();
     } catch {}
@@ -449,21 +454,13 @@ ipcMain.on(
 
       // Inject prior plain-text history into the text prompt for simple continuity.
       // If payload.history is provided (regeneration), use it as the prior history override;
-      // otherwise use the current conversationHistoryText.
+      // otherwise use the current session's accumulated history.
       const priorPlain =
-        (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
+        (typeof payload.history === 'string'
+          ? payload.history
+          : null) ?? (conversationHistoryBySession.get(analysisSessionId) ?? '');
       // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
-      const initialPromptPrefix = (() => {
-        try {
-          const idx = conversationHistoryText.indexOf('Q: ');
-
-          if (idx > 0) return conversationHistoryText.slice(0, idx);
-
-          return '';
-        } catch {
-          return '';
-        }
-      })();
+      const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
       const priorWithInitial =
         typeof payload.history === 'string'
           ? `${initialPromptPrefix}${priorPlain || ''}`
@@ -484,6 +481,10 @@ ipcMain.on(
           return '';
         }
       })();
+      if (defaultPrompt) {
+        // Cache the initial prompt used for this session so we can reuse it during regen
+        initialPromptBySession.set(analysisSessionId, defaultPrompt);
+      }
 
       // Create AbortController for this renderer and abort any prior one
       const wcId = evt.sender.id;
@@ -543,19 +544,22 @@ ipcMain.on(
           // payload.history already excludes the current page's Q/A
           const base = payload.history || '';
           const rebuilt = `${initialPromptPrefix}${base}`;
-
-          conversationHistoryText =
-            rebuilt + (question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '');
+          const appended = question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '';
+          const updated = rebuilt + appended;
+          conversationHistoryBySession.set(analysisSessionId, updated);
         } else {
           if (question || answer) {
-            conversationHistoryText += `${defaultPrompt}\nQ: ${question}\nA: ${answer}\n\n`;
+            const existing = conversationHistoryBySession.get(analysisSessionId) ?? '';
+            const prefix = existing ? '' : (defaultPrompt ? `${defaultPrompt}\n` : '');
+            const updated = existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
+            conversationHistoryBySession.set(analysisSessionId, updated);
           }
         }
         // Persist current conversation history for this request for debugging/inspection
         try {
           const logPath = await logManager.writeConversationLog(
             analysisSessionId,
-            conversationHistoryText,
+            conversationHistoryBySession.get(analysisSessionId) ?? '',
           );
 
           // Track session entry

@@ -44,8 +44,8 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
 - **Rate Limiting**: Built-in API quota management and request optimization
-- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory for prompt composition; after each request completes, the current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost-ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history.
+- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory per session for prompt composition; after each request completes, the current session’s conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
+- **Default Prompt Injection (first turn only)**: The active prompt from `~/.ghost-ai/prompts/default.txt` is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history. Regeneration preserves the original first‑turn prompt in prior context.
 - **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
   - A structured Session Store is also maintained in memory and persisted to `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
 

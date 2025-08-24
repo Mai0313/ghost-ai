@@ -46,32 +46,44 @@ This document explains technical behaviors relevant to contributors.
 Implementation details:
 
 - `src/main/modules/session-store.ts` exposes `hasEntries(sessionId: string): boolean`.
-- `src/main/main.ts` checks `!sessionStore.hasEntries(currentSessionId)` to decide whether to read and pass the default prompt.
+- `src/main/main.ts` checks `!sessionStore.hasEntries(analysisSessionId)` to decide whether to read and pass the default prompt.
 - The call site:
 
-```414:425:src/main/main.ts
+```ts
 // Load active prompt content only for the first turn of the current session
 const defaultPrompt = (() => {
   try {
-    const isFirstTurn = !sessionStore.hasEntries(currentSessionId);
+    const isFirstTurn = !sessionStore.hasEntries(analysisSessionId);
     if (!isFirstTurn) return '';
     return readPrompt() || '';
   } catch {
     return '';
   }
 })();
+if (defaultPrompt) initialPromptBySession.set(analysisSessionId, defaultPrompt);
 ```
 
 ### Conversation Memory
 
-- Plain-text `Q:`/`A:` history is maintained in the main process as a single string and is appended after each successful request.
+- Plain‑text `Q:`/`A:` history is maintained in the main process per session using a Map: `conversationHistoryBySession: Map<string, string>`.
+- The initial (first‑turn) default prompt used for a session is cached in `initialPromptBySession: Map<string, string>` and reused when rebuilding history for regeneration.
 - On each new request, `combinedTextPrompt` is composed as:
 
-```420:446:src/main/main.ts
+```ts
 // Use override if provided (regeneration), otherwise use accumulated history
-const priorPlain = (typeof payload.history === 'string' ? payload.history : null) ?? conversationHistoryText;
-const combinedTextPrompt = priorPlain
-  ? `Previous conversation (plain text):\n${priorPlain}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
+const priorPlain =
+  (typeof payload.history === 'string' ? payload.history : null)
+  ?? (conversationHistoryBySession.get(analysisSessionId) ?? '');
+
+const initialPromptPrefix = initialPromptBySession.get(analysisSessionId) ?? '';
+
+const priorWithInitial =
+  typeof payload.history === 'string'
+    ? `${initialPromptPrefix}${priorPlain || ''}`
+    : priorPlain;
+
+const combinedTextPrompt = priorWithInitial
+  ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
   : (payload.textPrompt ?? '').trim();
 ```
 
@@ -207,18 +219,17 @@ Streaming cancellation (interrupt):
 
 Conversation history (main-managed):
 
-- The main process keeps a simple in-memory string `conversationHistoryText` formatted as:
+- The main process keeps a simple in-memory per-session string in `conversationHistoryBySession` formatted as:
   - `Q: <question>\nA: <answer>\n\n` appended per turn
-- On each new request, main composes the prompt as:
-  - `Previous conversation (plain text):\n<conversationHistoryText>\n\nNew question:\n<current question>`
-- On `Cmd/Ctrl+R` (clear), renderer emits `ask:clear`, and main resets `conversationHistoryText` to empty.
+- On each new request, main composes the prompt by prepending the session’s initial prompt (if any) when regeneration provides an override history.
+- On `Cmd/Ctrl+R` (clear) or `session:new`, main clears `conversationHistoryBySession` and `initialPromptBySession` and generates a new `sessionId`.
 
 Logging (new):
 
 - Module: `src/main/modules/log-manager.ts`
   - `writeConversationLog(sessionId: string, content: string): Promise<string>`
   - Writes plain-text conversation to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to `conversationHistoryText`, call `await logManager.writeConversationLog(currentSessionId, conversationHistoryText)`.
+- Integration point: in `capture:analyze-stream` handler, after appending `Q:`/`A:` to the session’s history, call `await logManager.writeConversationLog(analysisSessionId, conversationHistoryBySession.get(analysisSessionId) ?? '')`.
 
 HUD / Hide integration:
 
