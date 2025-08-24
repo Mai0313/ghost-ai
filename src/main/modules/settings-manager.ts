@@ -82,10 +82,13 @@ export function loadUserSettings(): Partial<UserSettings> {
     if (typeof (ret as any).transcribeLanguage !== 'string') {
       (ret as any).transcribeLanguage = 'en';
     }
+    if (typeof (ret as any).attachScreenshot !== 'boolean') {
+      (ret as any).attachScreenshot = true;
+    }
 
     return ret;
   } catch {
-    return { transcribeLanguage: 'en' } as any;
+    return { transcribeLanguage: 'en', attachScreenshot: true } as any;
   }
 }
 

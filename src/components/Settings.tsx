@@ -10,6 +10,8 @@ export function Settings() {
   const [ok, setOk] = useState<boolean | null>(null);
   // Transcription language
   const [transcribeLanguage, setTranscribeLanguage] = useState<'en' | 'zh'>('en');
+  // Attach screenshot with each Ask
+  const [attachScreenshot, setAttachScreenshot] = useState<boolean>(true);
   // Prompts manager state
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
@@ -48,6 +50,12 @@ export function Settings() {
 
           setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
         } catch {}
+        // Attach screenshot
+        try {
+          const v = userSettings && (userSettings as any).attachScreenshot;
+
+          setAttachScreenshot(typeof v === 'boolean' ? v : true);
+        } catch {}
         // Prompts
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
@@ -66,7 +74,7 @@ export function Settings() {
     if (!api) return alert('Preload not ready. Please restart the app.');
     await api.updateOpenAIConfig({ apiKey, baseURL, model } as any);
     try {
-      await api.updateUserSettings?.({ transcribeLanguage });
+      await api.updateUserSettings?.({ transcribeLanguage, attachScreenshot });
     } catch {}
     alert('Saved OpenAI settings');
   };
@@ -181,6 +189,20 @@ export function Settings() {
               中文 (zh)
             </option>
           </select>
+        </div>
+      </div>
+      <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Screenshots</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input
+            checked={attachScreenshot}
+            id="attach-screenshot"
+            type="checkbox"
+            onChange={(e) => setAttachScreenshot(!!e.target.checked)}
+          />
+          <label htmlFor="attach-screenshot" style={{ fontSize: 12, color: '#BDBDBD' }}>
+            Attach a screenshot with each Ask
+          </label>
         </div>
       </div>
       <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>

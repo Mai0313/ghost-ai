@@ -344,12 +344,13 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - Captured via `screenshot-desktop` with PNG buffers.
 - Uses `hideAllWindowsDuring(...)` to avoid self-capture.
+- Main checks `loadUserSettings().attachScreenshot` before capturing. If false, capture is skipped and `openAIClient.responseStream(undefined, ...)` is called.
 
 ## Settings
 
 - Persisted with `electron-store` and `safeStorage` (encrypts the OpenAI config blob).
 - `Settings.tsx` reads and updates config via `window.ghostAI`.
-- New: `settings:get`/`settings:update` now persist user preferences, including `transcribeLanguage: 'en' | 'zh'` (default `'en'`). Renderer shows a dropdown under Settings → Transcription.
+- New: `settings:get`/`settings:update` now persist user preferences, including `transcribeLanguage: 'en' | 'zh'` (default `'en'`) and `attachScreenshot?: boolean` (default `true`). The latter controls whether each Ask includes a screenshot. When disabled, the main process skips capture and only sends the text question; `responseStream` accepts an optional `imageBuffer`.
 
 ## Coding Guidelines
 

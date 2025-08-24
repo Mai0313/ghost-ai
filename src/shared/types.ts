@@ -36,4 +36,6 @@ export interface UserSettings {
   isFirstRun: boolean;
   // Preferred language for realtime transcription (UI: en or zh)
   transcribeLanguage?: 'en' | 'zh';
+  // Whether to attach a screenshot with each Ask request
+  attachScreenshot?: boolean;
 }

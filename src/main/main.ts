@@ -447,8 +447,17 @@ ipcMain.on(
     const requestSessionId = currentSessionId;
 
     try {
-      ensureHiddenOnCapture();
-      const image = await hideAllWindowsDuring(async () => captureScreen());
+      const settings = loadUserSettings();
+      const attach =
+        typeof (settings as any)?.attachScreenshot === 'boolean'
+          ? !!(settings as any).attachScreenshot
+          : true;
+      let image: Buffer | undefined = undefined;
+
+      if (attach) {
+        ensureHiddenOnCapture();
+        image = await hideAllWindowsDuring(async () => captureScreen());
+      }
       const requestId = crypto.randomUUID();
 
       evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: requestSessionId });

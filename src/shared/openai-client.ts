@@ -8,6 +8,7 @@ import type {
   ResponseCreateParams,
   ResponseStreamEvent,
   ResponseInput,
+  ResponseInputMessageContentList,
 } from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
 
@@ -156,7 +157,7 @@ export class OpenAIClient {
   }
 
   async responseStream(
-    imageBuffer: Buffer,
+    imageBuffer: Buffer | undefined,
     textPrompt: string,
     customPrompt: string,
     requestId: string,
@@ -172,10 +173,13 @@ export class OpenAIClient {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer.toString('base64');
+    const base64 = imageBuffer?.toString('base64');
 
     const effectiveText =
-      textPrompt?.trim() || 'Response to the question based on the info or image you have.';
+      textPrompt?.trim() ||
+      (imageBuffer
+        ? 'Response to the question based on the info or image you have.'
+        : 'Please respond to my question.');
 
     // Responses API expects a single ResponseInput (array of items), not role-based messages
     const input: ResponseInput = [];
@@ -187,13 +191,21 @@ export class OpenAIClient {
         content: [{ type: 'input_text', text: customPrompt.trim() }],
       });
     }
+    const userContent: ResponseInputMessageContentList = [
+      { type: 'input_text', text: effectiveText },
+    ];
+
+    if (imageBuffer && base64) {
+      userContent.push({
+        type: 'input_image',
+        image_url: `data:image/png;base64,${base64}`,
+        detail: 'auto',
+      });
+    }
     input.push({
       type: 'message',
       role: 'user',
-      content: [
-        { type: 'input_text', text: effectiveText },
-        { type: 'input_image', image_url: `data:image/png;base64,${base64}`, detail: 'auto' },
-      ],
+      content: userContent,
     });
 
     const request: ResponseCreateParams & { stream: true } = {

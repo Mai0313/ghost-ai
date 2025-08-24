@@ -247,7 +247,10 @@ npm run dist
 2. **Invisible Mode**: Application immediately hides all windows
 3. **Screenshot Capture**: System captures the current screen to memory
 4. **Prompt Input**: UI appears for you to enter analysis instructions
-5. **AI Analysis**: Image and prompt sent to OpenAI Vision API (streaming-only)
+5. **AI Analysis**: Depending on Settings → Screenshots → "Attach a screenshot with each Ask", the app will either:
+   - attach the screenshot and send both image + question, or
+   - skip the screenshot and send only your question.
+     The analysis runs via the streaming Responses API.
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
 8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
