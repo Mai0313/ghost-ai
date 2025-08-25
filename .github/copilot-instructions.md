@@ -737,15 +737,19 @@ Ensure to unsubscribe listeners on `done` or `error` from the preload wrapper.
 
 - `npm run dist` — Build + package for current platform using `electron-builder`.
 - `npm run dist:win` — Build + package Windows (`--win --publish never`). Outputs NSIS installer under `release/`.
+- `npm run dist:win:portable` — Build + package Windows Portable (`--win portable --publish never`). Outputs a single portable `.exe` under `release/` (no installer / no elevation / no auto‑update).
 - `npm run dist:mac` — Build + package macOS (`--mac --publish never`). Must run on macOS for DMG and signing.
+- `npm run dist:mac:zip` — Build + package macOS ZIP (`--mac zip --publish never`).
 - `npm run dist:linux` — Build + package Linux (`--linux --publish never`). Recommend running on Linux (or WSL2) for AppImage/deb.
+- `npm run dist:linux:portable` — Build + package Linux AppImage only (`--linux AppImage --publish never`).
 
 Packaging targets are defined in `electron-builder.json`:
 
 ```json
 {
   "mac": { "target": ["dmg"], "category": "public.app-category.productivity" },
-  "win": { "target": ["nsis"], "icon": "ghost.ico" },
+  "win": { "target": ["nsis", "portable"], "icon": "ghost.ico" },
+  "mac": { "target": ["dmg", "zip"], "category": "public.app-category.productivity" },
   "linux": { "target": ["AppImage", "deb"] }
 }
 ```

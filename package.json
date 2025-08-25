@@ -13,8 +13,11 @@
     "build": "rimraf dist && vite build && tsup",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:win:portable": "npm run build && electron-builder --win portable --publish never",
     "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:mac:zip": "npm run build && electron-builder --mac zip --publish never",
     "dist:linux": "npm run build && electron-builder --linux --publish never",
+    "dist:linux:portable": "npm run build && electron-builder --linux AppImage --publish never",
     "lint": "eslint . --fix",
     "format": "prettier -w .",
     "test": "echo 'No tests yet'"

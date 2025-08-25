@@ -209,8 +209,11 @@ npm run format                          # Format code
 # Packaging
     npm run dist                            # Build and package (electron-builder)
 npm run dist:win                        # Package for Windows
-npm run dist:mac                        # Package for macOS
+npm run dist:win:portable               # Package Windows Portable (.exe, no installer)
+npm run dist:mac                        # Package for macOS (DMG)
+npm run dist:mac:zip                    # Package for macOS (ZIP)
 npm run dist:linux                      # Package for Linux
+npm run dist:linux:portable             # Package Linux Portable (AppImage)
 
 # Dependencies
 npm install <package>                   # Add dependency
@@ -226,8 +229,9 @@ npm run dist   # Build and package for your platform
 #### OS-specific packaging notes
 
 - Windows: `npm run dist:win` produces an NSIS installer under `release/` (e.g., `Ghost AI Setup <version>.exe`).
-- macOS: `npm run dist:mac` must be run on macOS (DMG creation and code signing require macOS).
-- Linux: `npm run dist:linux` must be run on a Linux environment for best results (AppImage/deb). On Windows, use WSL2 or a Linux machine.
+- Windows Portable: `npm run dist:win:portable` produces a single-file portable `.exe` under `release/` that runs without installation (no installer, no elevation). Useful for USB/portable use-cases. Auto‑update is not supported for portable builds.
+- macOS: `npm run dist:mac` must be run on macOS (DMG creation and code signing require macOS). For a zipped app bundle, use `npm run dist:mac:zip`.
+- Linux: `npm run dist:linux` must be run on a Linux environment for best results (AppImage/deb). On Windows, use WSL2 or a Linux machine. For a portable single-file, use `npm run dist:linux:portable` (AppImage).
 - All artifacts are written to the `release/` directory. Use `--publish never` (default in scripts) to avoid accidental uploads.
 
 ### Application Icon

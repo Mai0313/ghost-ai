@@ -8,11 +8,11 @@
   "extraResources": ["ghost.ico"],
   "files": ["dist/**/*"],
   "mac": {
-    "target": ["dmg"],
+    "target": ["dmg", "zip"],
     "category": "public.app-category.productivity"
   },
   "win": {
-    "target": ["nsis"],
+    "target": ["nsis", "portable"],
     "icon": "ghost.ico"
   },
   "linux": {

@@ -214,8 +214,11 @@ npm run format                          # 格式化程式碼
 # 打包
     npm run dist                            # 建置並打包（electron-builder）
 npm run dist:win                        # 打包 Windows 版本
-npm run dist:mac                        # 打包 macOS 版本
+npm run dist:win:portable               # 打包 Windows Portable（免安裝單一 .exe）
+npm run dist:mac                        # 打包 macOS 版本（DMG）
+npm run dist:mac:zip                    # 打包 macOS 版本（ZIP）
 npm run dist:linux                      # 打包 Linux 版本
+npm run dist:linux:portable             # 打包 Linux Portable（AppImage）
 
 # 依賴管理
 npm install <package>                   # 添加依賴
@@ -231,8 +234,9 @@ npm run dist   # 建置並打包當前平台
 #### 各作業系統打包說明
 
 - Windows：執行 `npm run dist:win`，會在 `release/` 產出 NSIS 安裝程式（例如 `Ghost AI Setup <version>.exe`）。
-- macOS：執行 `npm run dist:mac`（需在 macOS 上執行；DMG 與簽章步驟需 macOS）。
-- Linux：執行 `npm run dist:linux`（建議在 Linux 環境執行，會產出 AppImage 與 deb）。在 Windows 上可考慮使用 WSL2。
+- Windows（Portable）：執行 `npm run dist:win:portable`，會在 `release/` 產出免安裝的單一 `.exe`（無安裝程式、無須系統管理員權限）。適合隨身碟/免安裝情境。Portable 版本不支援自動更新。
+- macOS：執行 `npm run dist:mac`（需在 macOS 上執行；DMG 與簽章步驟需 macOS）。如需 ZIP 版，請執行 `npm run dist:mac:zip`。
+- Linux：執行 `npm run dist:linux`（建議在 Linux 環境執行，會產出 AppImage 與 deb）。在 Windows 上可考慮使用 WSL2。若需免安裝單檔，請執行 `npm run dist:linux:portable`（AppImage）。
 - 所有產物會輸出到 `release/` 目錄。腳本使用 `--publish never` 以避免意外上傳。
 
 ### 應用程式圖示
