@@ -47,6 +47,7 @@ export function listPrompts(): { prompts: string[]; defaultPrompt: string | null
 
     if (name && files.includes(name)) active = name;
   } catch {}
+
   // Return active selection (or null) as `defaultPrompt` for UI display
   return { prompts: files, defaultPrompt: active } as any;
 }
@@ -64,20 +65,24 @@ export function setDefaultPromptFrom(name: string): string {
   // Persist selection by name only (do not write any prompt files)
   ensureDirs();
   const sourceName = normalizeName(name);
+
   try {
     saveUserSettings({ defaultPrompt: sourceName } as any);
   } catch {}
+
   return sourceName;
 }
 
 export function readPrompt(name?: string): string {
   ensureDirs();
   let fileName: string | null = null;
+
   if (name) fileName = normalizeName(name);
   else {
     try {
       const s = loadUserSettings() as any;
       const n = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+
       fileName = n || null;
     } catch {
       fileName = null;
@@ -85,6 +90,7 @@ export function readPrompt(name?: string): string {
   }
   if (!fileName) return '';
   const full = path.join(promptsDir, fileName);
+
   try {
     return fs.readFileSync(full, 'utf8');
   } catch {
@@ -98,6 +104,7 @@ export function ensureDefaultPrompt(_defaultContent?: string): {
 } {
   // No-op: do not create or write any prompt files.
   ensureDirs();
+
   return { created: false, defaultPrompt: 'default.txt' };
 }
 
@@ -119,8 +126,10 @@ export function getActivePromptName(): string | null {
 export function setActivePromptName(name: string): string {
   ensureDirs();
   const norm = normalizeName(name);
+
   try {
     saveUserSettings({ defaultPrompt: norm } as any);
   } catch {}
+
   return norm;
 }

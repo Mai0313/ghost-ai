@@ -24,15 +24,14 @@ export function Settings() {
 
     const loadOpenAIConfigAndModels = async () => {
       try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
+
         if (cfg) {
           setApiKey(cfg.apiKey || '');
           setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
         }
         const cfgModel = (cfg && (cfg as any).model) || '';
+
         if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
         else setModel('');
       } catch {}
@@ -45,12 +44,15 @@ export function Settings() {
           api.listPrompts?.(),
           api.getActivePromptName?.(),
         ]);
+
         try {
           const lang = (userSettings && (userSettings as any).transcribeLanguage) || 'en';
+
           setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
         } catch {}
         try {
           const v = userSettings && (userSettings as any).attachScreenshot;
+
           setAttachScreenshot(typeof v === 'boolean' ? v : true);
         } catch {}
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
@@ -59,8 +61,10 @@ export function Settings() {
             (typeof activePromptName === 'string' && activePromptName) ||
             promptsInfo.defaultPrompt ||
             null;
+
           setDefaultPrompt(current);
           const initial = current || promptsInfo.prompts[0] || null;
+
           setSelectedPrompt(initial);
         }
       } catch {}
@@ -75,6 +79,7 @@ export function Settings() {
       try {
         return api.onOpenAIConfigUpdated?.(() => void loadOpenAIConfigAndModels());
       } catch {}
+
       return undefined;
     })();
 

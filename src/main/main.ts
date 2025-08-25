@@ -310,6 +310,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
     saveUserSettings(partial);
+
     return loadUserSettings();
   });
 
@@ -487,14 +488,17 @@ ipcMain.on(
       // Required: user must select an active prompt; do not fallback to default.txt or write files.
       const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
       let defaultPrompt = '';
+
       if (isFirstTurn) {
         try {
           const activeName = getActivePromptName();
+
           if (!activeName) {
             evt.sender.send('capture:analyze-stream:error', {
               error: 'No active prompt selected. Open Settings → Prompts to select one.',
               sessionId: requestSessionId,
             });
+
             return;
           }
           defaultPrompt = readPrompt(activeName) || '';

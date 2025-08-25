@@ -310,10 +310,12 @@ export function App() {
     // Require an active prompt selection; avoid relying on any default file
     try {
       const activePromptName = await (window as any).ghostAI?.getActivePromptName?.();
+
       if (!activePromptName) {
         setStreaming(false);
         setBusy(false);
         setResult('Error: No active prompt selected. Open Settings → Prompts to select one.');
+
         return;
       }
     } catch {}
