@@ -730,25 +730,23 @@ export function App() {
           pointerEvents: 'auto',
         }}
       >
-        {tab === 'settings' && (
-          <div style={settingsCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 700 }}>Settings</div>
-              <button
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
-                title="Close"
-                onClick={() => setTab(null)}
-              >
-                <IconX />
-              </button>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <Settings />
-            </div>
+        <div style={{ ...settingsCard, display: tab === 'settings' ? 'block' : 'none' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontWeight: 700 }}>Settings</div>
+            <button
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+              title="Close"
+              onClick={() => setTab(null)}
+            >
+              <IconX />
+            </button>
           </div>
-        )}
+          <div style={{ marginTop: 8 }}>
+            <Settings />
+          </div>
+        </div>
 
-        {tab === 'ask' && (
+        <div style={{ display: tab === 'ask' ? 'block' : 'none' }}>
           <AskPanel
             busy={busy}
             canRegenerate={canRegenerate}
@@ -767,7 +765,7 @@ export function App() {
             onRegenerate={() => void onRegenerate()}
             onSubmit={() => void onSubmit()}
           />
-        )}
+        </div>
 
         {!tab && (recording || (displayMarkdown && transcriptModeRef.current)) && (
           <TranscriptBubble markdown={displayMarkdown} />

@@ -18,60 +18,71 @@ export function Settings() {
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      const api: any = (window as any).ghostAI;
+    const api: any = (window as any).ghostAI;
 
-      if (!api) return;
+    if (!api) return;
 
+    const loadOpenAIConfigAndModels = async () => {
       try {
-        const [cfg, list, promptsInfo, userSettings, activePromptName] = await Promise.all([
-          api.getOpenAIConfig(),
-          api.listOpenAIModels(),
-          api.listPrompts?.(),
-          api.getUserSettings?.(),
-          api.getActivePromptName?.(),
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
         ]);
-
         if (cfg) {
           setApiKey(cfg.apiKey || '');
           setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
         }
+        const cfgModel = (cfg && (cfg as any).model) || '';
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
+        else setModel('');
+      } catch {}
+    };
 
-        // Only set model after models are loaded; if cfg.model isn't in list, leave empty
-        const cfgModel = (cfg && cfg.model) || '';
-
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) {
-          setModel(cfgModel);
-        } else {
-          setModel('');
-        }
-        // Language
+    const loadUserSettingsAndPrompts = async () => {
+      try {
+        const [userSettings, promptsInfo, activePromptName] = await Promise.all([
+          api.getUserSettings?.(),
+          api.listPrompts?.(),
+          api.getActivePromptName?.(),
+        ]);
         try {
           const lang = (userSettings && (userSettings as any).transcribeLanguage) || 'en';
-
           setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
         } catch {}
-        // Attach screenshot
         try {
           const v = userSettings && (userSettings as any).attachScreenshot;
-
           setAttachScreenshot(typeof v === 'boolean' ? v : true);
         } catch {}
-        // Prompts
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
           const current =
             (typeof activePromptName === 'string' && activePromptName) ||
             promptsInfo.defaultPrompt ||
             null;
-
           setDefaultPrompt(current);
           const initial = current || promptsInfo.prompts[0] || null;
-
           setSelectedPrompt(initial);
         }
       } catch {}
+    };
+
+    // Initial load once on mount
+    void Promise.all([loadOpenAIConfigAndModels(), loadUserSettingsAndPrompts()]);
+
+    // Listen for targeted updates
+    // No settings:updated listener; settings reload happens after Save locally
+    const offOpenAI = (() => {
+      try {
+        return api.onOpenAIConfigUpdated?.(() => void loadOpenAIConfigAndModels());
+      } catch {}
+      return undefined;
     })();
+
+    return () => {
+      try {
+        if (typeof offOpenAI === 'function') offOpenAI();
+      } catch {}
+    };
   }, []);
 
   const onSave = async () => {

@@ -310,7 +310,6 @@ app.whenReady().then(async () => {
   ipcMain.handle('settings:get', () => loadUserSettings());
   ipcMain.handle('settings:update', (_evt, partial: any) => {
     saveUserSettings(partial);
-
     return loadUserSettings();
   });
 

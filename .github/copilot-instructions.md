@@ -15,6 +15,8 @@ IPC updates
   - Main implementation lives in `src/main/main.ts`.
   - Preload exposes a convenience listener: `onOpenAIConfigUpdated(handler)` in `src/main/preload.ts`.
   - Renderer subscribes and refreshes the model list when config changes (see `src/components/AskPanel.tsx`).
+  
+// Removed: settings:updated broadcast and preload listener to keep surface minimal.
 
 OpenAI client behavior
 
@@ -26,7 +28,14 @@ OpenAI client behavior
 Renderer notes
 
 - The Ask footer model selector now refreshes automatically when settings change, via `onOpenAIConfigUpdated`.
-- Settings screen (`src/components/Settings.tsx`) still updates models eagerly when API key/Base URL inputs change.
+- Settings screen (`src/components/Settings.tsx`)
+  - Loads once on mount; remains mounted while you toggle visibility, avoiding reload on each open.
+  - Subscribes to `onOpenAIConfigUpdated` and (local save) updates to refresh state only on real updates.
+  
+Ask panel notes
+
+- `src/components/AskPanel.tsx` is kept mounted; App toggles visibility via CSS to avoid reloading the model list on each open.
+- Model list fetch happens on mount and when `onOpenAIConfigUpdated` fires (API key/baseURL/model changes), not on every toggle.
 
 Troubleshooting
 

@@ -311,6 +311,7 @@ All settings are encrypted and stored locally - no external services required.
   - Open Settings and enter a valid OpenAI API key and Base URL.
   - The app now falls back to a default model list even when the API key is missing/invalid, so you can still pick a model. If requests later fail, verify your account has access to the selected model.
   - Changing settings triggers an automatic refresh in the Ask panel.
+  - Settings panel no longer reloads on every open; it mounts once and avoids flicker.
 
 #### Packaged app installs but no UI is visible (Windows/macOS/Linux)
 
