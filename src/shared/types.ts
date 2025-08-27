@@ -1,5 +1,3 @@
-export type Role = "system" | "user" | "assistant";
-
 export interface OpenAIConfig {
   apiKey: string;
   baseURL: string;
