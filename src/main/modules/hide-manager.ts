@@ -1,8 +1,8 @@
-import type { BrowserWindow as BrowserWindowType } from 'electron';
+import type { BrowserWindow as BrowserWindowType } from "electron";
 
-import { BrowserWindow } from 'electron';
+import { BrowserWindow } from "electron";
 
-import { loadHiddenState, saveHiddenState } from './settings-manager';
+import { loadHiddenState, saveHiddenState } from "./settings-manager";
 
 let isHidden = loadHiddenState();
 
@@ -11,7 +11,7 @@ export async function toggleHidden(win: BrowserWindowType | null) {
   if (isHidden) {
     win.showInactive();
     try {
-      win.webContents.send('hud:show');
+      win.webContents.send("hud:show");
     } catch {}
     isHidden = false;
     saveHiddenState(false);
@@ -26,7 +26,9 @@ export function ensureHiddenOnCapture() {
   // Kept for backward compatibility; use hideAllWindowsDuring in new code
 }
 
-export async function hideAllWindowsDuring<T>(fn: () => Promise<T> | T): Promise<T> {
+export async function hideAllWindowsDuring<T>(
+  fn: () => Promise<T> | T,
+): Promise<T> {
   const windows = BrowserWindow.getAllWindows();
   const wasVisible = windows.map((w) => ({ w, visible: w.isVisible() }));
 

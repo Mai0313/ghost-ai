@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { useCreateBlockNote } from '@blocknote/react';
-import { BlockNoteView } from '@blocknote/mantine';
+import React, { useEffect } from "react";
+import { useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
 
 type MarkdownViewerProps = {
   markdown: string;
@@ -8,24 +8,28 @@ type MarkdownViewerProps = {
   style?: React.CSSProperties;
 };
 
-export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ markdown, className, style }) => {
+export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
+  markdown,
+  className,
+  style,
+}) => {
   const editor = useCreateBlockNote({
     codeBlock: {
-      defaultLanguage: 'text',
+      defaultLanguage: "text",
       supportedLanguages: {
-        javascript: { name: 'JavaScript', aliases: ['js'] },
-        typescript: { name: 'TypeScript', aliases: ['ts'] },
-        python: { name: 'Python', aliases: ['py'] },
-        java: { name: 'Java' },
-        cpp: { name: 'C++' },
-        csharp: { name: 'C#', aliases: ['cs'] },
-        rust: { name: 'Rust' },
-        sql: { name: 'SQL' },
-        xml: { name: 'XML' },
-        html: { name: 'HTML' },
-        php: { name: 'PHP' },
-        json: { name: 'JSON' },
-        text: { name: 'Text' },
+        javascript: { name: "JavaScript", aliases: ["js"] },
+        typescript: { name: "TypeScript", aliases: ["ts"] },
+        python: { name: "Python", aliases: ["py"] },
+        java: { name: "Java" },
+        cpp: { name: "C++" },
+        csharp: { name: "C#", aliases: ["cs"] },
+        rust: { name: "Rust" },
+        sql: { name: "SQL" },
+        xml: { name: "XML" },
+        html: { name: "HTML" },
+        php: { name: "PHP" },
+        json: { name: "JSON" },
+        text: { name: "Text" },
       },
     },
   });
@@ -35,7 +39,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ markdown, classN
 
     (async () => {
       try {
-        const blocks = await editor.tryParseMarkdownToBlocks(markdown || '');
+        const blocks = await editor.tryParseMarkdownToBlocks(markdown || "");
 
         if (!cancelled) {
           editor.replaceBlocks(editor.document, blocks);

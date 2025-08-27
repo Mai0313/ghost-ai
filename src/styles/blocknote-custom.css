@@ -112,14 +112,22 @@
 }
 
 .bn-markdown-viewer::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.12)
+  );
   border-radius: 10px;
   border: 2px solid transparent; /* creates padding around thumb */
   background-clip: padding-box;
 }
 
 .bn-markdown-viewer:hover::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.18));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.34),
+    rgba(255, 255, 255, 0.18)
+  );
 }
 
 .bn-markdown-viewer::-webkit-scrollbar-corner {

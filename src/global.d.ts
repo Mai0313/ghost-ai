@@ -14,20 +14,31 @@ declare global {
           onDelta?: (payload: {
             requestId: string;
             sessionId: string;
-            channel?: 'answer' | 'reasoning' | 'web_search';
+            channel?: "answer" | "reasoning" | "web_search";
             eventType?: string;
             delta?: string;
             text?: string;
           }) => void;
-          onDone?: (payload: { requestId: string; content: string; sessionId: string }) => void;
-          onError?: (payload: { requestId?: string; error: string; sessionId: string }) => void;
+          onDone?: (payload: {
+            requestId: string;
+            content: string;
+            sessionId: string;
+          }) => void;
+          onError?: (payload: {
+            requestId?: string;
+            error: string;
+            sessionId: string;
+          }) => void;
         },
         history?: string | null,
       ) => () => void; // returns unsubscribe
       listOpenAIModels: () => Promise<string[]>;
       updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
       // Prompts management
-      listPrompts: () => Promise<{ prompts: string[]; defaultPrompt: string | null }>;
+      listPrompts: () => Promise<{
+        prompts: string[];
+        defaultPrompt: string | null;
+      }>;
       readPrompt: (name?: string) => Promise<string>;
       setDefaultPrompt: (name: string) => Promise<string>;
       getDefaultPrompt: () => Promise<string | null>;
@@ -43,12 +54,18 @@ declare global {
       onAskClear: (handler: () => void) => void;
 
       onAudioToggle: (handler: () => void) => void;
-      onAskScroll: (handler: (data: { direction: 'up' | 'down' }) => void) => () => void;
-      onAskPaginate: (handler: (data: { direction: 'up' | 'down' }) => void) => () => void;
+      onAskScroll: (
+        handler: (data: { direction: "up" | "down" }) => void,
+      ) => () => void;
+      onAskPaginate: (
+        handler: (data: { direction: "up" | "down" }) => void,
+      ) => () => void;
       // Session controls
       getSession: () => Promise<string>;
       newSession: () => Promise<string>;
-      onSessionChanged: (handler: (data: { sessionId: string }) => void) => () => void;
+      onSessionChanged: (
+        handler: (data: { sessionId: string }) => void,
+      ) => () => void;
       dumpSession: () => Promise<
         Array<
           Record<

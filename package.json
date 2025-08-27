@@ -75,5 +75,19 @@
     "react-dom": "*",
     "screenshot-desktop": "*",
     "ws": "^8.18.3"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": false,
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "arrowParens": "always",
+    "endOfLine": "auto",
+    "quoteProps": "consistent",
+    "proseWrap": "preserve"
   }
 }

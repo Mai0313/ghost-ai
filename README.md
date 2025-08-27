@@ -284,7 +284,7 @@ Edit the hotkey configuration in the settings:
 
 ```typescript
 // Default hotkey: Ctrl+Shift+S
-const defaultHotkey = 'CommandOrControl+Shift+S';
+const defaultHotkey = "CommandOrControl+Shift+S";
 
 // Custom hotkey examples:
 // "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) or Cmd+Alt+G (macOS)

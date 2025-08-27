@@ -1,21 +1,36 @@
-import type { OpenAIConfig } from '@shared/types';
+import type { OpenAIConfig } from "@shared/types";
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import crypto from 'node:crypto';
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 
-import { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, screen } from 'electron';
-import { openAIClient } from '@shared/openai-client';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeImage,
+  Tray,
+  Menu,
+  screen,
+} from "electron";
+import { openAIClient } from "@shared/openai-client";
 
-import { registerFixedHotkeys, unregisterAllHotkeys } from './modules/hotkey-manager';
-import { captureScreen } from './modules/screenshot-manager';
-import { toggleHidden, ensureHiddenOnCapture, hideAllWindowsDuring } from './modules/hide-manager';
+import {
+  registerFixedHotkeys,
+  unregisterAllHotkeys,
+} from "./modules/hotkey-manager";
+import { captureScreen } from "./modules/screenshot-manager";
+import {
+  toggleHidden,
+  ensureHiddenOnCapture,
+  hideAllWindowsDuring,
+} from "./modules/hide-manager";
 import {
   loadOpenAIConfig,
   saveOpenAIConfig,
   loadUserSettings,
   saveUserSettings,
-} from './modules/settings-manager';
+} from "./modules/settings-manager";
 import {
   ensureDefaultPrompt,
   listPrompts,
@@ -24,10 +39,10 @@ import {
   getDefaultPromptName,
   getActivePromptName,
   setActivePromptName,
-} from './modules/prompts-manager';
-import { realtimeTranscribeManager } from './modules/realtime-transcribe';
-import { logManager } from './modules/log-manager';
-import { sessionStore } from './modules/session-store';
+} from "./modules/prompts-manager";
+import { realtimeTranscribeManager } from "./modules/realtime-transcribe";
+import { logManager } from "./modules/log-manager";
+import { sessionStore } from "./modules/session-store";
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -57,7 +72,7 @@ function resolveAssetPath(assetRelativePath: string) {
   }
 
   // In dev, __dirname points to dist/, project root is one level up
-  return path.join(__dirname, '..', assetRelativePath);
+  return path.join(__dirname, "..", assetRelativePath);
 }
 
 function createWindow() {
@@ -72,9 +87,9 @@ function createWindow() {
     show: true, // start hidden; we only show when user invokes overlay
     frame: false,
     transparent: true,
-    backgroundColor: '#00000000',
-    icon: resolveAssetPath('ghost.ico'),
-    titleBarStyle: 'hidden',
+    backgroundColor: "#00000000",
+    icon: resolveAssetPath("ghost.ico"),
+    titleBarStyle: "hidden",
     hasShadow: false,
     resizable: false,
     fullscreenable: false,
@@ -82,21 +97,21 @@ function createWindow() {
     alwaysOnTop: true,
     webPreferences: {
       // Preload is bundled as CommonJS; use .cjs extension
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
       contextIsolation: true,
     },
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL("http://localhost:5173");
   } else {
-    const indexHtml = path.join(__dirname, 'renderer', 'index.html');
+    const indexHtml = path.join(__dirname, "renderer", "index.html");
 
     mainWindow.loadFile(indexHtml);
   }
 
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     mainWindow = null;
   });
 
@@ -115,23 +130,23 @@ function createWindow() {
 }
 
 function createTray() {
-  const trayIconPath = resolveAssetPath('ghost.ico');
+  const trayIconPath = resolveAssetPath("ghost.ico");
   const icon = nativeImage.createFromPath(trayIconPath);
 
   tray = new Tray(icon);
-  tray.setToolTip('Ghost AI');
+  tray.setToolTip("Ghost AI");
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show Overlay',
+      label: "Show Overlay",
       click: () => {
         if (!mainWindow) return;
         mainWindow.show();
-        mainWindow.webContents.send('text-input:show');
+        mainWindow.webContents.send("text-input:show");
       },
     },
-    { label: 'Toggle Hide', click: () => toggleHidden(mainWindow) },
-    { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() },
+    { label: "Toggle Hide", click: () => toggleHidden(mainWindow) },
+    { type: "separator" },
+    { label: "Quit", click: () => app.quit() },
   ]);
 
   tray.setContextMenu(contextMenu);
@@ -140,9 +155,9 @@ function createTray() {
 async function initializeOpenAI() {
   // Minimal default config; real values should be set through renderer via IPC
   const defaultConfig: OpenAIConfig = {
-    apiKey: '',
-    baseURL: 'https://api.openai.com/v1',
-    model: '',
+    apiKey: "",
+    baseURL: "https://api.openai.com/v1",
+    model: "",
     timeout: 60000,
     maxTokens: null,
     temperature: 0.7,
@@ -162,41 +177,41 @@ app.whenReady().then(async () => {
   createTray();
   try {
     console.log(
-      '[Global Session]',
+      "[Global Session]",
       new Date().toISOString(),
-      'sessionId created at app start:',
+      "sessionId created at app start:",
       currentSessionId,
     );
   } catch {}
   // Application menu
   const template: Electron.MenuItemConstructorOptions[] = [
     {
-      label: 'File',
+      label: "File",
       submenu: [
         {
-          label: 'Show Overlay',
-          accelerator: 'CommandOrControl+Enter',
+          label: "Show Overlay",
+          accelerator: "CommandOrControl+Enter",
           click: () => {
             if (!mainWindow) return;
             mainWindow.show();
-            mainWindow.webContents.send('text-input:show');
+            mainWindow.webContents.send("text-input:show");
           },
         },
         {
-          label: 'Toggle Hide',
-          accelerator: 'CommandOrControl+\\',
+          label: "Toggle Hide",
+          accelerator: "CommandOrControl+\\",
           click: () => toggleHidden(mainWindow),
         },
-        { type: 'separator' },
-        { role: 'quit' },
+        { type: "separator" },
+        { role: "quit" },
       ],
     },
     {
-      label: 'View',
+      label: "View",
       submenu: [
         // Avoid conflicting with renderer Ctrl/Cmd+R (used to clear Ask history)
-        { role: 'reload', accelerator: 'F5' },
-        { role: 'toggleDevTools' },
+        { role: "reload", accelerator: "F5" },
+        { role: "toggleDevTools" },
       ],
     },
   ];
@@ -208,13 +223,13 @@ app.whenReady().then(async () => {
     onTextInput: async () => {
       // Suppress Ask toggle if audio toggle fired very recently (key overlap)
       if (Date.now() - lastAudioToggleAt < 400) {
-        console.log('[Hotkey] Suppress Ask toggle due to recent Audio toggle');
+        console.log("[Hotkey] Suppress Ask toggle due to recent Audio toggle");
 
         return;
       }
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('text-input:toggle');
+      mainWindow.webContents.send("text-input:toggle");
     },
     onToggleHide: async () => {
       await toggleHidden(mainWindow);
@@ -235,7 +250,7 @@ app.whenReady().then(async () => {
           activeAnalyzeControllers.delete(wcId);
         }
       } catch {}
-      mainWindow.webContents.send('ask:clear');
+      mainWindow.webContents.send("ask:clear");
       // Also clear main-process conversation history for all sessions
       conversationHistoryBySession.clear();
       initialPromptBySession.clear();
@@ -247,21 +262,26 @@ app.whenReady().then(async () => {
       currentSessionId = crypto.randomUUID();
       try {
         console.log(
-          '[Session]',
+          "[Session]",
           new Date().toISOString(),
-          'sessionId reset (clear):',
+          "sessionId reset (clear):",
           currentSessionId,
         );
       } catch {}
       // Initialize new session with empty log file to ensure correct path structure
       try {
-        await logManager.writeConversationLog(currentSessionId, '');
+        await logManager.writeConversationLog(currentSessionId, "");
         const json = sessionStore.toJSON();
 
-        await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+        await logManager.writeSessionJson(
+          currentSessionId,
+          json[currentSessionId] ?? {},
+        );
       } catch {}
       try {
-        mainWindow.webContents.send('session:changed', { sessionId: currentSessionId });
+        mainWindow.webContents.send("session:changed", {
+          sessionId: currentSessionId,
+        });
       } catch {}
       // Best-effort: stop any active transcription session for this window
       try {
@@ -272,27 +292,27 @@ app.whenReady().then(async () => {
       lastAudioToggleAt = Date.now();
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('audio:toggle');
+      mainWindow.webContents.send("audio:toggle");
     },
     onScrollUp: async () => {
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('ask:scroll', { direction: 'up' });
+      mainWindow.webContents.send("ask:scroll", { direction: "up" });
     },
     onScrollDown: async () => {
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('ask:scroll', { direction: 'down' });
+      mainWindow.webContents.send("ask:scroll", { direction: "down" });
     },
     onPagePrev: async () => {
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('ask:paginate', { direction: 'up' });
+      mainWindow.webContents.send("ask:paginate", { direction: "up" });
     },
     onPageNext: async () => {
       if (!mainWindow) return;
       mainWindow.show();
-      mainWindow.webContents.send('ask:paginate', { direction: 'down' });
+      mainWindow.webContents.send("ask:paginate", { direction: "down" });
     },
   });
 
@@ -302,36 +322,40 @@ app.whenReady().then(async () => {
 
     if (!cfg) {
       mainWindow?.show();
-      mainWindow?.webContents.send('text-input:show');
+      mainWindow?.webContents.send("text-input:show");
     }
   } catch {}
 
   // Dynamic hotkey updates are disabled by design (fixed hotkeys)
-  ipcMain.handle('settings:get', () => loadUserSettings());
-  ipcMain.handle('settings:update', (_evt, partial: any) => {
+  ipcMain.handle("settings:get", () => loadUserSettings());
+  ipcMain.handle("settings:update", (_evt, partial: any) => {
     saveUserSettings(partial);
 
     return loadUserSettings();
   });
 
   // Prompts IPC
-  ipcMain.handle('prompts:list', () => listPrompts());
-  ipcMain.handle('prompts:read', (_evt, name?: string) => readPrompt(name));
-  ipcMain.handle('prompts:set-default', (_evt, name: string) => setDefaultPromptFrom(name));
-  ipcMain.handle('prompts:get-default', () => getDefaultPromptName());
+  ipcMain.handle("prompts:list", () => listPrompts());
+  ipcMain.handle("prompts:read", (_evt, name?: string) => readPrompt(name));
+  ipcMain.handle("prompts:set-default", (_evt, name: string) =>
+    setDefaultPromptFrom(name),
+  );
+  ipcMain.handle("prompts:get-default", () => getDefaultPromptName());
   // New: active prompt name persisted in settings
-  ipcMain.handle('prompts:get-active', () => getActivePromptName());
-  ipcMain.handle('prompts:set-active', (_evt, name: string) => setActivePromptName(name));
+  ipcMain.handle("prompts:get-active", () => getActivePromptName());
+  ipcMain.handle("prompts:set-active", (_evt, name: string) =>
+    setActivePromptName(name),
+  );
 
   // HUD IPC
-  ipcMain.handle('hud:toggle-hide', async () => {
+  ipcMain.handle("hud:toggle-hide", async () => {
     await toggleHidden(mainWindow);
 
     return true;
   });
 
   // App lifecycle IPC
-  ipcMain.handle('app:quit', () => {
+  ipcMain.handle("app:quit", () => {
     try {
       app.quit();
     } catch {}
@@ -340,7 +364,7 @@ app.whenReady().then(async () => {
   });
 
   // Allow renderer to toggle click-through dynamically
-  ipcMain.handle('hud:set-mouse-ignore', (_evt, ignore: boolean) => {
+  ipcMain.handle("hud:set-mouse-ignore", (_evt, ignore: boolean) => {
     try {
       mainWindow?.setIgnoreMouseEvents(!!ignore, { forward: true });
     } catch {}
@@ -348,8 +372,8 @@ app.whenReady().then(async () => {
     return true;
   });
   // Session IPC
-  ipcMain.handle('session:get', () => ({ sessionId: currentSessionId }));
-  ipcMain.handle('session:new', async () => {
+  ipcMain.handle("session:get", () => ({ sessionId: currentSessionId }));
+  ipcMain.handle("session:new", async () => {
     // Clear any in-memory conversation history and initial prompt cache
     conversationHistoryBySession.clear();
     initialPromptBySession.clear();
@@ -359,82 +383,93 @@ app.whenReady().then(async () => {
     currentSessionId = crypto.randomUUID();
     try {
       console.log(
-        '[Global Session]',
+        "[Global Session]",
         new Date().toISOString(),
-        'sessionId reset (manual):',
+        "sessionId reset (manual):",
         currentSessionId,
       );
     } catch {}
     try {
-      mainWindow?.webContents.send('session:changed', { sessionId: currentSessionId });
+      mainWindow?.webContents.send("session:changed", {
+        sessionId: currentSessionId,
+      });
     } catch {}
     // Initialize new session with empty log file and session JSON to ensure correct path structure
     try {
-      await logManager.writeConversationLog(currentSessionId, '');
+      await logManager.writeConversationLog(currentSessionId, "");
       const json = sessionStore.toJSON();
 
-      await logManager.writeSessionJson(currentSessionId, json[currentSessionId] ?? {});
+      await logManager.writeSessionJson(
+        currentSessionId,
+        json[currentSessionId] ?? {},
+      );
     } catch {}
 
     return { sessionId: currentSessionId };
   });
-  ipcMain.handle('session:dump', () => sessionStore.getSessionsData());
+  ipcMain.handle("session:dump", () => sessionStore.getSessionsData());
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });
 
-app.on('before-quit', () => {
+app.on("before-quit", () => {
   unregisterAllHotkeys();
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
 // IPC Handlers
-ipcMain.handle('openai:update-config', async (_, config: Partial<OpenAIConfig>) => {
-  openAIClient.updateConfig(config);
-  // persist merged config
-  const merged = (openAIClient as any).config as OpenAIConfig; // access internal for persistence
-
-  saveOpenAIConfig(merged);
-
-  try {
-    // Notify renderers that OpenAI config has changed so they can refresh models
-    for (const bw of BrowserWindow.getAllWindows()) {
-      try {
-        bw.webContents.send('openai:config-updated');
-      } catch {}
-    }
-  } catch {}
-
-  return true;
-});
-
-// Update config in-memory without persisting to disk (used to fetch models after user types API key)
-ipcMain.handle('openai:update-config-volatile', async (_evt, config: Partial<OpenAIConfig>) => {
-  try {
+ipcMain.handle(
+  "openai:update-config",
+  async (_, config: Partial<OpenAIConfig>) => {
     openAIClient.updateConfig(config);
+    // persist merged config
+    const merged = (openAIClient as any).config as OpenAIConfig; // access internal for persistence
+
+    saveOpenAIConfig(merged);
+
     try {
-      // Notify renderers that OpenAI config has changed in-memory
+      // Notify renderers that OpenAI config has changed so they can refresh models
       for (const bw of BrowserWindow.getAllWindows()) {
         try {
-          bw.webContents.send('openai:config-updated');
+          bw.webContents.send("openai:config-updated");
         } catch {}
       }
     } catch {}
 
     return true;
-  } catch {
-    return false;
-  }
-});
+  },
+);
 
-ipcMain.handle('openai:get-config', () => loadOpenAIConfig());
+// Update config in-memory without persisting to disk (used to fetch models after user types API key)
+ipcMain.handle(
+  "openai:update-config-volatile",
+  async (_evt, config: Partial<OpenAIConfig>) => {
+    try {
+      openAIClient.updateConfig(config);
+      try {
+        // Notify renderers that OpenAI config has changed in-memory
+        for (const bw of BrowserWindow.getAllWindows()) {
+          try {
+            bw.webContents.send("openai:config-updated");
+          } catch {}
+        }
+      } catch {}
 
-ipcMain.handle('openai:list-models', async () => {
+      return true;
+    } catch {
+      return false;
+    }
+  },
+);
+
+ipcMain.handle("openai:get-config", () => loadOpenAIConfig());
+
+ipcMain.handle("openai:list-models", async () => {
   try {
     return await openAIClient.listModels();
   } catch {
@@ -446,15 +481,22 @@ ipcMain.handle('openai:list-models', async () => {
 
 // Streaming analyze (sends start/delta/done/error events)
 ipcMain.on(
-  'capture:analyze-stream',
-  async (evt, payload: { textPrompt: string; customPrompt: string; history?: string | null }) => {
+  "capture:analyze-stream",
+  async (
+    evt,
+    payload: {
+      textPrompt: string;
+      customPrompt: string;
+      history?: string | null;
+    },
+  ) => {
     // Snapshot the sessionId at the start of this request to prevent races with Ctrl+R
     const requestSessionId = currentSessionId;
 
     try {
       const settings = loadUserSettings();
       const attach =
-        typeof (settings as any)?.attachScreenshot === 'boolean'
+        typeof (settings as any)?.attachScreenshot === "boolean"
           ? !!(settings as any).attachScreenshot
           : true;
       let image: Buffer | undefined = undefined;
@@ -465,45 +507,50 @@ ipcMain.on(
       }
       const requestId = crypto.randomUUID();
 
-      evt.sender.send('capture:analyze-stream:start', { requestId, sessionId: requestSessionId });
+      evt.sender.send("capture:analyze-stream:start", {
+        requestId,
+        sessionId: requestSessionId,
+      });
 
       // Inject prior plain-text history into the text prompt for simple continuity.
       // If payload.history is provided (regeneration), use it as the prior history override;
       // otherwise use the current session's accumulated history.
       const priorPlain =
-        (typeof payload.history === 'string' ? payload.history : null) ??
+        (typeof payload.history === "string" ? payload.history : null) ??
         conversationHistoryBySession.get(requestSessionId) ??
-        '';
+        "";
       // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
-      const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? '';
+      const initialPromptPrefix =
+        initialPromptBySession.get(requestSessionId) ?? "";
       const priorWithInitial =
-        typeof payload.history === 'string'
-          ? `${initialPromptPrefix}${priorPlain || ''}`
+        typeof payload.history === "string"
+          ? `${initialPromptPrefix}${priorPlain || ""}`
           : priorPlain;
       const combinedTextPrompt = priorWithInitial
-        ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
-        : (payload.textPrompt ?? '').trim();
+        ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? "").trim()}`
+        : (payload.textPrompt ?? "").trim();
 
       // Load active prompt content only for the first turn of the current session.
       // Required: user must select an active prompt; do not fallback to default.txt or write files.
       const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
-      let defaultPrompt = '';
+      let defaultPrompt = "";
 
       if (isFirstTurn) {
         try {
           const activeName = getActivePromptName();
 
           if (!activeName) {
-            evt.sender.send('capture:analyze-stream:error', {
-              error: 'No active prompt selected. Open Settings → Prompts to select one.',
+            evt.sender.send("capture:analyze-stream:error", {
+              error:
+                "No active prompt selected. Open Settings → Prompts to select one.",
               sessionId: requestSessionId,
             });
 
             return;
           }
-          defaultPrompt = readPrompt(activeName) || '';
+          defaultPrompt = readPrompt(activeName) || "";
         } catch {
-          defaultPrompt = '';
+          defaultPrompt = "";
         }
       }
 
@@ -535,7 +582,7 @@ ipcMain.on(
         requestId,
         (update) => {
           try {
-            evt.sender.send('capture:analyze-stream:delta', {
+            evt.sender.send("capture:analyze-stream:delta", {
               requestId,
               sessionId: requestSessionId,
               channel: update.channel,
@@ -549,7 +596,7 @@ ipcMain.on(
         controller.signal,
       );
 
-      evt.sender.send('capture:analyze-stream:done', {
+      evt.sender.send("capture:analyze-stream:done", {
         ...result,
         sessionId: requestSessionId,
       });
@@ -568,22 +615,29 @@ ipcMain.on(
         // Append to plain-text conversation history.
         // If this was a regeneration (payload.history provided), rebuild from that base
         // to avoid duplicating the previous answer.
-        const question = (payload.textPrompt ?? '').trim();
-        const answer = (result?.content ?? '').trim();
+        const question = (payload.textPrompt ?? "").trim();
+        const answer = (result?.content ?? "").trim();
 
-        if (typeof payload.history === 'string') {
+        if (typeof payload.history === "string") {
           // payload.history already excludes the current page's Q/A
-          const base = payload.history || '';
+          const base = payload.history || "";
           const rebuilt = `${initialPromptPrefix}${base}`;
-          const appended = question || answer ? `Q: ${question}\nA: ${answer}\n\n` : '';
+          const appended =
+            question || answer ? `Q: ${question}\nA: ${answer}\n\n` : "";
           const updated = rebuilt + appended;
 
           conversationHistoryBySession.set(requestSessionId, updated);
         } else {
           if (question || answer) {
-            const existing = conversationHistoryBySession.get(requestSessionId) ?? '';
-            const prefix = existing ? '' : defaultPrompt ? `${defaultPrompt}\n` : '';
-            const updated = existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
+            const existing =
+              conversationHistoryBySession.get(requestSessionId) ?? "";
+            const prefix = existing
+              ? ""
+              : defaultPrompt
+                ? `${defaultPrompt}\n`
+                : "";
+            const updated =
+              existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
 
             conversationHistoryBySession.set(requestSessionId, updated);
           }
@@ -592,13 +646,13 @@ ipcMain.on(
         try {
           const logPath = await logManager.writeConversationLog(
             requestSessionId,
-            conversationHistoryBySession.get(requestSessionId) ?? '',
+            conversationHistoryBySession.get(requestSessionId) ?? "",
           );
 
           // Track session entry
           sessionStore.appendEntry(requestSessionId, {
             requestId,
-            text_input: (payload.textPrompt ?? '').trim(),
+            text_input: (payload.textPrompt ?? "").trim(),
             ai_output: answer,
           });
           sessionStore.updateSessionLogPath(requestSessionId, logPath);
@@ -606,19 +660,22 @@ ipcMain.on(
           try {
             const json = sessionStore.toJSON();
 
-            await logManager.writeSessionJson(requestSessionId, json[requestSessionId] ?? {});
+            await logManager.writeSessionJson(
+              requestSessionId,
+              json[requestSessionId] ?? {},
+            );
           } catch {}
         } catch {}
       }
     } catch (err) {
-      const error = String(err ?? 'analyze-stream failed');
+      const error = String(err ?? "analyze-stream failed");
       // If aborted, suppress noisy error; listeners will be cleaned up via ask:clear
       const isAbort =
-        typeof err === 'object' &&
+        typeof err === "object" &&
         err !== null &&
-        String((err as any).name || '')
+        String((err as any).name || "")
           .toLowerCase()
-          .includes('abort');
+          .includes("abort");
 
       try {
         const wcId = evt.sender.id;
@@ -628,38 +685,41 @@ ipcMain.on(
       if (!isAbort) {
         // Best-effort request routing – if requestId isn't known yet, send without
         // Use the original analysis sessionId, not the current one (which might have changed due to Ctrl+R)
-        evt.sender.send('capture:analyze-stream:error', { error, sessionId: requestSessionId });
+        evt.sender.send("capture:analyze-stream:error", {
+          error,
+          sessionId: requestSessionId,
+        });
       }
     }
   },
 );
 
-ipcMain.handle('openai:validate-config', async (_, cfg: OpenAIConfig) => {
+ipcMain.handle("openai:validate-config", async (_, cfg: OpenAIConfig) => {
   return openAIClient.validateConfig(cfg);
 });
 
 // Realtime transcription IPC (global handlers)
-ipcMain.handle('transcribe:start', async (evt, options: { model?: string }) => {
+ipcMain.handle("transcribe:start", async (evt, options: { model?: string }) => {
   const cfg = loadOpenAIConfig();
   const user = loadUserSettings();
 
-  if (!cfg?.apiKey) throw new Error('Missing OpenAI API key');
+  if (!cfg?.apiKey) throw new Error("Missing OpenAI API key");
   realtimeTranscribeManager.start(evt.sender, {
     apiKey: cfg.apiKey,
     model: options?.model,
     sessionId: currentSessionId,
-    language: (user as any)?.transcribeLanguage === 'zh' ? 'zh' : 'en',
+    language: (user as any)?.transcribeLanguage === "zh" ? "zh" : "en",
   });
 
   return { ok: true };
 });
-ipcMain.on('transcribe:append', (evt, data: { audio: string }) => {
+ipcMain.on("transcribe:append", (evt, data: { audio: string }) => {
   if (!data?.audio) return;
   realtimeTranscribeManager.append(evt.sender, data.audio);
 });
-ipcMain.on('transcribe:end', (evt) => {
+ipcMain.on("transcribe:end", (evt) => {
   realtimeTranscribeManager.end(evt.sender);
 });
-ipcMain.on('transcribe:stop', (evt) => {
+ipcMain.on("transcribe:stop", (evt) => {
   realtimeTranscribeManager.stop(evt.sender);
 });

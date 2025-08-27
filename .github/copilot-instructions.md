@@ -74,10 +74,10 @@ Implementation details:
 const defaultPrompt = (() => {
   try {
     const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
-    if (!isFirstTurn) return '';
-    return readPrompt() || '';
+    if (!isFirstTurn) return "";
+    return readPrompt() || "";
   } catch {
-    return '';
+    return "";
   }
 })();
 if (defaultPrompt) initialPromptBySession.set(requestSessionId, defaultPrompt);
@@ -92,18 +92,20 @@ if (defaultPrompt) initialPromptBySession.set(requestSessionId, defaultPrompt);
 ```ts
 // Use override if provided (regeneration), otherwise use accumulated history
 const priorPlain =
-  (typeof payload.history === 'string' ? payload.history : null) ??
+  (typeof payload.history === "string" ? payload.history : null) ??
   conversationHistoryBySession.get(requestSessionId) ??
-  '';
+  "";
 
-const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? '';
+const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? "";
 
 const priorWithInitial =
-  typeof payload.history === 'string' ? `${initialPromptPrefix}${priorPlain || ''}` : priorPlain;
+  typeof payload.history === "string"
+    ? `${initialPromptPrefix}${priorPlain || ""}`
+    : priorPlain;
 
 const combinedTextPrompt = priorWithInitial
-  ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? '').trim()}`
-  : (payload.textPrompt ?? '').trim();
+  ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? "").trim()}`
+  : (payload.textPrompt ?? "").trim();
 ```
 
 ### Sessions
@@ -185,13 +187,17 @@ interface GhostAPI {
       onDelta?: (p: {
         requestId: string;
         sessionId: string;
-        channel?: 'answer' | 'reasoning';
+        channel?: "answer" | "reasoning";
         eventType?: string;
         delta?: string;
         text?: string;
       }) => void;
       onDone?: (p: AnalysisResult & { sessionId: string }) => void;
-      onError?: (p: { requestId?: string; error: string; sessionId: string }) => void;
+      onError?: (p: {
+        requestId?: string;
+        error: string;
+        sessionId: string;
+      }) => void;
     },
     history?: string | null, // optional plain-text Q/A prior-context override (used for regeneration)
   ): () => void; // unsubscribe
@@ -200,10 +206,18 @@ interface GhostAPI {
   appendTranscriptionAudio(base64Pcm16: string): void;
   endTranscription(): void;
   stopTranscription(): void;
-  onTranscribeStart(handler: (p: { ok: boolean; sessionId: string }) => void): () => void;
-  onTranscribeDelta(handler: (p: { delta: string; sessionId: string }) => void): () => void;
-  onTranscribeDone(handler: (p: { content: string; sessionId: string }) => void): () => void;
-  onTranscribeError(handler: (p: { error: string; sessionId: string }) => void): () => void;
+  onTranscribeStart(
+    handler: (p: { ok: boolean; sessionId: string }) => void,
+  ): () => void;
+  onTranscribeDelta(
+    handler: (p: { delta: string; sessionId: string }) => void,
+  ): () => void;
+  onTranscribeDone(
+    handler: (p: { content: string; sessionId: string }) => void,
+  ): () => void;
+  onTranscribeError(
+    handler: (p: { error: string; sessionId: string }) => void,
+  ): () => void;
   onTranscribeClosed(handler: () => void): () => void;
   getUserSettings(): Promise<any>;
   updateUserSettings(partial: Partial<any>): Promise<any>;
@@ -758,7 +772,10 @@ Packaging targets are defined in `electron-builder.json`:
 {
   "mac": { "target": ["dmg"], "category": "public.app-category.productivity" },
   "win": { "target": ["nsis", "portable"], "icon": "ghost.ico" },
-  "mac": { "target": ["dmg", "zip"], "category": "public.app-category.productivity" },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "category": "public.app-category.productivity"
+  },
   "linux": { "target": ["AppImage", "deb"] }
 }
 ```

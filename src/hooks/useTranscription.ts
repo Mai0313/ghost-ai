@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type UseTranscriptionOptions = {
   recording: boolean;
@@ -33,7 +33,7 @@ export function useTranscription({
   const chunkFloatLenRef = useRef<number>(0);
   const transcribeUnsubsRef = useRef<(() => void)[]>([]);
   const transcriptModeRef = useRef<boolean>(false);
-  const transcriptBufferRef = useRef<string>('');
+  const transcriptBufferRef = useRef<string>("");
   const pausedRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -58,7 +58,11 @@ export function useTranscription({
       return out;
     }
 
-    function resample(buffer: Float32Array, inRate: number, outRate: number): Float32Array {
+    function resample(
+      buffer: Float32Array,
+      inRate: number,
+      outRate: number,
+    ): Float32Array {
       if (inRate === outRate) return buffer;
       const ratio = inRate / outRate;
       const newLen = Math.floor(buffer.length / ratio);
@@ -84,14 +88,18 @@ export function useTranscription({
 
       setVisible(true);
       transcriptModeRef.current = true;
-      transcriptBufferRef.current = '';
+      transcriptBufferRef.current = "";
       setPaused(false);
 
       try {
-        await (window as any).ghostAI?.startTranscription?.({ model: 'gpt-4o-mini-transcribe' });
+        await (window as any).ghostAI?.startTranscription?.({
+          model: "gpt-4o-mini-transcribe",
+        });
       } catch (e) {
-        console.error('Failed to start transcription session', e);
-        alert('Failed to start transcription session. Check API key in Settings.');
+        console.error("Failed to start transcription session", e);
+        alert(
+          "Failed to start transcription session. Check API key in Settings.",
+        );
 
         return;
       }
@@ -107,33 +115,42 @@ export function useTranscription({
           },
         );
 
-        if (typeof u1 === 'function') transcribeUnsubsRef.current.push(u1);
+        if (typeof u1 === "function") transcribeUnsubsRef.current.push(u1);
 
         const u2 = (window as any).ghostAI?.onTranscribeDone?.(
-          ({ content, sessionId: sid }: { content: string; sessionId: string }) => {
+          ({
+            content,
+            sessionId: sid,
+          }: {
+            content: string;
+            sessionId: string;
+          }) => {
             if (sid && sessionId && sid !== sessionId) return;
             if (!content) return;
             onDone(content);
             try {
-              transcriptBufferRef.current = content.endsWith('\n') ? content : content + '\n';
+              transcriptBufferRef.current = content.endsWith("\n")
+                ? content
+                : content + "\n";
             } catch {}
           },
         );
 
-        if (typeof u2 === 'function') transcribeUnsubsRef.current.push(u2);
+        if (typeof u2 === "function") transcribeUnsubsRef.current.push(u2);
 
         const u3 = (window as any).ghostAI?.onTranscribeError?.(
           ({ error, sessionId: sid }: { error: string; sessionId: string }) => {
             if (sid && sessionId && sid !== sessionId) return;
-            console.error('Transcribe error', error);
+            console.error("Transcribe error", error);
             onError?.(error);
           },
         );
 
-        if (typeof u3 === 'function') transcribeUnsubsRef.current.push(u3);
+        if (typeof u3 === "function") transcribeUnsubsRef.current.push(u3);
       } catch {}
 
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioCtx = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
 
       audioCtxRef.current = audioCtx;
       const mix = audioCtx.createGain();
@@ -161,7 +178,7 @@ export function useTranscription({
 
         micSrc.connect(mix);
       } catch (e) {
-        console.warn('[Audio] microphone capture failed', e);
+        console.warn("[Audio] microphone capture failed", e);
       }
 
       try {
@@ -176,7 +193,7 @@ export function useTranscription({
 
         sysSrc.connect(mix);
       } catch (e) {
-        console.warn('[Audio] system audio capture failed', e);
+        console.warn("[Audio] system audio capture failed", e);
       }
 
       const bufferSize = 4096;
@@ -213,7 +230,7 @@ export function useTranscription({
         try {
           (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
         } catch (e) {
-          console.warn('[Audio] appendTranscriptionAudio failed', e);
+          console.warn("[Audio] appendTranscriptionAudio failed", e);
         }
       };
 
@@ -275,7 +292,7 @@ export function useTranscription({
           }
           chunkFloatLenRef.current = used;
         } catch (err) {
-          console.error('[Audio] process error', err);
+          console.error("[Audio] process error", err);
         }
       };
     }
@@ -342,8 +359,8 @@ export function useTranscription({
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const minutes = Math.floor(totalSeconds / 60)
       .toString()
-      .padStart(2, '0');
-    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      .padStart(2, "0");
+    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
 
     return `${minutes}:${seconds}`;
   }, [elapsedMs]);

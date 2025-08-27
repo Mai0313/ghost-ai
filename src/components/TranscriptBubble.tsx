@@ -1,15 +1,20 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 
-import { askCard, askResultArea } from '../styles/styles';
+import { askCard, askResultArea } from "../styles/styles";
 
-import { MarkdownViewer } from './MarkdownViewer';
+import { MarkdownViewer } from "./MarkdownViewer";
 
 type TranscriptBubbleProps = {
   markdown: string;
 };
 
-export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({ markdown }) => {
-  const markdownVisible = useMemo(() => (markdown ? 'block' : 'none'), [markdown]);
+export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({
+  markdown,
+}) => {
+  const markdownVisible = useMemo(
+    () => (markdown ? "block" : "none"),
+    [markdown],
+  );
 
   return (
     <div style={askCard}>
@@ -17,7 +22,7 @@ export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({ markdown }) 
         className="bn-markdown-viewer"
         style={{
           ...askResultArea,
-          whiteSpace: 'normal',
+          whiteSpace: "normal",
           display: markdownVisible,
         }}
       >

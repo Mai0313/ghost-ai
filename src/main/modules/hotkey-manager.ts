@@ -1,4 +1,4 @@
-import { globalShortcut } from 'electron';
+import { globalShortcut } from "electron";
 
 export interface HotkeyHandlers {
   onTextInput: () => void | Promise<void>;
@@ -12,14 +12,14 @@ export interface HotkeyHandlers {
 }
 
 // Fixed hotkeys (Cmd on macOS, Ctrl on others)
-const ASK_HOTKEY = 'CommandOrControl+Enter';
-const HIDE_HOTKEY = 'CommandOrControl+\\';
-const CLEAR_HOTKEY = 'CommandOrControl+R';
-const AUDIO_TOGGLE_HOTKEY = 'CommandOrControl+Shift+Enter';
-const SCROLL_UP_HOTKEY = 'CommandOrControl+Up';
-const SCROLL_DOWN_HOTKEY = 'CommandOrControl+Down';
-const PAGE_PREV_HOTKEY = 'CommandOrControl+Shift+Up';
-const PAGE_NEXT_HOTKEY = 'CommandOrControl+Shift+Down';
+const ASK_HOTKEY = "CommandOrControl+Enter";
+const HIDE_HOTKEY = "CommandOrControl+\\";
+const CLEAR_HOTKEY = "CommandOrControl+R";
+const AUDIO_TOGGLE_HOTKEY = "CommandOrControl+Shift+Enter";
+const SCROLL_UP_HOTKEY = "CommandOrControl+Up";
+const SCROLL_DOWN_HOTKEY = "CommandOrControl+Down";
+const PAGE_PREV_HOTKEY = "CommandOrControl+Shift+Up";
+const PAGE_NEXT_HOTKEY = "CommandOrControl+Shift+Down";
 
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   ok: boolean;
@@ -46,7 +46,10 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   }
 
   try {
-    globalShortcut.register(AUDIO_TOGGLE_HOTKEY, () => void handlers.onAudioToggle());
+    globalShortcut.register(
+      AUDIO_TOGGLE_HOTKEY,
+      () => void handlers.onAudioToggle(),
+    );
   } catch {
     failures.push(AUDIO_TOGGLE_HOTKEY);
   }
@@ -58,7 +61,10 @@ export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   }
 
   try {
-    globalShortcut.register(SCROLL_DOWN_HOTKEY, () => void handlers.onScrollDown());
+    globalShortcut.register(
+      SCROLL_DOWN_HOTKEY,
+      () => void handlers.onScrollDown(),
+    );
   } catch {
     failures.push(SCROLL_DOWN_HOTKEY);
   }

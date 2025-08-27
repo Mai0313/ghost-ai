@@ -1,8 +1,14 @@
-import React from 'react';
+import React from "react";
 
-import { theme } from '../styles/theme';
+import { theme } from "../styles/theme";
 
-export function ThinkingIndicator({ size = 10, dots = 3 }: { size?: number; dots?: number }) {
+export function ThinkingIndicator({
+  size = 10,
+  dots = 3,
+}: {
+  size?: number;
+  dots?: number;
+}) {
   const items = new Array(Math.max(1, Math.min(6, dots))).fill(0);
 
   return (

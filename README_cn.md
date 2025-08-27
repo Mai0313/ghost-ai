@@ -289,7 +289,7 @@ npm run dist
 
 ```typescript
 // 預設熱鍵: Ctrl+Shift+S
-const defaultHotkey = 'CommandOrControl+Shift+S';
+const defaultHotkey = "CommandOrControl+Shift+S";
 
 // 自訂熱鍵範例:
 // "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) 或 Cmd+Alt+G (macOS)

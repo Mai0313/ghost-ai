@@ -1,9 +1,20 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 
-import { barStyle, ghostButton, iconButton, pillButton } from '../styles/styles';
-import { theme } from '../styles/theme';
+import {
+  barStyle,
+  ghostButton,
+  iconButton,
+  pillButton,
+} from "../styles/styles";
+import { theme } from "../styles/theme";
 
-import { IconEyeOff, IconGear, IconMicOff, IconText, IconWaveBars } from './Icons';
+import {
+  IconEyeOff,
+  IconGear,
+  IconMicOff,
+  IconText,
+  IconWaveBars,
+} from "./Icons";
 
 type HUDBarProps = {
   barRef: React.RefObject<HTMLDivElement>;
@@ -32,13 +43,15 @@ export const HUDBar: React.FC<HUDBarProps> = ({
   onAskToggle,
   onSettingsToggle,
 }) => {
-  const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const dragStateRef = useRef<{ offsetX: number; offsetY: number } | null>(
+    null,
+  );
 
   return (
     <div
       ref={barRef}
       style={{
-        position: 'absolute',
+        position: "absolute",
         top: barPos.y,
         left: barPos.x,
         ...barStyle,
@@ -49,8 +62,8 @@ export const HUDBar: React.FC<HUDBarProps> = ({
       <div
         style={{
           width: 12,
-          cursor: 'move',
-          alignSelf: 'stretch',
+          cursor: "move",
+          alignSelf: "stretch",
           marginRight: 4,
         }}
         title="Drag"
@@ -68,33 +81,40 @@ export const HUDBar: React.FC<HUDBarProps> = ({
             const dy = ev.clientY - (dragStateRef.current?.offsetY ?? 0);
             const width = barRef.current?.offsetWidth ?? 320;
             const height = barRef.current?.offsetHeight ?? 40;
-            const clampedX = Math.min(Math.max(0, dx), window.innerWidth - width);
-            const clampedY = Math.min(Math.max(0, dy), window.innerHeight - height);
+            const clampedX = Math.min(
+              Math.max(0, dx),
+              window.innerWidth - width,
+            );
+            const clampedY = Math.min(
+              Math.max(0, dy),
+              window.innerHeight - height,
+            );
 
             setBarPos({ x: clampedX, y: clampedY });
           };
           const onUp = () => {
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
             dragStateRef.current = null;
             const el = barRef.current;
-            const leaveToIgnore = () => (window as any).ghostAI?.setMouseIgnore?.(true);
+            const leaveToIgnore = () =>
+              (window as any).ghostAI?.setMouseIgnore?.(true);
 
-            if (el && el.matches(':hover')) {
+            if (el && el.matches(":hover")) {
               (window as any).ghostAI?.setMouseIgnore?.(false);
             } else {
               leaveToIgnore();
             }
           };
 
-          window.addEventListener('pointermove', onMove);
-          window.addEventListener('pointerup', onUp, { once: true });
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp, { once: true });
         }}
       />
       {!recording && (
         <button
           style={pillButton({ primary: true, danger: false })}
-          title={'Start recording'}
+          title={"Start recording"}
           onClick={() => setRecording(true)}
         >
           <IconWaveBars />
@@ -102,17 +122,17 @@ export const HUDBar: React.FC<HUDBarProps> = ({
         </button>
       )}
       {recording && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             style={pillButton({ primary: !paused, danger: paused })}
-            title={paused ? 'Resume' : 'Pause'}
+            title={paused ? "Resume" : "Pause"}
             onClick={() => setPaused((p) => !p)}
           >
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? "Resume" : "Pause"}
           </button>
           <button
             style={pillButton({ primary: false, danger: true })}
-            title={'Stop recording'}
+            title={"Stop recording"}
             onClick={() => {
               setRecording(false);
               setPaused(false);
@@ -131,7 +151,9 @@ export const HUDBar: React.FC<HUDBarProps> = ({
         }}
         onClick={onAskToggle}
       >
-        <IconText color={askActive ? theme.color.text() : theme.color.muted()} />
+        <IconText
+          color={askActive ? theme.color.text() : theme.color.muted()}
+        />
         Ask
       </button>
 

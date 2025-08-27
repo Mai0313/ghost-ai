@@ -1,4 +1,4 @@
-export type Role = 'system' | 'user' | 'assistant';
+export type Role = "system" | "user" | "assistant";
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -35,7 +35,7 @@ export interface UserSettings {
   openaiConfig: OpenAIConfig;
   isFirstRun: boolean;
   // Preferred language for realtime transcription (UI: en or zh)
-  transcribeLanguage?: 'en' | 'zh';
+  transcribeLanguage?: "en" | "zh";
   // Whether to attach a screenshot with each Ask request
   attachScreenshot?: boolean;
 }

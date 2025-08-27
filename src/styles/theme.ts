@@ -70,21 +70,28 @@ export function makeTheme(opacity = 0.85): ThemeSpec {
     text: (multiplier = 1) => rgba(palette.text, opacity * multiplier),
     muted: (multiplier = 1) => rgba(palette.mutedText, opacity * multiplier),
     barBg: (multiplier = 1) => rgba(palette.barBg, opacity * multiplier),
-    settingsBg: (multiplier = 1) => rgba(palette.settingsBg, opacity * multiplier),
+    settingsBg: (multiplier = 1) =>
+      rgba(palette.settingsBg, opacity * multiplier),
     panelBg: (multiplier = 1) => rgba(palette.panelBg, opacity * multiplier),
-    panelFooterBg: (multiplier = 1) => rgba(palette.panelFooterBg, opacity * multiplier),
+    panelFooterBg: (multiplier = 1) =>
+      rgba(palette.panelFooterBg, opacity * multiplier),
     inputBg: (multiplier = 1) => rgba(palette.inputBg, opacity * multiplier),
-    border: (multiplier = 1, base = 0.08) => rgba(palette.border, base * opacity * multiplier),
-    primary: (multiplier = 1, base = 1) => rgba(palette.primary, base * opacity * multiplier),
-    danger: (multiplier = 1, base = 0.9) => rgba(palette.danger, base * opacity * multiplier),
-    shadow: (multiplier = 1, base = 0.35) => rgba(palette.shadow, base * opacity * multiplier),
+    border: (multiplier = 1, base = 0.08) =>
+      rgba(palette.border, base * opacity * multiplier),
+    primary: (multiplier = 1, base = 1) =>
+      rgba(palette.primary, base * opacity * multiplier),
+    danger: (multiplier = 1, base = 0.9) =>
+      rgba(palette.danger, base * opacity * multiplier),
+    shadow: (multiplier = 1, base = 0.35) =>
+      rgba(palette.shadow, base * opacity * multiplier),
     shadowStrong: (multiplier = 1, base = 0.45) =>
       rgba(palette.shadow, base * opacity * multiplier),
   };
 
   return {
     opacity,
-    fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
+    fontFamily:
+      "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     palette,
     color,
     shadow: {

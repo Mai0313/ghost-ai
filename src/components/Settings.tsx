@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-import { IconCheckCircle, IconXCircle } from './Icons';
+import { IconCheckCircle, IconXCircle } from "./Icons";
 
 export function Settings() {
-  const [apiKey, setApiKey] = useState('');
-  const [baseURL, setBaseURL] = useState('https://api.openai.com/v1');
-  const [model, setModel] = useState('');
+  const [apiKey, setApiKey] = useState("");
+  const [baseURL, setBaseURL] = useState("https://api.openai.com/v1");
+  const [model, setModel] = useState("");
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
   // Transcription language
-  const [transcribeLanguage, setTranscribeLanguage] = useState<'en' | 'zh'>('en');
+  const [transcribeLanguage, setTranscribeLanguage] = useState<"en" | "zh">(
+    "en",
+  );
   // Attach screenshot with each Ask
   const [attachScreenshot, setAttachScreenshot] = useState<boolean>(true);
   // Prompts manager state
@@ -24,41 +26,48 @@ export function Settings() {
 
     const loadOpenAIConfigAndModels = async () => {
       try {
-        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
+        ]);
 
         if (cfg) {
-          setApiKey(cfg.apiKey || '');
-          setBaseURL(cfg.baseURL || 'https://api.openai.com/v1');
+          setApiKey(cfg.apiKey || "");
+          setBaseURL(cfg.baseURL || "https://api.openai.com/v1");
         }
-        const cfgModel = (cfg && (cfg as any).model) || '';
+        const cfgModel = (cfg && (cfg as any).model) || "";
 
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
-        else setModel('');
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
+          setModel(cfgModel);
+        else setModel("");
       } catch {}
     };
 
     const loadUserSettingsAndPrompts = async () => {
       try {
-        const [userSettings, promptsInfo, activePromptName] = await Promise.all([
-          api.getUserSettings?.(),
-          api.listPrompts?.(),
-          api.getActivePromptName?.(),
-        ]);
+        const [userSettings, promptsInfo, activePromptName] = await Promise.all(
+          [
+            api.getUserSettings?.(),
+            api.listPrompts?.(),
+            api.getActivePromptName?.(),
+          ],
+        );
 
         try {
-          const lang = (userSettings && (userSettings as any).transcribeLanguage) || 'en';
+          const lang =
+            (userSettings && (userSettings as any).transcribeLanguage) || "en";
 
-          setTranscribeLanguage(lang === 'zh' ? 'zh' : 'en');
+          setTranscribeLanguage(lang === "zh" ? "zh" : "en");
         } catch {}
         try {
           const v = userSettings && (userSettings as any).attachScreenshot;
 
-          setAttachScreenshot(typeof v === 'boolean' ? v : true);
+          setAttachScreenshot(typeof v === "boolean" ? v : true);
         } catch {}
         if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
           setPromptNames(promptsInfo.prompts);
           const current =
-            (typeof activePromptName === 'string' && activePromptName) ||
+            (typeof activePromptName === "string" && activePromptName) ||
             promptsInfo.defaultPrompt ||
             null;
 
@@ -71,13 +80,18 @@ export function Settings() {
     };
 
     // Initial load once on mount
-    void Promise.all([loadOpenAIConfigAndModels(), loadUserSettingsAndPrompts()]);
+    void Promise.all([
+      loadOpenAIConfigAndModels(),
+      loadUserSettingsAndPrompts(),
+    ]);
 
     // Listen for targeted updates
     // No settings:updated listener; settings reload happens after Save locally
     const offOpenAI = (() => {
       try {
-        return api.onOpenAIConfigUpdated?.(() => void loadOpenAIConfigAndModels());
+        return api.onOpenAIConfigUpdated?.(
+          () => void loadOpenAIConfigAndModels(),
+        );
       } catch {}
 
       return undefined;
@@ -85,7 +99,7 @@ export function Settings() {
 
     return () => {
       try {
-        if (typeof offOpenAI === 'function') offOpenAI();
+        if (typeof offOpenAI === "function") offOpenAI();
       } catch {}
     };
   }, []);
@@ -93,12 +107,12 @@ export function Settings() {
   const onSave = async () => {
     const api: any = (window as any).ghostAI;
 
-    if (!api) return alert('Preload not ready. Please restart the app.');
+    if (!api) return alert("Preload not ready. Please restart the app.");
     await api.updateOpenAIConfig({ apiKey, baseURL, model } as any);
     try {
       await api.updateUserSettings?.({ transcribeLanguage, attachScreenshot });
     } catch {}
-    alert('Saved OpenAI settings');
+    alert("Saved OpenAI settings");
   };
 
   // When API key or base URL changes, try to refresh models automatically
@@ -116,7 +130,7 @@ export function Settings() {
         if (Array.isArray(list) && list.length) {
           // If current model is empty or not in list, auto-pick first
           if (!model || !list.includes(model)) {
-            setModel(list[0] ?? '');
+            setModel(list[0] ?? "");
           }
         }
       } catch {}
@@ -129,7 +143,7 @@ export function Settings() {
     try {
       const api: any = (window as any).ghostAI;
 
-      if (!api) throw new Error('Preload not ready');
+      if (!api) throw new Error("Preload not ready");
       const success = await api.validateOpenAIConfig({
         apiKey,
         baseURL,
@@ -144,39 +158,47 @@ export function Settings() {
   };
 
   return (
-    <div style={{ color: 'white' }}>
-      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>OpenAI Settings</div>
-      <div style={{ display: 'grid', gap: 10 }}>
-        <label htmlFor="openai-api-key" style={{ fontSize: 12, color: '#BDBDBD' }}>
+    <div style={{ color: "white" }}>
+      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+        OpenAI Settings
+      </div>
+      <div style={{ display: "grid", gap: 10 }}>
+        <label
+          htmlFor="openai-api-key"
+          style={{ fontSize: 12, color: "#BDBDBD" }}
+        >
           API Key
         </label>
         <input
           id="openai-api-key"
           style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            color: 'white',
-            padding: '10px 12px',
+            background: "#141414",
+            border: "1px solid #2a2a2a",
+            color: "white",
+            padding: "10px 12px",
             borderRadius: 10,
-            outline: 'none',
+            outline: "none",
           }}
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
         />
 
-        <label htmlFor="openai-base-url" style={{ fontSize: 12, color: '#BDBDBD' }}>
+        <label
+          htmlFor="openai-base-url"
+          style={{ fontSize: 12, color: "#BDBDBD" }}
+        >
           Base URL
         </label>
         <input
           id="openai-base-url"
           style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            color: 'white',
-            padding: '10px 12px',
+            background: "#141414",
+            border: "1px solid #2a2a2a",
+            color: "white",
+            padding: "10px 12px",
             borderRadius: 10,
-            outline: 'none',
+            outline: "none",
           }}
           value={baseURL}
           onChange={(e) => setBaseURL(e.target.value)}
@@ -184,76 +206,113 @@ export function Settings() {
 
         {/* Model selection moved next to Ask input. Keep internal state for Test, but hide UI here. */}
       </div>
-      <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Transcription</div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <label htmlFor="transcribe-language" style={{ fontSize: 12, color: '#BDBDBD' }}>
+      <div
+        style={{
+          marginTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          paddingTop: 12,
+        }}
+      >
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+          Transcription
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          <label
+            htmlFor="transcribe-language"
+            style={{ fontSize: 12, color: "#BDBDBD" }}
+          >
             Language
           </label>
           <select
             id="transcribe-language"
             style={{
-              background: '#141414',
-              border: '1px solid #2a2a2a',
-              color: 'white',
-              padding: '10px 12px',
+              background: "#141414",
+              border: "1px solid #2a2a2a",
+              color: "white",
+              padding: "10px 12px",
               borderRadius: 10,
-              outline: 'none',
-              width: '100%',
+              outline: "none",
+              width: "100%",
             }}
             value={transcribeLanguage}
-            onChange={(e) => setTranscribeLanguage((e.target.value as 'en' | 'zh') || 'en')}
+            onChange={(e) =>
+              setTranscribeLanguage((e.target.value as "en" | "zh") || "en")
+            }
           >
-            <option style={{ background: '#141414' }} value="en">
+            <option style={{ background: "#141414" }} value="en">
               English (en)
             </option>
-            <option style={{ background: '#141414' }} value="zh">
+            <option style={{ background: "#141414" }} value="zh">
               中文 (zh)
             </option>
           </select>
         </div>
       </div>
-      <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Screenshots</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div
+        style={{
+          marginTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          paddingTop: 12,
+        }}
+      >
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+          Screenshots
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input
             checked={attachScreenshot}
             id="attach-screenshot"
             type="checkbox"
             onChange={(e) => setAttachScreenshot(!!e.target.checked)}
           />
-          <label htmlFor="attach-screenshot" style={{ fontSize: 12, color: '#BDBDBD' }}>
+          <label
+            htmlFor="attach-screenshot"
+            style={{ fontSize: 12, color: "#BDBDBD" }}
+          >
             Attach a screenshot with each Ask
           </label>
         </div>
       </div>
-      <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Prompts</div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <label htmlFor="prompt-select" style={{ fontSize: 12, color: '#BDBDBD' }}>
-            Default prompt file (stored under ~/.ghost-ai/prompts){' '}
-            {defaultPrompt ? `— current: ${defaultPrompt}` : ''}
+      <div
+        style={{
+          marginTop: 16,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          paddingTop: 12,
+        }}
+      >
+        <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+          Prompts
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          <label
+            htmlFor="prompt-select"
+            style={{ fontSize: 12, color: "#BDBDBD" }}
+          >
+            Default prompt file (stored under ~/.ghost-ai/prompts){" "}
+            {defaultPrompt ? `— current: ${defaultPrompt}` : ""}
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <select
               id="prompt-select"
               style={{
-                background: '#141414',
-                border: '1px solid #2a2a2a',
-                color: 'white',
-                padding: '10px 12px',
+                background: "#141414",
+                border: "1px solid #2a2a2a",
+                color: "white",
+                padding: "10px 12px",
                 borderRadius: 10,
-                outline: 'none',
+                outline: "none",
                 flex: 1,
               }}
-              value={selectedPrompt || ''}
+              value={selectedPrompt || ""}
               onChange={async (e) => {
                 const name = e.target.value || null;
 
                 setSelectedPrompt(name);
                 try {
                   if (name) {
-                    const ret = await (window as any).ghostAI?.setActivePromptName?.(name);
+                    const ret = await (
+                      window as any
+                    ).ghostAI?.setActivePromptName?.(name);
 
                     setDefaultPrompt(ret || name);
                   }
@@ -262,11 +321,11 @@ export function Settings() {
             >
               {(!promptNames.length || !selectedPrompt) && (
                 <option disabled value="">
-                  {promptNames.length ? 'Select a prompt' : 'No prompts found'}
+                  {promptNames.length ? "Select a prompt" : "No prompts found"}
                 </option>
               )}
               {promptNames.map((n) => (
-                <option key={n} style={{ background: '#141414' }} value={n}>
+                <option key={n} style={{ background: "#141414" }} value={n}>
                   {n}
                 </option>
               ))}
@@ -274,16 +333,16 @@ export function Settings() {
           </div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button
           style={{
-            border: 'none',
+            border: "none",
             borderRadius: 10,
-            padding: '10px 14px',
-            background: '#2B66F6',
-            color: 'white',
+            padding: "10px 14px",
+            background: "#2B66F6",
+            color: "white",
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
           onClick={onSave}
         >
@@ -292,25 +351,25 @@ export function Settings() {
         <button
           disabled={testing}
           style={{
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'transparent',
-            color: '#E6E6E6',
-            padding: '10px 14px',
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent",
+            color: "#E6E6E6",
+            padding: "10px 14px",
             borderRadius: 10,
-            cursor: testing ? 'not-allowed' : 'pointer',
+            cursor: testing ? "not-allowed" : "pointer",
           }}
           onClick={onTest}
         >
-          {testing ? 'Testing…' : 'Test'}
+          {testing ? "Testing…" : "Test"}
         </button>
         <button
           style={{
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'transparent',
-            color: '#ff4d4f',
-            padding: '10px 14px',
+            border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent",
+            color: "#ff4d4f",
+            padding: "10px 14px",
             borderRadius: 10,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
           onClick={() => (window as any).ghostAI?.quitApp?.()}
         >
@@ -319,19 +378,23 @@ export function Settings() {
         {ok !== null && (
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '6px 12px',
-              background: ok ? 'rgba(82, 196, 26, 0.1)' : 'rgba(255, 77, 79, 0.1)',
+              display: "flex",
+              alignItems: "center",
+              padding: "6px 12px",
+              background: ok
+                ? "rgba(82, 196, 26, 0.1)"
+                : "rgba(255, 77, 79, 0.1)",
               borderRadius: 8,
-              border: `1px solid ${ok ? 'rgba(82, 196, 26, 0.3)' : 'rgba(255, 77, 79, 0.3)'}`,
+              border: `1px solid ${ok ? "rgba(82, 196, 26, 0.3)" : "rgba(255, 77, 79, 0.3)"}`,
               gap: 8,
-              alignSelf: 'center',
+              alignSelf: "center",
             }}
           >
             {ok ? <IconCheckCircle /> : <IconXCircle />}
-            <span style={{ color: ok ? '#52c41a' : '#ff4d4f', fontWeight: 500 }}>
-              {ok ? 'Valid' : 'Invalid'}
+            <span
+              style={{ color: ok ? "#52c41a" : "#ff4d4f", fontWeight: 500 }}
+            >
+              {ok ? "Valid" : "Invalid"}
             </span>
           </div>
         )}

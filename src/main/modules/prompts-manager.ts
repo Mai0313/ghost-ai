@@ -1,13 +1,13 @@
-import os from 'node:os';
-import fs from 'node:fs';
-import path from 'node:path';
+import os from "node:os";
+import fs from "node:fs";
+import path from "node:path";
 
-import { loadUserSettings, saveUserSettings } from './settings-manager';
+import { loadUserSettings, saveUserSettings } from "./settings-manager";
 
 const homeDir = os.homedir();
-const baseDir = path.join(homeDir, '.ghost-ai');
+const baseDir = path.join(homeDir, ".ghost-ai");
 
-export const promptsDir = path.join(baseDir, 'prompts');
+export const promptsDir = path.join(baseDir, "prompts");
 
 function ensureDirs() {
   try {
@@ -16,16 +16,19 @@ function ensureDirs() {
 }
 
 function normalizeName(name: string): string {
-  const trimmed = (name || '').trim();
+  const trimmed = (name || "").trim();
 
-  if (!trimmed) return 'default.txt';
+  if (!trimmed) return "default.txt";
   const withExt = /\.[a-zA-Z0-9]+$/.test(trimmed) ? trimmed : `${trimmed}.txt`;
 
   // Prevent path traversal
-  return withExt.replace(/[\\/]+/g, '_');
+  return withExt.replace(/[\\/]+/g, "_");
 }
 
-export function listPrompts(): { prompts: string[]; defaultPrompt: string | null } {
+export function listPrompts(): {
+  prompts: string[];
+  defaultPrompt: string | null;
+} {
   ensureDirs();
   const files = (() => {
     try {
@@ -43,7 +46,10 @@ export function listPrompts(): { prompts: string[]; defaultPrompt: string | null
 
   try {
     const s = loadUserSettings() as any;
-    const name = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+    const name =
+      typeof s?.defaultPrompt === "string"
+        ? normalizeName(s.defaultPrompt)
+        : null;
 
     if (name && files.includes(name)) active = name;
   } catch {}
@@ -55,7 +61,9 @@ export function listPrompts(): { prompts: string[]; defaultPrompt: string | null
 export function getDefaultPromptName(): string | null {
   ensureDirs();
   try {
-    return fs.existsSync(path.join(promptsDir, 'default.txt')) ? 'default.txt' : null;
+    return fs.existsSync(path.join(promptsDir, "default.txt"))
+      ? "default.txt"
+      : null;
   } catch {
     return null;
   }
@@ -81,20 +89,23 @@ export function readPrompt(name?: string): string {
   else {
     try {
       const s = loadUserSettings() as any;
-      const n = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+      const n =
+        typeof s?.defaultPrompt === "string"
+          ? normalizeName(s.defaultPrompt)
+          : null;
 
       fileName = n || null;
     } catch {
       fileName = null;
     }
   }
-  if (!fileName) return '';
+  if (!fileName) return "";
   const full = path.join(promptsDir, fileName);
 
   try {
-    return fs.readFileSync(full, 'utf8');
+    return fs.readFileSync(full, "utf8");
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -105,14 +116,17 @@ export function ensureDefaultPrompt(_defaultContent?: string): {
   // No-op: do not create or write any prompt files.
   ensureDirs();
 
-  return { created: false, defaultPrompt: 'default.txt' };
+  return { created: false, defaultPrompt: "default.txt" };
 }
 
 // New helpers for active prompt persistence and retrieval
 export function getActivePromptName(): string | null {
   try {
     const s = loadUserSettings() as any;
-    const name = typeof s?.defaultPrompt === 'string' ? normalizeName(s.defaultPrompt) : null;
+    const name =
+      typeof s?.defaultPrompt === "string"
+        ? normalizeName(s.defaultPrompt)
+        : null;
 
     if (!name) return null;
     const full = path.join(promptsDir, name);

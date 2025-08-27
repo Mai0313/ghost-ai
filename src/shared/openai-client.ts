@@ -1,21 +1,21 @@
-import type { AnalysisResult, OpenAIConfig } from './types';
+import type { AnalysisResult, OpenAIConfig } from "./types";
 import type {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionUserMessageParam,
-} from 'openai/resources/chat/completions';
+} from "openai/resources/chat/completions";
 import type {
   ResponseCreateParams,
   ResponseStreamEvent,
   ResponseInput,
   ResponseInputMessageContentList,
-} from 'openai/resources/responses/responses';
-import type { Stream } from 'openai/streaming';
+} from "openai/resources/responses/responses";
+import type { Stream } from "openai/streaming";
 
-import OpenAI from 'openai';
-import { ChatCompletionCreateParamsStreaming } from 'openai/resources.js';
-import { ResponseCreateParamsStreaming } from 'openai/resources/responses/responses.js';
+import OpenAI from "openai";
+import { ChatCompletionCreateParamsStreaming } from "openai/resources.js";
+import { ResponseCreateParamsStreaming } from "openai/resources/responses/responses.js";
 
 export class OpenAIClient {
   private client: OpenAI | null = null;
@@ -23,18 +23,27 @@ export class OpenAIClient {
 
   initialize(config: OpenAIConfig): void {
     this.config = config;
-    this.client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+    this.client = new OpenAI({
+      apiKey: config.apiKey,
+      baseURL: config.baseURL,
+    });
   }
 
   updateConfig(config: Partial<OpenAIConfig>): void {
-    if (!this.config) throw new Error('OpenAIClient not initialized');
+    if (!this.config) throw new Error("OpenAIClient not initialized");
     this.config = { ...this.config, ...config } as OpenAIConfig;
-    this.client = new OpenAI({ apiKey: this.config.apiKey, baseURL: this.config.baseURL });
+    this.client = new OpenAI({
+      apiKey: this.config.apiKey,
+      baseURL: this.config.baseURL,
+    });
   }
 
   async validateConfig(config: OpenAIConfig): Promise<boolean> {
     try {
-      const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+      const client = new OpenAI({
+        apiKey: config.apiKey,
+        baseURL: config.baseURL,
+      });
       const list = await client.models.list();
 
       return Array.isArray(list.data) && list.data.length >= 0;
@@ -44,7 +53,8 @@ export class OpenAIClient {
   }
 
   private ensureClient(): void {
-    if (!this.client || !this.config) throw new Error('OpenAIClient not initialized');
+    if (!this.client || !this.config)
+      throw new Error("OpenAIClient not initialized");
   }
 
   async listModels(): Promise<string[]> {
@@ -55,13 +65,13 @@ export class OpenAIClient {
       const list = await client.models.list();
       const ids = (list?.data ?? []).map((m: any) => m.id as string);
       const allowedOrder = [
-        'chatgpt-4o-latest',
-        'gpt-4o',
-        'gpt-4o-mini',
-        'gpt-4.1',
-        'o4-mini-2025-04-16',
-        'gpt-5',
-        'gpt-5-mini',
+        "chatgpt-4o-latest",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4.1",
+        "o4-mini-2025-04-16",
+        "gpt-5",
+        "gpt-5-mini",
       ];
       const filtered = allowedOrder.filter((id) => ids.includes(id));
 
@@ -69,12 +79,12 @@ export class OpenAIClient {
     } catch {
       // Return a sensible default order so the UI doesn't get stuck in "Loading models…"
       const allowedOrder = [
-        'chatgpt-4o-latest',
-        'gpt-4o',
-        'gpt-4.1',
-        'o4-mini-2025-04-16',
-        'gpt-5',
-        'gpt-5-mini',
+        "chatgpt-4o-latest",
+        "gpt-4o",
+        "gpt-4.1",
+        "o4-mini-2025-04-16",
+        "gpt-5",
+        "gpt-5-mini",
       ];
 
       return allowedOrder;
@@ -87,7 +97,7 @@ export class OpenAIClient {
     customPrompt: string,
     requestId: string,
     onDelta: (update: {
-      channel: 'answer';
+      channel: "answer";
       delta?: string;
       text?: string;
       eventType: string;
@@ -98,29 +108,29 @@ export class OpenAIClient {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer?.toString('base64');
+    const base64 = imageBuffer?.toString("base64");
     const messages: ChatCompletionMessageParam[] = [];
 
     messages.push({
-      name: 'message',
-      role: 'system',
-      content: [{ type: 'text', text: customPrompt.trim() }],
+      name: "message",
+      role: "system",
+      content: [{ type: "text", text: customPrompt.trim() }],
     });
     const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
 
-    const userContent: ChatCompletionUserMessageParam['content'] = [
-      { type: 'text', text: effectiveText },
+    const userContent: ChatCompletionUserMessageParam["content"] = [
+      { type: "text", text: effectiveText },
     ];
 
     if (imageBuffer && base64) {
       userContent.push({
-        type: 'image_url',
-        image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' },
+        type: "image_url",
+        image_url: { url: `data:image/png;base64,${base64}`, detail: "auto" },
       });
     }
     messages.push({
-      name: 'message',
-      role: 'user',
+      name: "message",
+      role: "user",
       content: userContent,
     });
 
@@ -130,25 +140,34 @@ export class OpenAIClient {
       stream: true,
     } as ChatCompletionCreateParamsStreaming;
 
-    if (config.model === 'gpt-5') {
-      request.reasoning_effort = 'low';
+    if (config.model === "gpt-5") {
+      request.reasoning_effort = "low";
     }
-    const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, {
-      signal,
-    });
+    const stream: Stream<ChatCompletionChunk> =
+      await client.chat.completions.create(request, {
+        signal,
+      });
 
-    let finalContent = '';
+    let finalContent = "";
 
     for await (const chunk of stream) {
-      const delta = chunk.choices[0].delta.content ?? '';
+      const delta = chunk.choices[0].delta.content ?? "";
 
       if (delta) {
         finalContent += delta;
-        onDelta({ channel: 'answer', delta, eventType: 'chat.output_text.delta' });
+        onDelta({
+          channel: "answer",
+          delta,
+          eventType: "chat.output_text.delta",
+        });
       }
     }
     // Emit a final done event for completeness (not required by current UI)
-    onDelta({ channel: 'answer', text: finalContent, eventType: 'chat.output_text.done' });
+    onDelta({
+      channel: "answer",
+      text: finalContent,
+      eventType: "chat.output_text.done",
+    });
 
     return {
       requestId,
@@ -165,7 +184,7 @@ export class OpenAIClient {
     customPrompt: string,
     requestId: string,
     onDelta: (update: {
-      channel: 'answer' | 'reasoning' | 'web_search';
+      channel: "answer" | "reasoning" | "web_search";
       eventType: string;
       delta?: string;
       text?: string;
@@ -176,89 +195,104 @@ export class OpenAIClient {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer?.toString('base64');
+    const base64 = imageBuffer?.toString("base64");
     const input: ResponseInput = [];
 
     input.push({
-      type: 'message',
-      role: 'system',
-      content: [{ type: 'input_text', text: customPrompt.trim() }],
+      type: "message",
+      role: "system",
+      content: [{ type: "input_text", text: customPrompt.trim() }],
     });
     const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
 
     const userContent: ResponseInputMessageContentList = [
-      { type: 'input_text', text: effectiveText },
+      { type: "input_text", text: effectiveText },
     ];
 
     if (imageBuffer && base64) {
       userContent.push({
-        type: 'input_image',
+        type: "input_image",
         image_url: `data:image/png;base64,${base64}`,
-        detail: 'auto',
+        detail: "auto",
       });
     }
     input.push({
-      type: 'message',
-      role: 'user',
+      type: "message",
+      role: "user",
       content: userContent,
     });
 
     const request: ResponseCreateParams & { stream: true } = {
       model: config.model,
       input: input,
-      tools: [{ type: 'web_search_preview' }],
+      tools: [{ type: "web_search_preview" }],
       stream: true,
     } as ResponseCreateParamsStreaming;
 
-    if (config.model === 'gpt-5') {
-      request.reasoning = { effort: 'low', summary: 'auto' };
+    if (config.model === "gpt-5") {
+      request.reasoning = { effort: "low", summary: "auto" };
     }
-    const stream: Stream<ResponseStreamEvent> = await client.responses.create(request, { signal });
+    const stream: Stream<ResponseStreamEvent> = await client.responses.create(
+      request,
+      { signal },
+    );
 
-    let finalContent = '';
+    let finalContent = "";
 
     for await (const event of stream) {
       // Reasoning stream (models with reasoning support)
-      if (event.type === 'response.reasoning_summary_text.delta') {
-        onDelta({ channel: 'reasoning', delta: event.delta, eventType: event.type });
+      if (event.type === "response.reasoning_summary_text.delta") {
+        onDelta({
+          channel: "reasoning",
+          delta: event.delta,
+          eventType: event.type,
+        });
         continue;
       }
 
       // Final reasoning text (models with reasoning support)
-      if (event.type === 'response.reasoning_summary_text.done') {
-        onDelta({ channel: 'reasoning', text: event.text, eventType: event.type });
+      if (event.type === "response.reasoning_summary_text.done") {
+        onDelta({
+          channel: "reasoning",
+          text: event.text,
+          eventType: event.type,
+        });
         continue;
       }
 
       // Reasoning lifecycle events (no full content available)
       if (
-        event.type === 'response.reasoning_summary_part.added' ||
-        event.type === 'response.reasoning_summary_part.done'
+        event.type === "response.reasoning_summary_part.added" ||
+        event.type === "response.reasoning_summary_part.done"
       ) {
-        onDelta({ channel: 'reasoning', eventType: event.type });
+        onDelta({ channel: "reasoning", eventType: event.type });
         continue;
       }
 
       // Web search lifecycle events (no full content available)
       if (
-        event.type === 'response.web_search_call.in_progress' ||
-        event.type === 'response.web_search_call.searching' ||
-        event.type === 'response.web_search_call.completed'
+        event.type === "response.web_search_call.in_progress" ||
+        event.type === "response.web_search_call.searching" ||
+        event.type === "response.web_search_call.completed"
       ) {
-        onDelta({ channel: 'web_search', eventType: event.type });
+        onDelta({ channel: "web_search", eventType: event.type });
         continue;
       }
 
       // Prefer granular answer delta events
-      if (event.type === 'response.output_text.delta') {
-        onDelta({ channel: 'answer', delta: event.delta, eventType: event.type });
+      if (event.type === "response.output_text.delta") {
+        onDelta({
+          channel: "answer",
+          delta: event.delta,
+          eventType: event.type,
+        });
         finalContent += event.delta;
         continue;
       }
 
       // Ensure we get the final answer text
-      if (event.type === 'response.output_text.done') {
-        onDelta({ channel: 'answer', text: event.text, eventType: event.type });
+      if (event.type === "response.output_text.done") {
+        onDelta({ channel: "answer", text: event.text, eventType: event.type });
         finalContent = event.text;
         continue;
       }

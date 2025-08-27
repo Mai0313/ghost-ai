@@ -1,14 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { askCard, askFooter, askInput, askResultArea, ghostButton } from '../styles/styles';
+import {
+  askCard,
+  askFooter,
+  askInput,
+  askResultArea,
+  ghostButton,
+} from "../styles/styles";
 
-import { MarkdownViewer } from './MarkdownViewer';
-import { ThinkingIndicator } from './ThinkingIndicator';
+import { MarkdownViewer } from "./MarkdownViewer";
+import { ThinkingIndicator } from "./ThinkingIndicator";
 
 type AskPanelProps = {
   displayMarkdown: string;
   reasoningMarkdown?: string;
-  webSearchStatus?: 'idle' | 'in_progress' | 'searching' | 'completed';
+  webSearchStatus?: "idle" | "in_progress" | "searching" | "completed";
   hasPages: boolean;
   currentPageLabel: string;
   historyIndex: number | null;
@@ -43,7 +49,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   inputRef,
 }) => {
   const [models, setModels] = useState<string[]>([]);
-  const [model, setModel] = useState<string>('');
+  const [model, setModel] = useState<string>("");
   const [composing, setComposing] = useState(false);
   const localInputRef = useRef<HTMLInputElement | null>(null);
   const askInputRef = inputRef ?? localInputRef;
@@ -54,13 +60,17 @@ export const AskPanel: React.FC<AskPanelProps> = ({
         const api: any = (window as any).ghostAI;
 
         if (!api) return;
-        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
+        ]);
 
         if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || '';
+        const cfgModel = (cfg && (cfg as any).model) || "";
 
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
-        else setModel('');
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
+          setModel(cfgModel);
+        else setModel("");
       } catch {}
     })();
   }, []);
@@ -71,13 +81,17 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     if (!api?.onOpenAIConfigUpdated) return;
     const off = api.onOpenAIConfigUpdated(async () => {
       try {
-        const [cfg, list] = await Promise.all([api.getOpenAIConfig?.(), api.listOpenAIModels?.()]);
+        const [cfg, list] = await Promise.all([
+          api.getOpenAIConfig?.(),
+          api.listOpenAIModels?.(),
+        ]);
 
         if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || '';
+        const cfgModel = (cfg && (cfg as any).model) || "";
 
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel)) setModel(cfgModel);
-        else if (Array.isArray(list) && list.length) setModel(list[0] ?? '');
+        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
+          setModel(cfgModel);
+        else if (Array.isArray(list) && list.length) setModel(list[0] ?? "");
       } catch {}
     });
 
@@ -88,9 +102,12 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     };
   }, []);
 
-  const markdownVisible = useMemo(() => (displayMarkdown ? 'block' : 'none'), [displayMarkdown]);
+  const markdownVisible = useMemo(
+    () => (displayMarkdown ? "block" : "none"),
+    [displayMarkdown],
+  );
   const isWebSearching = useMemo(
-    () => webSearchStatus === 'in_progress' || webSearchStatus === 'searching',
+    () => webSearchStatus === "in_progress" || webSearchStatus === "searching",
     [webSearchStatus],
   );
 
@@ -100,15 +117,15 @@ export const AskPanel: React.FC<AskPanelProps> = ({
         className="bn-markdown-viewer"
         style={{
           ...askResultArea,
-          whiteSpace: 'normal',
+          whiteSpace: "normal",
           display: markdownVisible,
         }}
       >
         {isWebSearching && (
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: 8,
               marginBottom: 8,
               opacity: 0.85,
@@ -124,12 +141,21 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             <MarkdownViewer markdown={reasoningMarkdown} />
           </div>
         )}
-        {!!displayMarkdown && <div style={{ marginBottom: 4, opacity: 0.7 }}>Answer</div>}
+        {!!displayMarkdown && (
+          <div style={{ marginBottom: 4, opacity: 0.7 }}>Answer</div>
+        )}
         <MarkdownViewer markdown={displayMarkdown} />
       </div>
       <div style={askFooter}>
         {hasPages && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 2 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingLeft: 2,
+            }}
+          >
             <button
               disabled={!hasPages || historyIndex === 0}
               style={ghostButton}
@@ -138,7 +164,14 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             >
               ◀ Prev
             </button>
-            <div style={{ opacity: 0.8, fontSize: 12, minWidth: 48, textAlign: 'center' }}>
+            <div
+              style={{
+                opacity: 0.8,
+                fontSize: 12,
+                minWidth: 48,
+                textAlign: "center",
+              }}
+            >
               {currentPageLabel}
             </div>
             <button
@@ -161,7 +194,14 @@ export const AskPanel: React.FC<AskPanelProps> = ({
           </div>
         )}
         {(busy || streaming) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 2 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              paddingLeft: 2,
+            }}
+          >
             <ThinkingIndicator dots={4} size={8} />
           </div>
         )}
@@ -169,14 +209,18 @@ export const AskPanel: React.FC<AskPanelProps> = ({
           ref={askInputRef}
           disabled={busy || streaming}
           id="ask-input"
-          placeholder={'Press Enter to ask with default prompt…'}
+          placeholder={"Press Enter to ask with default prompt…"}
           style={askInput}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onCompositionEnd={() => setComposing(false)}
           onCompositionStart={() => setComposing(true)}
           onKeyDown={(e) => {
-            if ((e as any).key === 'Enter' && !(e as any).shiftKey && !composing) {
+            if (
+              (e as any).key === "Enter" &&
+              !(e as any).shiftKey &&
+              !composing
+            ) {
               e.preventDefault();
               if (!busy) void onSubmit();
             }
@@ -186,12 +230,12 @@ export const AskPanel: React.FC<AskPanelProps> = ({
           disabled={busy || streaming || !models.length}
           id="ask-model-select"
           style={{
-            background: '#141414',
-            border: '1px solid #2a2a2a',
-            color: 'white',
-            padding: '10px 12px',
+            background: "#141414",
+            border: "1px solid #2a2a2a",
+            color: "white",
+            padding: "10px 12px",
             borderRadius: 10,
-            outline: 'none',
+            outline: "none",
             maxWidth: 220,
           }}
           value={model}
@@ -209,11 +253,11 @@ export const AskPanel: React.FC<AskPanelProps> = ({
         >
           {(!models.length || !model) && (
             <option disabled value="">
-              {models.length ? 'Select a model' : 'Loading models…'}
+              {models.length ? "Select a model" : "Loading models…"}
             </option>
           )}
           {models.map((m) => (
-            <option key={m} style={{ background: '#141414' }} value={m}>
+            <option key={m} style={{ background: "#141414" }} value={m}>
               {m}
             </option>
           ))}
