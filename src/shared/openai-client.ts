@@ -3,6 +3,7 @@ import type {
   ChatCompletionChunk,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
+  ChatCompletionUserMessageParam,
 } from 'openai/resources/chat/completions';
 import type {
   ResponseCreateParams,
@@ -81,7 +82,7 @@ export class OpenAIClient {
   }
 
   async completionStream(
-    imageBuffer: Buffer,
+    imageBuffer: Buffer | undefined,
     textPrompt: string,
     customPrompt: string,
     requestId: string,
@@ -92,37 +93,46 @@ export class OpenAIClient {
       eventType: string;
     }) => void,
     sessionId: string,
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer.toString('base64');
+    const base64 = imageBuffer?.toString('base64');
     const messages: ChatCompletionMessageParam[] = [];
 
-    if (customPrompt?.trim()) {
-      // Use system role for custom prompt/instructions to guide the model
-      messages.push({ role: 'system', content: customPrompt.trim() });
-    }
-    const effectiveText =
-      textPrompt?.trim() || 'Response to the question based on the info or image you have.';
-    const content: Exclude<ChatCompletionMessageParam['content'], string | null> = [
+    messages.push({
+      name: 'message',
+      role: 'system',
+      content: [{ type: 'text', text: customPrompt.trim() }],
+    });
+    const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
+
+    const userContent: ChatCompletionUserMessageParam['content'] = [
       { type: 'text', text: effectiveText },
-      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' } },
     ];
 
-    messages.push({ role: 'user', content });
+    if (imageBuffer && base64) {
+      userContent.push({
+        type: 'image_url',
+        image_url: { url: `data:image/png;base64,${base64}`, detail: 'auto' },
+      });
+    }
+    messages.push({
+      name: 'message',
+      role: 'user',
+      content: userContent,
+    });
 
     const request: ChatCompletionCreateParams & { stream: true } = {
       model: config.model,
-      messages,
+      messages: messages,
       stream: true,
     } as ChatCompletionCreateParamsStreaming;
 
     if (config.model === 'gpt-5') {
       request.reasoning_effort = 'low';
     }
-    // Pass AbortSignal so callers can cancel mid-stream
     const stream: Stream<ChatCompletionChunk> = await client.chat.completions.create(request, {
       signal,
     });
@@ -130,22 +140,15 @@ export class OpenAIClient {
     let finalContent = '';
 
     for await (const chunk of stream) {
-      try {
-        const delta = chunk.choices[0].delta.content ?? '';
+      const delta = chunk.choices[0].delta.content ?? '';
 
-        if (delta) {
-          finalContent += delta;
-          onDelta({ channel: 'answer', delta, eventType: 'chat.output_text.delta' });
-        }
-      } catch {
-        // ignore malformed chunks
+      if (delta) {
+        finalContent += delta;
+        onDelta({ channel: 'answer', delta, eventType: 'chat.output_text.delta' });
       }
     }
-
     // Emit a final done event for completeness (not required by current UI)
-    try {
-      onDelta({ channel: 'answer', text: finalContent, eventType: 'chat.output_text.done' });
-    } catch {}
+    onDelta({ channel: 'answer', text: finalContent, eventType: 'chat.output_text.done' });
 
     return {
       requestId,
@@ -163,34 +166,26 @@ export class OpenAIClient {
     requestId: string,
     onDelta: (update: {
       channel: 'answer' | 'reasoning' | 'web_search';
+      eventType: string;
       delta?: string;
       text?: string;
-      eventType: string;
     }) => void,
     sessionId: string,
-    signal?: AbortSignal,
+    signal: AbortSignal,
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
     const base64 = imageBuffer?.toString('base64');
-
-    const effectiveText =
-      textPrompt?.trim() ||
-      (imageBuffer
-        ? 'Response to the question based on the info or image you have.'
-        : 'Please respond to my question.');
-
-    // Responses API expects a single ResponseInput (array of items), not role-based messages
     const input: ResponseInput = [];
 
-    if (customPrompt?.trim()) {
-      input.push({
-        type: 'message',
-        role: 'system',
-        content: [{ type: 'input_text', text: customPrompt.trim() }],
-      });
-    }
+    input.push({
+      type: 'message',
+      role: 'system',
+      content: [{ type: 'input_text', text: customPrompt.trim() }],
+    });
+    const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
+
     const userContent: ResponseInputMessageContentList = [
       { type: 'input_text', text: effectiveText },
     ];
@@ -210,13 +205,12 @@ export class OpenAIClient {
 
     const request: ResponseCreateParams & { stream: true } = {
       model: config.model,
-      input,
+      input: input,
       tools: [{ type: 'web_search_preview' }],
       stream: true,
     } as ResponseCreateParamsStreaming;
 
     if (config.model === 'gpt-5') {
-      // Responses API uses nested reasoning config
       request.reasoning = { effort: 'low', summary: 'auto' };
     }
     const stream: Stream<ResponseStreamEvent> = await client.responses.create(request, { signal });
@@ -224,59 +218,49 @@ export class OpenAIClient {
     let finalContent = '';
 
     for await (const event of stream) {
-      try {
-        // Reasoning stream (models with reasoning support)
-        if (event.type === 'response.reasoning_summary_text.delta') {
-          const d = event.delta as string;
+      // Reasoning stream (models with reasoning support)
+      if (event.type === 'response.reasoning_summary_text.delta') {
+        onDelta({ channel: 'reasoning', delta: event.delta, eventType: event.type });
+        continue;
+      }
 
-          if (d) onDelta({ channel: 'reasoning', delta: d, eventType: event.type });
-          continue;
-        }
-        if (event.type === 'response.reasoning_summary_text.done') {
-          const t = event.text as string;
+      // Final reasoning text (models with reasoning support)
+      if (event.type === 'response.reasoning_summary_text.done') {
+        onDelta({ channel: 'reasoning', text: event.text, eventType: event.type });
+        continue;
+      }
 
-          onDelta({ channel: 'reasoning', text: t, eventType: event.type });
-          continue;
-        }
-        if (
-          event.type === 'response.reasoning_summary_part.added' ||
-          event.type === 'response.reasoning_summary_part.done'
-        ) {
-          onDelta({ channel: 'reasoning', eventType: event.type });
-          continue;
-        }
+      // Reasoning lifecycle events (no full content available)
+      if (
+        event.type === 'response.reasoning_summary_part.added' ||
+        event.type === 'response.reasoning_summary_part.done'
+      ) {
+        onDelta({ channel: 'reasoning', eventType: event.type });
+        continue;
+      }
 
-        // Web search lifecycle events (no full content available)
-        if (
-          event.type === 'response.web_search_call.in_progress' ||
-          event.type === 'response.web_search_call.searching' ||
-          event.type === 'response.web_search_call.completed'
-        ) {
-          onDelta({ channel: 'web_search', eventType: event.type });
-          continue;
-        }
+      // Web search lifecycle events (no full content available)
+      if (
+        event.type === 'response.web_search_call.in_progress' ||
+        event.type === 'response.web_search_call.searching' ||
+        event.type === 'response.web_search_call.completed'
+      ) {
+        onDelta({ channel: 'web_search', eventType: event.type });
+        continue;
+      }
 
-        // Prefer granular answer delta events
-        if (event.type === 'response.output_text.delta') {
-          const d = event.delta as string;
+      // Prefer granular answer delta events
+      if (event.type === 'response.output_text.delta') {
+        onDelta({ channel: 'answer', delta: event.delta, eventType: event.type });
+        finalContent += event.delta;
+        continue;
+      }
 
-          if (d) {
-            finalContent += d;
-            onDelta({ channel: 'answer', delta: d, eventType: event.type });
-          }
-          continue;
-        }
-
-        // Ensure we get the final answer text
-        if (event.type === 'response.output_text.done') {
-          const t = event.text as string;
-
-          if (typeof t === 'string') finalContent = t;
-          onDelta({ channel: 'answer', text: t, eventType: event.type });
-          continue;
-        }
-      } catch {
-        // ignore malformed events
+      // Ensure we get the final answer text
+      if (event.type === 'response.output_text.done') {
+        onDelta({ channel: 'answer', text: event.text, eventType: event.type });
+        finalContent = event.text;
+        continue;
       }
     }
 
