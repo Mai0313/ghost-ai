@@ -20,6 +20,14 @@ import { ResponseCreateParamsStreaming } from "openai/resources/responses/respon
 export class OpenAIClient {
   private client: OpenAI | null = null;
   private config: OpenAIConfig | null = null;
+  private allowedModels: string[] = [
+    "chatgpt-4o-latest",
+    "gpt-4o",
+    "gpt-4.1",
+    "o4-mini-2025-04-16",
+    "gpt-5",
+    "gpt-5-mini",
+  ];
 
   initialize(config: OpenAIConfig): void {
     this.config = config;
@@ -62,32 +70,12 @@ export class OpenAIClient {
     const client = this.client!;
 
     try {
-      const list = await client.models.list();
-      const ids = (list?.data ?? []).map((m: any) => m.id as string);
-      const allowedOrder = [
-        "chatgpt-4o-latest",
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4.1",
-        "o4-mini-2025-04-16",
-        "gpt-5",
-        "gpt-5-mini",
-      ];
-      const filtered = allowedOrder.filter((id) => ids.includes(id));
-
-      return filtered.length ? filtered : allowedOrder;
+      const model_list = await client.models.list();
+      const model_ids = (model_list.data ?? []).map((m: any) => m.id as string);
+      const filtered = this.allowedModels.filter((id) => model_ids.includes(id));
+      return filtered.length ? filtered : this.allowedModels;
     } catch {
-      // Return a sensible default order so the UI doesn't get stuck in "Loading models…"
-      const allowedOrder = [
-        "chatgpt-4o-latest",
-        "gpt-4o",
-        "gpt-4.1",
-        "o4-mini-2025-04-16",
-        "gpt-5",
-        "gpt-5-mini",
-      ];
-
-      return allowedOrder;
+      return this.allowedModels;
     }
   }
 
