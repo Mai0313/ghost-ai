@@ -6,6 +6,7 @@ export function Settings() {
   const [apiKey, setApiKey] = useState("");
   const [baseURL, setBaseURL] = useState("https://api.openai.com/v1");
   const [model, setModel] = useState("");
+  const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
   // Transcription language
@@ -35,6 +36,8 @@ export function Settings() {
           setApiKey(cfg.apiKey || "");
           setBaseURL(cfg.baseURL || "https://api.openai.com/v1");
         }
+        
+        if (Array.isArray(list) && list.length) setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || "";
 
         if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
@@ -128,6 +131,7 @@ export function Settings() {
         const list = await api.listOpenAIModels();
 
         if (Array.isArray(list) && list.length) {
+          setModels(list);
           // If current model is empty or not in list, auto-pick first
           if (!model || !list.includes(model)) {
             setModel(list[0] ?? "");
@@ -204,7 +208,44 @@ export function Settings() {
           onChange={(e) => setBaseURL(e.target.value)}
         />
 
-        {/* Model selection moved next to Ask input. Keep internal state for Test, but hide UI here. */}
+        <label
+          htmlFor="openai-model"
+          style={{ fontSize: 12, color: "#BDBDBD" }}
+        >
+          Model
+        </label>
+        <select
+          id="openai-model"
+          style={{
+            background: "#141414",
+            border: "1px solid #2a2a2a",
+            color: "white",
+            padding: "10px 12px",
+            borderRadius: 10,
+            outline: "none",
+          }}
+          value={model}
+          onChange={async (e) => {
+            const val = (e.target as HTMLSelectElement).value;
+            setModel(val);
+            try {
+              const api: any = (window as any).ghostAI;
+              await api?.updateOpenAIConfigVolatile?.({ model: val });
+              await api?.updateOpenAIConfig?.({ model: val });
+            } catch {}
+          }}
+        >
+          {(!models.length || !model) && (
+            <option disabled value="">
+              {models.length ? "Select a model" : "Loading models…"}
+            </option>
+          )}
+          {models.map((m) => (
+            <option key={m} style={{ background: "#141414" }} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
       </div>
       <div
         style={{

@@ -131,7 +131,7 @@ Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面�
    應用程式首次執行時會提示您配置 OpenAI API 設定：
    - API 金鑰
    - 基礎 URL（可選，預設為 https://api.openai.com/v1）
-   - 模型選擇
+   - 模型選擇（在 Ask 面板和設定面板中都可使用）
    - 其他偏好設定
 
    所有設定都使用 Electron 內建加密功能安全儲存。
@@ -303,7 +303,7 @@ const defaultHotkey = "CommandOrControl+Shift+S";
 
 - **API 金鑰**: 您的 OpenAI API 金鑰（使用 Electron safeStorage 安全儲存）
 - **基礎 URL**: 自訂 API 端點（預設為 https://api.openai.com/v1）
-- **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）
+- **模型**: 從可用模型中選擇（從 OpenAI 動態獲取）- 在 Ask 面板和設定面板中都可使用，方便操作
   注意：為了提高與不同模型的相容性，應用程式預設不設定溫度或最大 Token 參數。若您的模型支援這些參數，可透過更換模型或調整提示詞達成類似效果。
   - `OpenAIConfig.maxTokens` 仍保留於設定中以供需要時使用，型別為 `number | null`。預設為 `null`，代表「使用模型的預設/最大 token」。此欄位預設不會被送到 API；若在程式中重新啟用 token 上限，當 `maxTokens` 為 `null` 或 `undefined` 時，請完全省略該 API 參數。
 - 僅在選擇 `gpt-5` 時，應用會自動附加 `reasoning_effort: "low"` 以降低延遲/成本；為避免相容性問題，其餘模型均不會傳送此參數。

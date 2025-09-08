@@ -126,7 +126,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
    The application will prompt you to configure your OpenAI API settings on first run:
    - API Key
    - Base URL (optional, defaults to https://api.openai.com/v1)
-   - Model selection
+   - Model selection (available in both Ask panel and Settings panel)
    - Other preferences
 
    All settings are stored securely using Electron's built-in encryption.
@@ -298,7 +298,7 @@ Configure your OpenAI API settings through the application's settings interface:
 
 - **API Key**: Your OpenAI API key (stored securely using Electron's safeStorage)
 - **Base URL**: Custom API endpoint (defaults to https://api.openai.com/v1)
-- **Model**: Choose from available models (dynamically fetched from OpenAI)
+- **Model**: Choose from available models (dynamically fetched from OpenAI) - available in both the Ask panel and Settings panel for convenience
 - Note: The app does not set temperature or max tokens by default to maximize compatibility across models. If your selected model supports these, you can customize behavior by changing models or your prompts.
   - `OpenAIConfig.maxTokens` is retained in settings as a convenience and is typed as `number | null`. The default is `null`, which means "use the model's default/maximum tokens." This value is not sent to the API unless you explicitly re‑enable token limits in code; when `maxTokens` is `null` or `undefined`, omit the API parameter entirely.
 - For `gpt-5` only, the app automatically sets `reasoning_effort: "low"` to reduce latency/cost. This parameter is not sent for other models to maintain compatibility.

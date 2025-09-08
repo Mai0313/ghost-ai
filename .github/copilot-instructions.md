@@ -4,7 +4,8 @@ This document captures technical notes relevant to contributors.
 
 Model list loading and config updates
 
-- A renderer-side model selector lives in `src/components/AskPanel.tsx` (next to the Ask input).
+- Renderer-side model selectors live in both `src/components/AskPanel.tsx` (next to the Ask input) and `src/components/Settings.tsx` (in the OpenAI Settings section).
+- Both selectors are synchronized and use the same API calls to maintain consistency.
 - Models are fetched through `window.ghostAI.listOpenAIModels()` which bridges to `ipcMain.handle('openai:list-models')` and ultimately `src/shared/openai-client.ts#listModels`.
 - To avoid the selector getting stuck on "Loading models…" when the API key is missing or invalid, `listModels()` now returns a sensible default list even on errors.
 
@@ -27,10 +28,11 @@ OpenAI client behavior
 
 Renderer notes
 
-- The Ask footer model selector now refreshes automatically when settings change, via `onOpenAIConfigUpdated`.
+- Both the Ask footer model selector and Settings model selector now refresh automatically when settings change, via `onOpenAIConfigUpdated`.
 - Settings screen (`src/components/Settings.tsx`)
   - Loads once on mount; remains mounted while you toggle visibility, avoiding reload on each open.
   - Subscribes to `onOpenAIConfigUpdated` and (local save) updates to refresh state only on real updates.
+  - Contains a model selector in the OpenAI Settings section that is synchronized with the Ask panel selector.
 
 Ask panel notes
 
