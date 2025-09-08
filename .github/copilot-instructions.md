@@ -45,6 +45,11 @@ Ask panel notes
 
 - `src/components/AskPanel.tsx` is kept mounted; App toggles visibility via CSS to avoid reloading the model list on each open.
 - Model list fetch happens on mount and when `onOpenAIConfigUpdated` fires (API key/baseURL/model changes), not on every toggle.
+- **Screenshot attachment toggle (2024-12-19)**:
+  - Added screenshot toggle button (📷) next to the input field in AskPanel footer
+  - Toggle state is synchronized between AskPanel and Settings page via App component state management
+  - Changes are immediately persisted to user settings via `updateUserSettings({ attachScreenshot })`
+  - Both UI locations reflect the same state and update each other in real-time
 
 Troubleshooting
 

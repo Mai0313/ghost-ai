@@ -34,6 +34,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [attachScreenshot, setAttachScreenshot] = useState<boolean>(true);
   const barRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [barPos, setBarPos] = useState<{ x: number; y: number }>({
@@ -165,6 +166,29 @@ export function App() {
   }, [visible]);
 
   // Main process events
+  // Load user settings on mount
+  useEffect(() => {
+    const api: any = (window as any).ghostAI;
+
+    if (!api) return;
+
+    const loadUserSettings = async () => {
+      try {
+        const userSettings = await api.getUserSettings?.();
+
+        if (userSettings) {
+          const v = (userSettings as any).attachScreenshot;
+
+          setAttachScreenshot(typeof v === "boolean" ? v : true);
+        }
+      } catch (error) {
+        console.warn("Failed to load user settings:", error);
+      }
+    };
+
+    void loadUserSettings();
+  }, []);
+
   useEffect(() => {
     const api = (window as any).ghostAI;
 
@@ -318,6 +342,17 @@ export function App() {
   const appendReasoning = useCallback((delta: string) => {
     if (!delta) return;
     setReasoning((prev) => prev + delta);
+  }, []);
+
+  const handleAttachScreenshotChange = useCallback(async (value: boolean) => {
+    setAttachScreenshot(value);
+    try {
+      const api: any = (window as any).ghostAI;
+
+      await api?.updateUserSettings?.({ attachScreenshot: value });
+    } catch (error) {
+      console.warn("Failed to update attachScreenshot setting:", error);
+    }
   }, []);
 
   const finalizeLive = useCallback(
@@ -831,12 +866,16 @@ export function App() {
             </button>
           </div>
           <div style={{ marginTop: 8 }}>
-            <Settings />
+            <Settings
+              attachScreenshot={attachScreenshot}
+              onAttachScreenshotChange={handleAttachScreenshotChange}
+            />
           </div>
         </div>
 
         <div style={{ display: tab === "ask" ? "block" : "none" }}>
           <AskPanel
+            attachScreenshot={attachScreenshot}
             busy={busy}
             canRegenerate={canRegenerate}
             currentPageLabel={currentPageLabel}
@@ -851,6 +890,7 @@ export function App() {
             streaming={streaming}
             text={text}
             webSearchStatus={webSearchStatus}
+            onAttachScreenshotChange={handleAttachScreenshotChange}
             onRegenerate={() => void onRegenerate()}
             onSubmit={() => void onSubmit()}
           />

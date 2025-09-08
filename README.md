@@ -67,6 +67,7 @@ Ghost AI is a privacy-first cross-platform desktop application built with Electr
 ### 🎨 **User Experience**
 
 - **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
+- **Quick Screenshot Toggle**: Toggle screenshot attachment directly from the Ask panel with the 📷 button next to the input field, synchronized with Settings
 - **Unified Ask card with pagination (streaming‑only)**: The AI response and the input are combined into one card. Within the same session, past answers are shown as pages with Prev/Next controls and a page indicator (e.g., `2/5`). While streaming, you can stay on an older page; use Next to jump back to Live at any time.
 - **Unified rendering for answers and transcripts**: Both analyze responses and realtime transcripts stream into the same reply area using a shared render sink (append/finish). Transcript segments are also saved into the same paginated history as `{ user, assistant }` (assistant initially mirrors the transcript) so you can page through them just like AI answers.
 - **Reasoning-aware rendering**: When the selected model supports reasoning, the app streams the model's reasoning live in a smaller, more transparent block labeled “Reasoning”, shown above the final answer. Event types handled include `response.reasoning_summary_text.delta/.done` and `response.reasoning_summary_part.added/.done`.
@@ -255,6 +256,7 @@ npm run dist
    - attach the screenshot and send both image + question, or
    - skip the screenshot and send only your question.
      The analysis runs via the streaming Responses API.
+     **Note**: You can also toggle this setting directly from the Ask panel using the 📷 button next to the input field. Changes are synchronized between both locations in real-time.
 6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
 7. **Memory Cleanup**: All traces automatically cleared from memory
 8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.

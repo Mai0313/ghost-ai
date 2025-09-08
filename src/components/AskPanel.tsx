@@ -28,6 +28,8 @@ type AskPanelProps = {
   setText: (val: string) => void;
   onSubmit: () => void;
   inputRef?: React.RefObject<HTMLInputElement> | null;
+  attachScreenshot: boolean;
+  onAttachScreenshotChange: (value: boolean) => void;
 };
 
 export const AskPanel: React.FC<AskPanelProps> = ({
@@ -47,6 +49,8 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   setText,
   onSubmit,
   inputRef,
+  attachScreenshot,
+  onAttachScreenshotChange,
 }) => {
   const [models, setModels] = useState<string[]>([]);
   const [model, setModel] = useState<string>("");
@@ -226,6 +230,30 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             }
           }}
         />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            checked={attachScreenshot}
+            id="ask-attach-screenshot"
+            style={{
+              width: 16,
+              height: 16,
+              cursor: "pointer",
+            }}
+            type="checkbox"
+            onChange={(e) => onAttachScreenshotChange(!!e.target.checked)}
+          />
+          <label
+            htmlFor="ask-attach-screenshot"
+            style={{
+              fontSize: 12,
+              color: "#BDBDBD",
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            📷
+          </label>
+        </div>
         <select
           disabled={busy || streaming || !models.length}
           id="ask-model-select"

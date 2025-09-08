@@ -2,7 +2,15 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 
 import { IconCheckCircle, IconXCircle } from "./Icons";
 
-export function Settings() {
+type SettingsProps = {
+  attachScreenshot?: boolean;
+  onAttachScreenshotChange?: (value: boolean) => void;
+};
+
+export function Settings({
+  attachScreenshot: externalAttachScreenshot,
+  onAttachScreenshotChange,
+}: SettingsProps = {}) {
   const [apiKey, setApiKey] = useState("");
   const [baseURL, setBaseURL] = useState("https://api.openai.com/v1");
   const [model, setModel] = useState("");
@@ -22,7 +30,7 @@ export function Settings() {
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
-  
+
   // Refs for debouncing
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastApiKeyRef = useRef<string>("");
@@ -31,11 +39,12 @@ export function Settings() {
   // Optimized config loading with better error handling
   const loadOpenAIConfigAndModels = useCallback(async (showLoading = false) => {
     const api: any = (window as any).ghostAI;
+
     if (!api) return;
 
     try {
       if (showLoading) setLoadingModels(true);
-      
+
       const [cfg, list] = await Promise.all([
         api.getOpenAIConfig?.(),
         api.listOpenAIModels?.(),
@@ -51,7 +60,7 @@ export function Settings() {
       if (Array.isArray(list) && list.length) {
         setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || "";
-        
+
         if (cfgModel && list.includes(cfgModel)) {
           setModel(cfgModel);
         } else if (list.length > 0) {
@@ -69,6 +78,7 @@ export function Settings() {
 
   const loadUserSettingsAndPrompts = useCallback(async () => {
     const api: any = (window as any).ghostAI;
+
     if (!api) return;
 
     try {
@@ -79,20 +89,33 @@ export function Settings() {
       ]);
 
       // Set transcription language
-      const lang = (userSettings && (userSettings as any).transcribeLanguage) || "en";
+      const lang =
+        (userSettings && (userSettings as any).transcribeLanguage) || "en";
+
       setTranscribeLanguage(lang === "zh" ? "zh" : "en");
-      
+
       // Set screenshot attachment setting
       const v = userSettings && (userSettings as any).attachScreenshot;
-      setAttachScreenshot(typeof v === "boolean" ? v : true);
-      
+      const screenshotValue = typeof v === "boolean" ? v : true;
+
+      setAttachScreenshot(screenshotValue);
+
+      // If external control is provided, sync with it
+      if (onAttachScreenshotChange && externalAttachScreenshot !== undefined) {
+        onAttachScreenshotChange(screenshotValue);
+      }
+
       // Set prompts
       if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
         setPromptNames(promptsInfo.prompts);
-        const current = (typeof activePromptName === "string" && activePromptName) ||
-                       promptsInfo.defaultPrompt || null;
+        const current =
+          (typeof activePromptName === "string" && activePromptName) ||
+          promptsInfo.defaultPrompt ||
+          null;
+
         setDefaultPrompt(current);
         const initial = current || promptsInfo.prompts[0] || null;
+
         setSelectedPrompt(initial);
       }
     } catch (error) {
@@ -103,6 +126,7 @@ export function Settings() {
   // Initial load with loading state
   useEffect(() => {
     const api: any = (window as any).ghostAI;
+
     if (!api) return;
 
     const initializeSettings = async () => {
@@ -126,6 +150,7 @@ export function Settings() {
           void loadOpenAIConfigAndModels(true);
         });
       } catch {}
+
       return undefined;
     })();
 
@@ -155,7 +180,10 @@ export function Settings() {
     }
 
     // Skip if values haven't actually changed
-    if (apiKey === lastApiKeyRef.current && baseURL === lastBaseURLRef.current) {
+    if (
+      apiKey === lastApiKeyRef.current &&
+      baseURL === lastBaseURLRef.current
+    ) {
       return;
     }
 
@@ -167,11 +195,12 @@ export function Settings() {
     // Set debounced timeout
     debounceTimeoutRef.current = setTimeout(async () => {
       const api: any = (window as any).ghostAI;
+
       if (!api) return;
 
       try {
         setLoadingModels(true);
-        
+
         // Update in-memory client without persisting to disk yet
         await api.updateOpenAIConfigVolatile({ apiKey, baseURL } as any);
         const list = await api.listOpenAIModels();
@@ -183,7 +212,7 @@ export function Settings() {
             setModel(list[0] ?? "");
           }
         }
-        
+
         // Update refs to track changes
         lastApiKeyRef.current = apiKey;
         lastBaseURLRef.current = baseURL;
@@ -226,9 +255,7 @@ export function Settings() {
   if (loadingConfig) {
     return (
       <div style={{ color: "white", textAlign: "center", padding: "20px" }}>
-        <div style={{ fontSize: 14, opacity: 0.9 }}>
-          Loading settings...
-        </div>
+        <div style={{ fontSize: 14, opacity: 0.9 }}>Loading settings...</div>
       </div>
     );
   }
@@ -310,7 +337,7 @@ export function Settings() {
               // Update both volatile and persistent config
               await Promise.all([
                 api?.updateOpenAIConfigVolatile?.({ model: val }),
-                api?.updateOpenAIConfig?.({ model: val })
+                api?.updateOpenAIConfig?.({ model: val }),
               ]);
             } catch (error) {
               console.warn("Failed to update model:", error);
@@ -319,7 +346,11 @@ export function Settings() {
         >
           {(!models.length || !model) && (
             <option disabled value="">
-              {loadingModels ? "Loading models…" : models.length ? "Select a model" : "No models available"}
+              {loadingModels
+                ? "Loading models…"
+                : models.length
+                  ? "Select a model"
+                  : "No models available"}
             </option>
           )}
           {models.map((m) => (
@@ -383,10 +414,21 @@ export function Settings() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <input
-            checked={attachScreenshot}
+            checked={
+              externalAttachScreenshot !== undefined
+                ? externalAttachScreenshot
+                : attachScreenshot
+            }
             id="attach-screenshot"
             type="checkbox"
-            onChange={(e) => setAttachScreenshot(!!e.target.checked)}
+            onChange={(e) => {
+              const newValue = !!e.target.checked;
+
+              setAttachScreenshot(newValue);
+              if (onAttachScreenshotChange) {
+                onAttachScreenshotChange(newValue);
+              }
+            }}
           />
           <label
             htmlFor="attach-screenshot"
