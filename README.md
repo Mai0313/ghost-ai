@@ -18,443 +18,169 @@
 
 👻 **An invisible AI-powered desktop assistant that captures, analyzes, and provides insights**
 
-Ghost AI is a privacy-first cross-platform desktop application built with Electron and TypeScript. It provides three core features: text input with screenshot analysis, voice recording with real-time conversation support, and stealth operation interface. The system integrates directly with OpenAI API through global hotkeys, with all API settings configurable through the frontend interface, offering seamless AI assistance while remaining completely invisible to screen sharing and monitoring software.
+Ghost AI is a privacy-first cross-platform desktop application that provides seamless AI assistance while remaining completely invisible to screen sharing and monitoring software. It integrates directly with OpenAI API through global hotkeys, offering three core features: text input with screenshot analysis, voice recording with real-time conversation support, and stealth operation interface.
 
 **Other Languages**: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
-> ID model simplified
->
-> - sessionId: single conversation identifier (UUID). Required on all analyze/transcribe events.
-> - requestId: single streaming request identifier.
-> - requestSessionId: snapshot of sessionId at request start (internal; avoids race with Clear).
-> - Removed: OpenAI Conversations helpers (createConversation, retrieveConversationItems).
-
-## ✨ Features
+## ✨ Key Features
 
 ### 👻 **Invisible Operation**
-
 - **Ghost Mode**: Completely invisible during screenshots and screen sharing
 - **Stealth Hotkeys**: Low-level keyboard hooks that avoid detection by monitoring software
 - **Hidden Process**: Disguised process names and window titles for maximum privacy
-- **Memory-Only Images**: Images are processed entirely in memory; they never touch disk. Plain-text Q/A conversation is logged per session under `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for debugging/inspection.
+- **Memory-Only Processing**: Images are processed entirely in memory; they never touch disk
 
 ### ⚡ **Lightning Fast Capture**
-
 - **Global Hotkeys**: Trigger screenshots from any application with customizable key combinations
 - **Instant Analysis**: Real-time image analysis using OpenAI's Vision API
-- **Smart Prompting**: Store prompt files under `~/.ghost-ai/prompts`. The active prompt selection is persisted in settings and applied automatically (editing is done outside the app)
+- **Smart Prompting**: Store and use custom prompts for specific analysis needs
 - **Multiple Capture Modes**: Full screen, active window, or custom region selection
 
 ### 🤖 **AI-Powered Intelligence**
-
 - **OpenAI Vision**: Advanced image understanding and analysis capabilities
 - **Context-Aware**: Provide custom prompts to get specific insights about your screenshots
+- **Conversation Memory**: Maintains context across multiple interactions
 - **Error Handling**: Robust retry mechanisms and graceful error recovery
-- **Rate Limiting**: Built-in API quota management and request optimization
-- **Simple Conversation Memory**: Keeps a plain‑text Q/A history in memory per session for prompt composition; after each request completes, the current session’s conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-- **Default Prompt Injection (first turn only)**: The active prompt is persisted in settings and mirrored to `~/.ghost-ai/prompts/default.txt`. It is injected only on the first turn of each session. Subsequent turns include only your question and the plain‑text conversation history. Regeneration preserves the original first‑turn prompt in prior context.
-- **Top-level Session**: A `sessionId` is created on app start and whenever you press Clear (Cmd/Ctrl+R). All capture and transcription events carry this `sessionId`, and conversation logs are written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` for easier correlation.
-  - A structured Session Store is also maintained in memory and persisted to `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`, recording each send with `{ index, requestId, log_path, text_input, ai_output }`.
+
+### 🎤 **Voice Recording & Transcription**
+- **Real-time Transcription**: Live voice-to-text conversion with OpenAI's Whisper API
+- **Voice Controls**: Pause, resume, or stop recording without losing context
+- **Language Support**: Choose between English and Chinese transcription
+- **Seamless Integration**: Voice transcripts integrate with the same conversation flow
 
 ### 🔒 **Privacy & Security**
-
-- **Images never persisted**: Screenshots are processed in RAM only and are not saved to disk
-- **Conversation logs**: For debugging, the app writes the current plain-text Q/A conversation to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log` after each analyze request completes. This fix ensures new sessions create proper separate log paths without mixing with previous sessions. Interrupted conversations (via Ctrl+R) are not logged to prevent race conditions.
+- **Images Never Persisted**: Screenshots are processed in RAM only and are not saved to disk
 - **Encrypted Communication**: All API calls use HTTPS with certificate pinning
-- **Keylogger Detection**: Warns users about potential privacy risks from monitoring software
 - **Automatic Cleanup**: Memory and network traces are automatically cleared
+- **No Data Collection**: Your data stays on your device
 
 ### 🎨 **User Experience**
-
-- **Floating HUD**: A modern top‑center control bar (bar‑only by default) with Listen, Ask, Hide, and Settings
-- **Quick Screenshot Toggle**: Toggle screenshot attachment directly from the Ask panel with the 📷 button next to the input field, synchronized with Settings
-- **Unified Ask card with pagination (streaming‑only)**: The AI response and the input are combined into one card. Within the same session, past answers are shown as pages with Prev/Next controls and a page indicator (e.g., `2/5`). While streaming, you can stay on an older page; use Next to jump back to Live at any time.
-- **Unified rendering for answers and transcripts**: Both analyze responses and realtime transcripts stream into the same reply area using a shared render sink (append/finish). Transcript segments are also saved into the same paginated history as `{ user, assistant }` (assistant initially mirrors the transcript) so you can page through them just like AI answers.
-- **Reasoning-aware rendering**: When the selected model supports reasoning, the app streams the model's reasoning live in a smaller, more transparent block labeled “Reasoning”, shown above the final answer. Event types handled include `response.reasoning_summary_text.delta/.done` and `response.reasoning_summary_part.added/.done`.
-- **Web search indicator**: When the model triggers a web search call (`response.web_search_call.in_progress/searching/completed`), a subtle loading indicator with “Searching the web…” appears above the answer output.
-- **Regenerate on transcript pages**: Select a transcript page and click Regenerate to run analysis using that transcript as the question. The assistant content for that page is replaced in place; the original transcript remains as the preceding user message for context.
-- **Regenerate on completed page**: After an answer finishes, a Regenerate button appears. Clicking it resends the original question for that page using only the prior conversation context (excluding that page), producing a new answer in place without creating a new page.
-- **Elegant validation feedback**: API settings tests show clear visual feedback with icons and color-coded notifications
-- **Fixed hotkeys (all are global)**: Ask = Cmd/Ctrl+Enter, Voice Toggle = Cmd/Ctrl+Shift+Enter (realtime transcription), Toggle Hide = Cmd/Ctrl+\\, Clear Ask = Cmd/Ctrl+R (also resets voice state), Scroll Up/Down = Cmd/Ctrl+Up/Down, Prev/Next Page = Cmd/Ctrl+Shift+Up/Down
-- **Listen controls**: While recording, you can Pause/Resume live transcript without stopping the session, or Stop to end recording.
-- **Edge-friendly overlay**: The overlay is full‑screen and click‑through by default; it only captures mouse input when you hover the HUD or bubbles. This prevents invisible blockers and lets you drag the bar to the very top/bottom edges.
-- **Inline error messages**: If something goes wrong, errors show inline where the AI answer appears, so you can retry immediately
-- **Quick clear / Interrupt**: Press Cmd/Ctrl+R anytime to abort an in‑progress AI answer, clear the Ask bubble and conversation history, and start a brand‑new session instantly
-- **Minimal Friction**: Prompt composer with custom prompt field and Send button
-- **Customizable Settings**: Personalize hotkeys, default prompts, and behavior
+- **Floating HUD**: Modern top-center control bar with Listen, Ask, Hide, and Settings
+- **Quick Screenshot Toggle**: Toggle screenshot attachment directly from the Ask panel
+- **Unified Interface**: AI responses and voice transcripts in the same conversation flow
+- **Pagination**: Navigate through conversation history with Prev/Next controls
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
-- **Scrollbar styling**: The AI answer panel uses a custom thin, rounded scrollbar that matches the dark panel aesthetics. You can tweak it in `src/styles/blocknote-custom.css`.
-
-### 🏗️ **Modern Architecture**
-
-- **Frontend-Only Application**: Pure Electron + TypeScript with no backend dependencies
-- **UI Framework**: React for responsive and modern user interface
-- **Direct API Integration**: OpenAI SDK integrated directly in the main process
-- **Frontend Configuration**: All API settings configurable through the user interface
-- **Type Safety**: Full TypeScript type annotations throughout the codebase
-- **Memory-First**: All processing happens in memory without disk persistence
-
-### Overlay click‑through behavior
-
-- The main window is a transparent, full‑screen overlay with no frame/shadow.
-- It starts in click‑through mode so your desktop/apps remain interactive.
-- When your cursor enters the HUD or bubbles, the app temporarily disables click‑through so you can click/drag; it re‑enables click‑through when you move away.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- **Node.js 18+** for the Electron application
 - **OpenAI API Key** for AI analysis features
+- **Windows, macOS, or Linux** operating system
 
 ### Installation
 
-1. **Clone the repository**
+1. **Download the latest release** from the [Releases page](https://github.com/Mai0313/ghost-ai/releases)
 
-   ```bash
-   git clone https://github.com/Mai0313/ghost-ai.git
-   cd ghost-ai
-   ```
+2. **Install the application** for your platform:
+   - **Windows**: Run the `.exe` installer
+   - **macOS**: Open the `.dmg` file and drag to Applications
+   - **Linux**: Use the `.AppImage` file or install the `.deb` package
 
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure your OpenAI API settings**
-
-   The application will prompt you to configure your OpenAI API settings on first run:
-   - API Key
-   - Base URL (optional, defaults to https://api.openai.com/v1)
-   - Model selection (available in both Ask panel and Settings panel)
-   - Other preferences
-
-   All settings are stored securely using Electron's built-in encryption.
-
-### Running the Application
-
-1. **Start the application in development mode**
-
-   ```bash
-   npm run dev
-   ```
-
-2. **Fixed hotkeys (global)**
-   - **Ask (toggle Ask panel)**: `Cmd/Ctrl+Enter` (press again to collapse)
-   - **Voice (realtime transcription)**: `Cmd/Ctrl+Shift+Enter` — captures microphone and (where permitted) system audio, with client-side audio batching (~220 ms or 32 KB) to improve stability while keeping latency low. Uses `gpt-4o-mini-transcribe` by default.
-   - **Toggle Hide**: `Cmd/Ctrl+\\` (works even if the HUD was hidden via the Hide button)
-   - **Clear Ask**: `Cmd/Ctrl+R` (also stops recording and resets voice state)
-   - **Scroll Up/Down** (Ask/Transcript content): `Cmd/Ctrl+Up` / `Cmd/Ctrl+Down`
-   - **Prev/Next Page** (pagination within a session): `Cmd/Ctrl+Shift+Up` / `Cmd/Ctrl+Shift+Down`
-
-3. **Build for production**
-
-   ```bash
-   npm run build
-   ```
+3. **Configure your OpenAI API settings** on first launch:
+   - Enter your OpenAI API key
+   - Choose your preferred model
+   - Set up custom prompts (optional)
 
 ### First Use
 
+1. **Press `Ctrl/Cmd+Enter`** to open the Ask panel
+2. **Type your question** and press Send
+3. **Use `Ctrl/Cmd+Shift+Enter`** to start voice recording
+4. **Press `Ctrl/Cmd+\`** to hide/show the interface
+5. **Press `Ctrl/Cmd+R`** to clear conversation and start fresh
+
+## ⌨️ Hotkeys
+
+| Action | Hotkey | Description |
+|--------|--------|-------------|
+| **Ask Panel** | `Ctrl/Cmd+Enter` | Toggle the Ask panel |
+| **Voice Recording** | `Ctrl/Cmd+Shift+Enter` | Start/stop voice recording |
+| **Hide/Show** | `Ctrl/Cmd+\` | Hide or show the interface |
+| **Clear Session** | `Ctrl/Cmd+R` | Clear conversation and start fresh |
+| **Scroll Up/Down** | `Ctrl/Cmd+Up/Down` | Scroll through conversation |
+| **Previous/Next Page** | `Ctrl/Cmd+Shift+Up/Down` | Navigate conversation history |
+
+## 🎯 How to Use
+
+### Screenshot Analysis
 1. Press your configured hotkey to capture a screenshot
-2. Use the top control bar to switch between Ask and Settings
-3. Enter your question and click Send. The active prompt from `~/.ghost-ai/prompts` is applied automatically on the first turn of a session.
-4. View the AI response inside the bubble. Answers are rendered as Markdown with proper formatting. Code blocks are shown without syntax highlighting.
+2. The application automatically hides all windows
+3. Enter your question in the Ask panel
+4. Get AI analysis of your screenshot with your question
 
-## 📁 Project Structure
+### Voice Recording
+1. Press `Ctrl/Cmd+Shift+Enter` to start recording
+2. Speak your question or thoughts
+3. The app transcribes your speech in real-time
+4. Get AI responses based on your voice input
 
-```
-├── .devcontainer/          # VS Code Dev Container configuration
-├── .github/
-│   ├── workflows/          # CI/CD workflows
-│   └── copilot-instructions.md
-├── .kiro/
-│   └── specs/ghost-ai/     # Project specifications and requirements
-├── src/
-│   ├── main/               # Electron main process
-│   │   ├── hotkey-manager.ts    # Global hotkey management
-│   │   ├── screenshot-manager.ts # Screenshot capture
-│   │   ├── audio-manager.ts     # Voice recording
-│   │   └── hide-manager.ts      # Stealth interface
-│   ├── renderer/           # React renderer process
-│   │   ├── App.tsx               # Top-level UI state and wiring
-│   │   ├── main.tsx              # Slim entry that renders <App />
-│   │   ├── components/           # UI components (HUDBar, AskPanel, TranscriptBubble, MarkdownViewer, Settings, Icons)
-│   │   ├── hooks/                # Custom hooks (useTranscription)
-│   │   └── styles/               # Theme and styles
-│   ├── shared/             # Shared utilities
-│   │   ├── openai-client.ts     # OpenAI API integration
-│   │   └── types.ts             # TypeScript definitions
-│   └── services/           # Business logic services
-├── tests/                  # Test suite
-├── package.json            # Node.js project configuration
-├── tsconfig.json           # TypeScript configuration
-├── electron-builder.json   # Electron packaging configuration
-└── README.md
-```
+### Custom Prompts
+1. Create prompt files in `~/.ghost-ai/prompts/`
+2. Select your active prompt in Settings
+3. The prompt is automatically applied to your first question in each session
 
-Note: Removed unused service stubs `src/services/audio-processor.ts` and `src/services/image-processor.ts`.
+### Settings Configuration
+- **API Settings**: Configure your OpenAI API key and model preferences
+- **Hotkeys**: Customize keyboard shortcuts
+- **Transcription**: Choose language and audio settings
+- **Screenshots**: Configure capture behavior and attachment settings
 
-## 🛠️ Available Commands
+## 🔧 Configuration
 
-### Development Commands
-
-```bash
-# Development
-npm run dev                             # Start development mode
-npm run build                           # Build for production
-npm run test                            # Run tests
-npm run lint                            # Lint TypeScript code
-npm run format                          # Format code
-
-# Packaging
-npm run dist                            # Build and package (electron-builder)
-npm run dist:win                        # Package for Windows
-npm run dist:win:portable               # Package Windows Portable (.exe, no installer)
-npm run dist:mac                        # Package for macOS (DMG)
-npm run dist:mac:zip                    # Package for macOS (ZIP)
-npm run dist:linux                      # Package for Linux
-npm run dist:linux:portable             # Package Linux Portable (AppImage)
-
-# Dependencies
-npm install <package>                   # Add dependency
-npm install <package> --save-dev        # Add dev dependency
-```
-
-### Packaging
-
-```bash
-npm run dist   # Build and package for your platform
-```
-
-#### OS-specific packaging notes
-
-- Windows: `npm run dist:win` produces an NSIS installer under `release/` (e.g., `Ghost AI Setup <version>.exe`).
-- Windows Portable: `npm run dist:win:portable` produces a single-file portable `.exe` under `release/` that runs without installation (no installer, no elevation). Useful for USB/portable use-cases. Auto‑update is not supported for portable builds.
-- macOS: `npm run dist:mac` must be run on macOS (DMG creation and code signing require macOS). For a zipped app bundle, use `npm run dist:mac:zip`.
-- Linux: `npm run dist:linux` must be run on a Linux environment for best results (AppImage/deb). On Windows, use WSL2 or a Linux machine. For a portable single-file, use `npm run dist:linux:portable` (AppImage).
-- All artifacts are written to the `release/` directory. Use `--publish never` (default in scripts) to avoid accidental uploads.
-
-### Application Icon
-
-- Windows installer and app icon use `ghost.ico` in the project root.
-- To change the icon, replace the file `ghost.ico` and rebuild:
-
-```bash
-npm run dist
-```
-
-## 🎯 How It Works
-
-### Capture Flow
-
-1. **Hotkey Trigger**: Press your configured global hotkey (e.g., `Ctrl+Shift+S`)
-2. **Invisible Mode**: Application immediately hides all windows
-3. **Screenshot Capture**: System captures the current screen to memory
-4. **Prompt Input**: UI appears for you to enter analysis instructions
-5. **AI Analysis**: Depending on Settings → Screenshots → "Attach a screenshot with each Ask", the app will either:
-   - attach the screenshot and send both image + question, or
-   - skip the screenshot and send only your question.
-     The analysis runs via the streaming Responses API.
-     **Note**: You can also toggle this setting directly from the Ask panel using the 📷 button next to the input field. Changes are synchronized between both locations in real-time.
-6. **Results Display**: Answer streams live above the input; on errors, an inline `Error: ...` shows in the same bubble, and you can retry right away. The app is streaming‑only; legacy non‑streaming chat flows have been removed.
-7. **Memory Cleanup**: All traces automatically cleared from memory
-8. **Conversation Memory**: After each answer, the app appends `Q:`/`A:` lines to an in‑memory string; on the next turn, it sends that history plus the new question. The current conversation text is also written to `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`.
-
-### Privacy Protection
-
-- **No Disk Storage**: Screenshots never saved to disk
-- **Memory Processing**: All image data processed in RAM only
-- **Stealth Operation**: Invisible to screen recording and sharing
-- **Secure Communication**: Encrypted API calls
-- **Process Hiding**: Disguised process names and window titles
-- **Automatic Cleanup**: Memory and network traces cleared on exit
-
-### AI Integration
-
-- **OpenAI Vision API**: State-of-the-art image understanding
-- **Custom Prompts**: Tailor analysis to your specific needs
-- **Context Awareness**: AI understands both image content and your questions
-- **Error Recovery**: Robust handling of API failures and rate limits
-- **Response Optimization**: Intelligent caching and request batching
-
-## ⚙️ Configuration
-
-### Hotkey Customization
-
-Edit the hotkey configuration in the settings:
-
-```typescript
-// Default hotkey: Ctrl+Shift+S
-const defaultHotkey = "CommandOrControl+Shift+S";
-
-// Custom hotkey examples:
-// "CommandOrControl+Alt+G"     // Ctrl+Alt+G (Windows/Linux) or Cmd+Alt+G (macOS)
-// "CommandOrControl+Shift+A"   // Ctrl+Shift+A (Windows/Linux) or Cmd+Shift+A (macOS)
-// "F12"                        // Function key F12
-```
-
-### API Configuration
-
-Configure your OpenAI API settings through the application's settings interface:
-
-- **API Key**: Your OpenAI API key (stored securely using Electron's safeStorage)
-- **Base URL**: Custom API endpoint (defaults to https://api.openai.com/v1)
-- **Model**: Choose from available models (dynamically fetched from OpenAI) - available in both the Ask panel and Settings panel for convenience
-- Note: The app does not set temperature or max tokens by default to maximize compatibility across models. If your selected model supports these, you can customize behavior by changing models or your prompts.
-  - `OpenAIConfig.maxTokens` is retained in settings as a convenience and is typed as `number | null`. The default is `null`, which means "use the model's default/maximum tokens." This value is not sent to the API unless you explicitly re‑enable token limits in code; when `maxTokens` is `null` or `undefined`, omit the API parameter entirely.
-- For `gpt-5` only, the app automatically sets `reasoning_effort: "low"` to reduce latency/cost. This parameter is not sent for other models to maintain compatibility.
-
-All settings are encrypted and stored locally - no external services required.
-
-### Troubleshooting
-
-- If the model selector next to the Ask input stays on "Loading models…":
-  - Open Settings and enter a valid OpenAI API key and Base URL.
-  - The app now falls back to a default model list even when the API key is missing/invalid, so you can still pick a model. If requests later fail, verify your account has access to the selected model.
-  - Changing settings triggers an automatic refresh in the Ask panel.
-  - Settings panel no longer reloads on every open; it mounts once and avoids flicker.
-
-#### Packaged app installs but no UI is visible (Windows/macOS/Linux)
-
-- Symptom: After running the installer, you only see the tray icon and process in Task Manager, but no window appears.
-- Causes and fixes:
-  1. Production resource path
-     - Ensure `vite.config.ts` sets `base: './'` so the renderer assets load correctly via `file://` in Electron.
-  2. Environment detection
-     - In `src/main/main.ts`, detect production with `app.isPackaged` instead of `process.env.NODE_ENV` to avoid trying to load `http://localhost:5173` in the packaged app.
-  3. Overlay behavior
-     - The app is an overlay and may start hidden/click‑through. Use the global hotkey `Ctrl/Cmd+Enter` or the tray menu "Show Overlay" to reveal the HUD.
-  4. Rebuild/package
-     - Rebuild and repackage after applying the fixes:
-       ```bash
-       npm run build
-       npm run dist:win   # or :mac / :linux
-       ```
-
-### Realtime Transcription Language
-
-- In Settings → Transcription, you can choose the transcription language: **English (en)** or **中文 (zh)**. Default is **en**.
-- This hint is sent to the realtime transcription session to reduce garbled characters when speaking Chinese (e.g., avoid outputs like `��得到嗎?`).
-
-### UI customization (opacity and colors)
-
-- To adjust overall opacity (both background and text), change the theme opacity in `src/styles/theme.ts`:
-
-```96:96:src/styles/theme.ts
-export const theme = makeTheme();
-```
-
-For example, `makeTheme(0.75)` makes the UI more transparent; values are 0–1.
-
-- To change colors, edit the `palette` in the same file:
-
-```54:65:src/styles/theme.ts
-const palette = {
-  text: [255, 255, 255],
-  mutedText: [189, 189, 189],
-  barBg: [30, 30, 30],
-  settingsBg: [20, 20, 20],
-  panelBg: [22, 22, 22],
-  panelFooterBg: [24, 24, 24],
-  inputBg: [22, 22, 22],
-  border: [255, 255, 255],
-  shadow: [0, 0, 0],
-  primary: [43, 102, 246],
-  danger: [255, 40, 40],
-};
-```
-
-- Component styles are centralized in `src/styles/styles.ts` and consume the theme, so most tweaks should only require the edits above.
+### API Settings
+- **API Key**: Your OpenAI API key (stored securely)
+- **Base URL**: Custom API endpoint (optional)
+- **Model**: Choose from available OpenAI models
+- **Transcription Language**: English or Chinese
 
 ### Privacy Settings
+- **Stealth Mode**: Hide from screen sharing software
+- **Memory Only**: Never save images to disk
+- **Auto Cleanup**: Clear traces automatically
+- **Process Hiding**: Disguise application process
 
-Customize privacy and security options:
+## 🛠️ Troubleshooting
 
-```typescript
-interface PrivacySettings {
-  stealthMode: boolean; // Hide from screen sharing
-  memoryOnly: boolean; // Never save to disk
-  autoCleanup: boolean; // Auto-clear memory traces
-  processHiding: boolean; // Disguise process names
-  keyloggerDetection: boolean; // Warn about monitoring software
-}
-```
+### Common Issues
 
-### Prompts Directory (Read-only)
+**Application won't start:**
+- Check if you have the required permissions
+- Ensure your OpenAI API key is valid
+- Try running as administrator (Windows) or with sudo (Linux/macOS)
 
-- Ghost AI loads prompts from `~/.ghost-ai/prompts`.
-- Ghost AI never writes or overwrites your prompt files. The app only reads from the prompts directory.
-- The active prompt name is persisted in settings; there is no fallback to `default.txt`. You must select one in Settings → Prompts.
-- If `default.txt` does not exist, the app creates an empty `default.txt` on first run.
-- To create or edit prompts, manage files directly in your editor (e.g., `general.txt`, `ui-review.md`).
+**No response from AI:**
+- Verify your OpenAI API key is correct
+- Check your internet connection
+- Ensure you have sufficient API credits
 
-## 🔧 Development
+**Voice recording not working:**
+- Check microphone permissions
+- Verify audio input devices are working
+- Try restarting the application
 
-### Setting Up Development Environment
+**Interface not visible:**
+- Press `Ctrl/Cmd+Enter` to show the Ask panel
+- Check system tray for the application icon
+- Try the global hotkey `Ctrl/Cmd+\` to toggle visibility
 
-1. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-2. **Configure API settings**
-
-   The application will guide you through setting up your OpenAI API configuration on first run.
-
-3. **Run in development mode**
-
-   ```bash
-   npm run dev
-   ```
-
-4. **Run tests**
-
-   ```bash
-   npm test
-   ```
-
-### Building for Production
-
-```bash
-# Build the application
-npm run build
-
-# Package for distribution
-npm run dist
-```
+### Getting Help
+- Check the [Issues page](https://github.com/Mai0313/ghost-ai/issues) for known problems
+- Create a new issue if you encounter a bug
+- Join discussions in the [Discussions section](https://github.com/Mai0313/ghost-ai/discussions)
 
 ## 🤝 Contributing
 
 We welcome contributions! Please feel free to:
-
 - 🐛 Report bugs and issues
 - 💡 Suggest new features or improvements
 - 🔧 Submit pull requests
 - 📖 Improve documentation
-- 🧪 Add tests and improve coverage
 
-### Development Guidelines
-
-- Follow the existing code style and conventions
-- Add tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PRs
-
-## 📖 Documentation
-
-For detailed documentation, visit: [https://mai0313.github.io/ghost-ai/](https://mai0313.github.io/ghost-ai/)
-
-## 🛡️ Security
-
-If you discover a security vulnerability, please send an email to the maintainers. All security vulnerabilities will be promptly addressed.
-
-## 👥 Contributors
-
-[![Contributors](https://contrib.rocks/image?repo=Mai0313/ghost-ai)](https://github.com/Mai0313/ghost-ai/graphs/contributors)
-
-Made with [contrib.rocks](https://contrib.rocks)
+### Development Setup
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Run in development mode with `npm run dev`
+4. Build for production with `npm run build`
 
 ## 📄 License
 
@@ -464,8 +190,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <center>
 
-**Made with ❤️ for privacy-conscious developers**
+**Made with ❤️ for privacy-conscious users**
 
-_Ghost AI - Invisible AI-powered screenshot analysis_
+_Ghost AI - Invisible AI-powered desktop assistance_
 
 </center>
