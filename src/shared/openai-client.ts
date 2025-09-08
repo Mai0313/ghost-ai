@@ -132,7 +132,7 @@ export class OpenAIClient {
     } as ChatCompletionCreateParamsStreaming;
 
     if (config.model === "gpt-5") {
-      request.reasoning_effort = "low";
+      request.reasoning_effort = "high";
       request.service_tier = "priority";
     }
     const stream: Stream<ChatCompletionChunk> =
