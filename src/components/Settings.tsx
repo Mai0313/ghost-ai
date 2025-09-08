@@ -36,7 +36,7 @@ export function Settings() {
           setApiKey(cfg.apiKey || "");
           setBaseURL(cfg.baseURL || "https://api.openai.com/v1");
         }
-        
+
         if (Array.isArray(list) && list.length) setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || "";
 
@@ -227,9 +227,11 @@ export function Settings() {
           value={model}
           onChange={async (e) => {
             const val = (e.target as HTMLSelectElement).value;
+
             setModel(val);
             try {
               const api: any = (window as any).ghostAI;
+
               await api?.updateOpenAIConfigVolatile?.({ model: val });
               await api?.updateOpenAIConfig?.({ model: val });
             } catch {}

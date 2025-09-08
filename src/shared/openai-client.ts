@@ -72,7 +72,10 @@ export class OpenAIClient {
     try {
       const model_list = await client.models.list();
       const model_ids = (model_list.data ?? []).map((m: any) => m.id as string);
-      const filtered = this.allowedModels.filter((id) => model_ids.includes(id));
+      const filtered = this.allowedModels.filter((id) =>
+        model_ids.includes(id),
+      );
+
       return filtered.length ? filtered : this.allowedModels;
     } catch {
       return this.allowedModels;
@@ -130,6 +133,7 @@ export class OpenAIClient {
 
     if (config.model === "gpt-5") {
       request.reasoning_effort = "low";
+      request.service_tier = "priority";
     }
     const stream: Stream<ChatCompletionChunk> =
       await client.chat.completions.create(request, {
@@ -218,7 +222,8 @@ export class OpenAIClient {
     } as ResponseCreateParamsStreaming;
 
     if (config.model === "gpt-5") {
-      request.reasoning = { effort: "low", summary: "auto" };
+      request.reasoning = { effort: "high", summary: "auto" };
+      request.service_tier = "priority";
     }
     const stream: Stream<ResponseStreamEvent> = await client.responses.create(
       request,
