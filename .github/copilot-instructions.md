@@ -33,6 +33,13 @@ Renderer notes
   - Loads once on mount; remains mounted while you toggle visibility, avoiding reload on each open.
   - Subscribes to `onOpenAIConfigUpdated` and (local save) updates to refresh state only on real updates.
   - Contains a model selector in the OpenAI Settings section that is synchronized with the Ask panel selector.
+  - **Optimized config loading (2024-12-19)**:
+    - Added debounced model refresh (800ms) when API key or base URL changes to prevent excessive API calls
+    - Improved loading states with `loadingConfig` and `loadingModels` indicators
+    - Enhanced error handling with proper try-catch blocks and console warnings
+    - Optimized initial loading with `useCallback` hooks to prevent unnecessary re-renders
+    - Added change detection to avoid redundant model updates when values haven't actually changed
+    - Better cleanup of event listeners and debounce timeouts
 
 Ask panel notes
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 
 import { IconCheckCircle, IconXCircle } from "./Icons";
 
@@ -9,6 +9,9 @@ export function Settings() {
   const [models, setModels] = useState<string[]>([]);
   const [testing, setTesting] = useState(false);
   const [ok, setOk] = useState<boolean | null>(null);
+  // Loading states
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   // Transcription language
   const [transcribeLanguage, setTranscribeLanguage] = useState<"en" | "zh">(
     "en",
@@ -19,84 +22,110 @@ export function Settings() {
   const [promptNames, setPromptNames] = useState<string[]>([]);
   const [defaultPrompt, setDefaultPrompt] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+  
+  // Refs for debouncing
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastApiKeyRef = useRef<string>("");
+  const lastBaseURLRef = useRef<string>("");
 
-  useEffect(() => {
+  // Optimized config loading with better error handling
+  const loadOpenAIConfigAndModels = useCallback(async (showLoading = false) => {
     const api: any = (window as any).ghostAI;
-
     if (!api) return;
 
-    const loadOpenAIConfigAndModels = async () => {
-      try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+    try {
+      if (showLoading) setLoadingModels(true);
+      
+      const [cfg, list] = await Promise.all([
+        api.getOpenAIConfig?.(),
+        api.listOpenAIModels?.(),
+      ]);
 
-        if (cfg) {
-          setApiKey(cfg.apiKey || "");
-          setBaseURL(cfg.baseURL || "https://api.openai.com/v1");
-        }
+      if (cfg) {
+        setApiKey(cfg.apiKey || "");
+        setBaseURL(cfg.baseURL || "https://api.openai.com/v1");
+        lastApiKeyRef.current = cfg.apiKey || "";
+        lastBaseURLRef.current = cfg.baseURL || "https://api.openai.com/v1";
+      }
 
-        if (Array.isArray(list) && list.length) setModels(list);
+      if (Array.isArray(list) && list.length) {
+        setModels(list);
         const cfgModel = (cfg && (cfg as any).model) || "";
-
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
+        
+        if (cfgModel && list.includes(cfgModel)) {
           setModel(cfgModel);
-        else setModel("");
-      } catch {}
-    };
-
-    const loadUserSettingsAndPrompts = async () => {
-      try {
-        const [userSettings, promptsInfo, activePromptName] = await Promise.all(
-          [
-            api.getUserSettings?.(),
-            api.listPrompts?.(),
-            api.getActivePromptName?.(),
-          ],
-        );
-
-        try {
-          const lang =
-            (userSettings && (userSettings as any).transcribeLanguage) || "en";
-
-          setTranscribeLanguage(lang === "zh" ? "zh" : "en");
-        } catch {}
-        try {
-          const v = userSettings && (userSettings as any).attachScreenshot;
-
-          setAttachScreenshot(typeof v === "boolean" ? v : true);
-        } catch {}
-        if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
-          setPromptNames(promptsInfo.prompts);
-          const current =
-            (typeof activePromptName === "string" && activePromptName) ||
-            promptsInfo.defaultPrompt ||
-            null;
-
-          setDefaultPrompt(current);
-          const initial = current || promptsInfo.prompts[0] || null;
-
-          setSelectedPrompt(initial);
+        } else if (list.length > 0) {
+          setModel(list[0]);
+        } else {
+          setModel("");
         }
-      } catch {}
+      }
+    } catch (error) {
+      console.warn("Failed to load OpenAI config and models:", error);
+    } finally {
+      if (showLoading) setLoadingModels(false);
+    }
+  }, []);
+
+  const loadUserSettingsAndPrompts = useCallback(async () => {
+    const api: any = (window as any).ghostAI;
+    if (!api) return;
+
+    try {
+      const [userSettings, promptsInfo, activePromptName] = await Promise.all([
+        api.getUserSettings?.(),
+        api.listPrompts?.(),
+        api.getActivePromptName?.(),
+      ]);
+
+      // Set transcription language
+      const lang = (userSettings && (userSettings as any).transcribeLanguage) || "en";
+      setTranscribeLanguage(lang === "zh" ? "zh" : "en");
+      
+      // Set screenshot attachment setting
+      const v = userSettings && (userSettings as any).attachScreenshot;
+      setAttachScreenshot(typeof v === "boolean" ? v : true);
+      
+      // Set prompts
+      if (promptsInfo && Array.isArray(promptsInfo.prompts)) {
+        setPromptNames(promptsInfo.prompts);
+        const current = (typeof activePromptName === "string" && activePromptName) ||
+                       promptsInfo.defaultPrompt || null;
+        setDefaultPrompt(current);
+        const initial = current || promptsInfo.prompts[0] || null;
+        setSelectedPrompt(initial);
+      }
+    } catch (error) {
+      console.warn("Failed to load user settings and prompts:", error);
+    }
+  }, []);
+
+  // Initial load with loading state
+  useEffect(() => {
+    const api: any = (window as any).ghostAI;
+    if (!api) return;
+
+    const initializeSettings = async () => {
+      setLoadingConfig(true);
+      try {
+        await Promise.all([
+          loadOpenAIConfigAndModels(),
+          loadUserSettingsAndPrompts(),
+        ]);
+      } finally {
+        setLoadingConfig(false);
+      }
     };
 
-    // Initial load once on mount
-    void Promise.all([
-      loadOpenAIConfigAndModels(),
-      loadUserSettingsAndPrompts(),
-    ]);
+    void initializeSettings();
 
-    // Listen for targeted updates
-    // No settings:updated listener; settings reload happens after Save locally
+    // Listen for config updates
     const offOpenAI = (() => {
       try {
-        return api.onOpenAIConfigUpdated?.(
-          () => void loadOpenAIConfigAndModels(),
-        );
+        return api.onOpenAIConfigUpdated?.(() => {
+          void loadOpenAIConfigAndModels(true);
+        });
       } catch {}
-
       return undefined;
     })();
 
@@ -105,7 +134,7 @@ export function Settings() {
         if (typeof offOpenAI === "function") offOpenAI();
       } catch {}
     };
-  }, []);
+  }, [loadOpenAIConfigAndModels, loadUserSettingsAndPrompts]);
 
   const onSave = async () => {
     const api: any = (window as any).ghostAI;
@@ -118,14 +147,31 @@ export function Settings() {
     alert("Saved OpenAI settings");
   };
 
-  // When API key or base URL changes, try to refresh models automatically
+  // Debounced model refresh when API key or base URL changes
   useEffect(() => {
-    (async () => {
-      const api: any = (window as any).ghostAI;
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
 
+    // Skip if values haven't actually changed
+    if (apiKey === lastApiKeyRef.current && baseURL === lastBaseURLRef.current) {
+      return;
+    }
+
+    // Skip if either field is empty
+    if (!apiKey.trim() || !baseURL.trim()) {
+      return;
+    }
+
+    // Set debounced timeout
+    debounceTimeoutRef.current = setTimeout(async () => {
+      const api: any = (window as any).ghostAI;
       if (!api) return;
-      if (!apiKey || !baseURL) return;
+
       try {
+        setLoadingModels(true);
+        
         // Update in-memory client without persisting to disk yet
         await api.updateOpenAIConfigVolatile({ apiKey, baseURL } as any);
         const list = await api.listOpenAIModels();
@@ -137,9 +183,24 @@ export function Settings() {
             setModel(list[0] ?? "");
           }
         }
-      } catch {}
-    })();
-  }, [apiKey, baseURL]);
+        
+        // Update refs to track changes
+        lastApiKeyRef.current = apiKey;
+        lastBaseURLRef.current = baseURL;
+      } catch (error) {
+        console.warn("Failed to refresh models:", error);
+      } finally {
+        setLoadingModels(false);
+      }
+    }, 800); // 800ms debounce
+
+    // Cleanup function
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [apiKey, baseURL, model]);
 
   const onTest = async () => {
     setTesting(true);
@@ -160,6 +221,17 @@ export function Settings() {
       setTesting(false);
     }
   };
+
+  // Show loading state during initial config load
+  if (loadingConfig) {
+    return (
+      <div style={{ color: "white", textAlign: "center", padding: "20px" }}>
+        <div style={{ fontSize: 14, opacity: 0.9 }}>
+          Loading settings...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ color: "white" }}>
@@ -228,18 +300,26 @@ export function Settings() {
           onChange={async (e) => {
             const val = (e.target as HTMLSelectElement).value;
 
+            // Only update if the value actually changed
+            if (val === model) return;
+
             setModel(val);
             try {
               const api: any = (window as any).ghostAI;
 
-              await api?.updateOpenAIConfigVolatile?.({ model: val });
-              await api?.updateOpenAIConfig?.({ model: val });
-            } catch {}
+              // Update both volatile and persistent config
+              await Promise.all([
+                api?.updateOpenAIConfigVolatile?.({ model: val }),
+                api?.updateOpenAIConfig?.({ model: val })
+              ]);
+            } catch (error) {
+              console.warn("Failed to update model:", error);
+            }
           }}
         >
           {(!models.length || !model) && (
             <option disabled value="">
-              {models.length ? "Select a model" : "Loading models…"}
+              {loadingModels ? "Loading models…" : models.length ? "Select a model" : "No models available"}
             </option>
           )}
           {models.map((m) => (
