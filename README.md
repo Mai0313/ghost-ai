@@ -20,7 +20,7 @@
 
 Ghost AI is a privacy-first cross-platform desktop application built with Electron and TypeScript. It provides three core features: text input with screenshot analysis, voice recording with real-time conversation support, and stealth operation interface. The system integrates directly with OpenAI API through global hotkeys, with all API settings configurable through the frontend interface, offering seamless AI assistance while remaining completely invisible to screen sharing and monitoring software.
 
-**Other Languages**: [English](README.md) | [繁體中文](README_cn.md)
+**Other Languages**: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
 > ID model simplified
 >

@@ -20,7 +20,7 @@
 
 Ghost AI 是一個基於 Electron 和 TypeScript 的隱私優先跨平台桌面應用程式。提供三個核心功能：文字輸入與螢幕截圖分析、語音錄音與實時對話支援、以及隱蔽式操作界面。系統透過全域熱鍵直接整合 OpenAI API，所有 API 設定都可透過前端界面配置，提供無縫的 AI 輔助體驗，同時對螢幕分享和監控軟體完全隱形。
 
-**其他語言版本**: [English](README.md) | [繁體中文](README_cn.md)
+**其他語言版本**: [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
 > ID 模型已簡化
 >
