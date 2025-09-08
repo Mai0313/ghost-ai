@@ -208,7 +208,7 @@ npm run lint                            # Lint TypeScript code
 npm run format                          # Format code
 
 # Packaging
-    npm run dist                            # Build and package (electron-builder)
+npm run dist                            # Build and package (electron-builder)
 npm run dist:win                        # Package for Windows
 npm run dist:win:portable               # Package Windows Portable (.exe, no installer)
 npm run dist:mac                        # Package for macOS (DMG)

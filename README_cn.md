@@ -213,7 +213,7 @@ npm run lint                            # 檢查 TypeScript 程式碼
 npm run format                          # 格式化程式碼
 
 # 打包
-    npm run dist                            # 建置並打包（electron-builder）
+npm run dist                            # 建置並打包（electron-builder）
 npm run dist:win                        # 打包 Windows 版本
 npm run dist:win:portable               # 打包 Windows Portable（免安裝單一 .exe）
 npm run dist:mac                        # 打包 macOS 版本（DMG）
