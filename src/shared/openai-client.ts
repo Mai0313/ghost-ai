@@ -47,8 +47,8 @@ export class OpenAIClient {
 
     // Only recreate client if connection parameters changed
     const needsRecreate =
-      config.apiKey !== undefined && config.apiKey !== prevApiKey ||
-      config.baseURL !== undefined && config.baseURL !== prevBaseURL;
+      (config.apiKey !== undefined && config.apiKey !== prevApiKey) ||
+      (config.baseURL !== undefined && config.baseURL !== prevBaseURL);
 
     if (needsRecreate) {
       this.client = new OpenAI({
@@ -77,7 +77,9 @@ export class OpenAIClient {
       throw new Error("OpenAIClient not initialized");
   }
 
-  private prepareImageData(imageBuffer: Buffer | undefined): string | undefined {
+  private prepareImageData(
+    imageBuffer: Buffer | undefined,
+  ): string | undefined {
     return imageBuffer?.toString("base64");
   }
 

@@ -22,11 +22,7 @@ export class RealtimeTranscribeManager {
   >();
 
   // Helper to safely send IPC messages with error handling
-  private safeSend(
-    webContents: WebContents,
-    channel: string,
-    data: any,
-  ): void {
+  private safeSend(webContents: WebContents, channel: string, data: any): void {
     try {
       webContents.send(channel, data);
     } catch (err) {

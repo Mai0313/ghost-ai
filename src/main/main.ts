@@ -444,7 +444,10 @@ app.whenReady().then(async () => {
         sessionId: currentSessionId,
       });
     } catch (err) {
-      console.error("[Session] Failed to notify renderer of session change:", err);
+      console.error(
+        "[Session] Failed to notify renderer of session change:",
+        err,
+      );
     }
 
     // Initialize new session with empty log file and session JSON
@@ -510,7 +513,10 @@ ipcMain.handle(
           }
         }
       } catch (err) {
-        console.error("[IPC] Failed to notify renderers of volatile config:", err);
+        console.error(
+          "[IPC] Failed to notify renderers of volatile config:",
+          err,
+        );
       }
 
       return true;

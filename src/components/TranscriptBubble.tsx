@@ -13,18 +13,19 @@ export const TranscriptBubble: React.FC<TranscriptBubbleProps> = memo(
     // Simple derived value doesn't need useMemo
     const markdownVisible = markdown ? "block" : "none";
 
-  return (
-    <div style={askCard}>
-      <div
-        className="bn-markdown-viewer"
-        style={{
-          ...askResultArea,
-          whiteSpace: "normal",
-          display: markdownVisible,
-        }}
-      >
-        <MarkdownViewer markdown={markdown} />
+    return (
+      <div style={askCard}>
+        <div
+          className="bn-markdown-viewer"
+          style={{
+            ...askResultArea,
+            whiteSpace: "normal",
+            display: markdownVisible,
+          }}
+        >
+          <MarkdownViewer markdown={markdown} />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
