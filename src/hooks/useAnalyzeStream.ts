@@ -21,7 +21,7 @@ export interface AnalyzeStreamRequest {
 
 export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
   const {
-    sessionId,
+    sessionId: _sessionId,
     onDeltaText,
     onDeltaReasoning,
     onWebSearchStatusChange,
