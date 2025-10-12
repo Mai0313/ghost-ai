@@ -45,7 +45,7 @@ export function listPrompts(): {
   let active: string | null = null;
 
   try {
-    const s = loadUserSettings() as any;
+    const s = loadUserSettings();
     const name =
       typeof s?.defaultPrompt === "string"
         ? normalizeName(s.defaultPrompt)
@@ -55,30 +55,7 @@ export function listPrompts(): {
   } catch {}
 
   // Return active selection (or null) as `defaultPrompt` for UI display
-  return { prompts: files, defaultPrompt: active } as any;
-}
-
-export function getDefaultPromptName(): string | null {
-  ensureDirs();
-  try {
-    return fs.existsSync(path.join(promptsDir, "default.txt"))
-      ? "default.txt"
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-export function setDefaultPromptFrom(name: string): string {
-  // Persist selection by name only (do not write any prompt files)
-  ensureDirs();
-  const sourceName = normalizeName(name);
-
-  try {
-    saveUserSettings({ defaultPrompt: sourceName } as any);
-  } catch {}
-
-  return sourceName;
+  return { prompts: files, defaultPrompt: active };
 }
 
 export function readPrompt(name?: string): string {
@@ -88,7 +65,7 @@ export function readPrompt(name?: string): string {
   if (name) fileName = normalizeName(name);
   else {
     try {
-      const s = loadUserSettings() as any;
+      const s = loadUserSettings();
       const n =
         typeof s?.defaultPrompt === "string"
           ? normalizeName(s.defaultPrompt)
@@ -109,20 +86,10 @@ export function readPrompt(name?: string): string {
   }
 }
 
-export function ensureDefaultPrompt(_defaultContent?: string): {
-  created: boolean;
-  defaultPrompt: string;
-} {
-  // No-op: do not create or write any prompt files.
-  ensureDirs();
-
-  return { created: false, defaultPrompt: "default.txt" };
-}
-
 // New helpers for active prompt persistence and retrieval
 export function getActivePromptName(): string | null {
   try {
-    const s = loadUserSettings() as any;
+    const s = loadUserSettings();
     const name =
       typeof s?.defaultPrompt === "string"
         ? normalizeName(s.defaultPrompt)
@@ -142,7 +109,7 @@ export function setActivePromptName(name: string): string {
   const norm = normalizeName(name);
 
   try {
-    saveUserSettings({ defaultPrompt: norm } as any);
+    saveUserSettings({ defaultPrompt: norm });
   } catch {}
 
   return norm;

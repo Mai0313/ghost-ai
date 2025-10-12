@@ -31,20 +31,14 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
   const activeUnsubRef = useRef<(() => void) | null>(null);
   const lastDeltaRef = useRef<string | null>(null);
   const lastReasoningDeltaRef = useRef<string | null>(null);
-  const activeSessionIdForRequestRef = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
 
   const cleanup = useCallback(() => {
-    if (activeUnsubRef.current) {
-      try {
-        activeUnsubRef.current();
-      } catch (err) {
-        console.error("[AnalyzeStream] Cleanup error:", err);
-      }
-      activeUnsubRef.current = null;
-    }
+    activeUnsubRef.current?.();
+    activeUnsubRef.current = null;
     lastDeltaRef.current = null;
     lastReasoningDeltaRef.current = null;
-    activeSessionIdForRequestRef.current = null;
+    activeSessionIdRef.current = null;
   }, []);
 
   const execute = useCallback(
@@ -52,35 +46,29 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
       const { userMessage, customPrompt, formattedPrompt, onSuccess, onError } =
         request;
 
-      // Cleanup any previous stream
       cleanup();
-
       onStreamStart?.();
 
-      let unsubscribe: (() => void) | null = null;
-
       try {
-        unsubscribe = window.ghostAI.analyzeCurrentScreenStream(
+        const unsubscribe = window.ghostAI.analyzeCurrentScreenStream(
           userMessage,
           customPrompt,
           formattedPrompt,
           {
             onStart: ({
-              sessionId: sid,
+              sessionId,
             }: {
               requestId: string;
               sessionId: string;
             }) => {
-              if (sid) {
-                activeSessionIdForRequestRef.current = sid;
-              }
+              if (sessionId) activeSessionIdRef.current = sessionId;
             },
             onDelta: ({
-              channel,
+              channel = "answer",
               eventType,
               delta,
-              text: fullText,
-              sessionId: sid,
+              text,
+              sessionId,
             }: {
               requestId: string;
               sessionId: string;
@@ -89,46 +77,30 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
               delta?: string;
               text?: string;
             }) => {
-              // Ignore deltas from different sessions
-              if (
-                sid &&
-                activeSessionIdForRequestRef.current &&
-                sid !== activeSessionIdForRequestRef.current
-              ) {
-                return;
-              }
+              // Ignore stale session events
+              if (sessionId && activeSessionIdRef.current !== sessionId) return;
 
-              // Web search indicator
-              if ((channel ?? "answer") === "web_search") {
-                const type = String(eventType || "");
-
-                if (type.endsWith("in_progress")) {
+              // Web search status
+              if (channel === "web_search" && eventType) {
+                if (eventType.endsWith("in_progress"))
                   onWebSearchStatusChange("in_progress");
-                } else if (type.endsWith("searching")) {
+                else if (eventType.endsWith("searching"))
                   onWebSearchStatusChange("searching");
-                } else if (type.endsWith("completed")) {
+                else if (eventType.endsWith("completed"))
                   onWebSearchStatusChange("completed");
-                }
 
                 return;
               }
 
               // Reasoning channel
-              if ((channel ?? "answer") === "reasoning") {
-                const piece =
-                  (typeof fullText === "string" && fullText) ||
-                  (typeof delta === "string" && delta) ||
-                  "";
+              if (channel === "reasoning") {
+                const piece = text || delta || "";
 
                 if (!piece) return;
-
                 if (eventType === "response.reasoning_summary_text.done") {
-                  // Full reasoning text available
                   onDeltaReasoning(piece);
                   lastReasoningDeltaRef.current = null;
-                } else {
-                  // Incremental reasoning delta
-                  if (lastReasoningDeltaRef.current === piece) return;
+                } else if (lastReasoningDeltaRef.current !== piece) {
                   lastReasoningDeltaRef.current = piece;
                   onDeltaReasoning(piece);
                 }
@@ -136,41 +108,28 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
                 return;
               }
 
-              // Answer channel (default)
-              const piece =
-                (typeof fullText === "string" && fullText) ||
-                (typeof delta === "string" && delta) ||
-                "";
+              // Answer channel
+              const piece = text || delta || "";
 
-              if (!piece) return;
-              if (lastDeltaRef.current === piece) return;
+              if (!piece || lastDeltaRef.current === piece) return;
               lastDeltaRef.current = piece;
               onDeltaText(piece);
             },
             onDone: ({
               content,
-              sessionId: sid,
+              sessionId,
             }: {
               requestId: string;
               content: string;
               sessionId: string;
             }) => {
-              // Ignore completion from different sessions
-              if (
-                sid &&
-                activeSessionIdForRequestRef.current &&
-                sid !== activeSessionIdForRequestRef.current
-              ) {
-                return;
-              }
-
+              if (sessionId && activeSessionIdRef.current !== sessionId) return;
               lastDeltaRef.current = null;
               lastReasoningDeltaRef.current = null;
               onWebSearchStatusChange("idle");
-              activeSessionIdForRequestRef.current = null;
-
+              activeSessionIdRef.current = null;
               try {
-                onSuccess(content ?? "");
+                onSuccess(content || "");
               } finally {
                 cleanup();
                 onStreamEnd?.();
@@ -178,26 +137,17 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
             },
             onError: ({
               error,
-              sessionId: sid,
+              sessionId,
             }: {
               requestId?: string;
               error: string;
               sessionId: string;
             }) => {
-              // Ignore errors from different sessions
-              if (
-                sid &&
-                activeSessionIdForRequestRef.current &&
-                sid !== activeSessionIdForRequestRef.current
-              ) {
-                return;
-              }
-
+              if (sessionId && activeSessionIdRef.current !== sessionId) return;
               lastDeltaRef.current = null;
               lastReasoningDeltaRef.current = null;
               onWebSearchStatusChange("idle");
-              activeSessionIdForRequestRef.current = null;
-
+              activeSessionIdRef.current = null;
               try {
                 onError(error || "Unknown error");
               } finally {
@@ -211,7 +161,6 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
         if (typeof unsubscribe !== "function") {
           throw new Error("Streaming unavailable");
         }
-
         activeUnsubRef.current = unsubscribe;
       } catch (e) {
         onError(

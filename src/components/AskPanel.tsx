@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 
 import {
   askCard,
@@ -59,71 +59,44 @@ export const AskPanel: React.FC<AskPanelProps> = memo(function AskPanel({
   const askInputRef = inputRef ?? localInputRef;
 
   useEffect(() => {
-    (async () => {
-      try {
-        const api: any = (window as any).ghostAI;
+    const api = (window as any).ghostAI;
 
-        if (!api) return;
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+    if (!api) return;
 
-        if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || "";
+    const loadConfig = async () => {
+      const [cfg, list] = await Promise.all([
+        api.getOpenAIConfig?.(),
+        api.listOpenAIModels?.(),
+      ]);
 
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
-          setModel(cfgModel);
-        else setModel("");
-      } catch {}
-    })();
-  }, []);
+      if (Array.isArray(list) && list.length) setModels(list);
+      const cfgModel = cfg?.model || "";
 
-  useEffect(() => {
-    const api: any = (window as any).ghostAI;
-
-    if (!api?.onOpenAIConfigUpdated) return;
-    const off = api.onOpenAIConfigUpdated(async () => {
-      try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
-
-        if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || "";
-
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
-          setModel(cfgModel);
-        else if (Array.isArray(list) && list.length) setModel(list[0] ?? "");
-      } catch {}
-    });
-
-    return () => {
-      try {
-        off && off();
-      } catch {}
+      setModel(
+        cfgModel && list?.includes(cfgModel) ? cfgModel : list?.[0] || "",
+      );
     };
+
+    loadConfig();
+
+    const off = api.onOpenAIConfigUpdated?.(loadConfig);
+
+    return () => off?.();
   }, []);
 
-  // Simple derived values don't need useMemo - V8 is very fast at these
   const markdownVisible = displayMarkdown ? "block" : "none";
   const isWebSearching =
     webSearchStatus === "in_progress" || webSearchStatus === "searching";
 
-  const handleModelChange = useCallback(
-    async (val: string) => {
-      if (val === model) return;
-      setModel(val);
-      try {
-        // Only persist to disk - volatile update is redundant as config is immediately saved
-        await window.ghostAI.updateOpenAIConfig({ model: val });
-      } catch (err) {
-        console.error("[AskPanel] Failed to update model:", err);
-      }
-    },
-    [model],
-  );
+  const handleModelChange = async (val: string) => {
+    if (val === model) return;
+    setModel(val);
+    window.ghostAI
+      .updateOpenAIConfig({ model: val })
+      .catch((err: any) =>
+        console.error("[AskPanel] Failed to update model:", err),
+      );
+  };
 
   return (
     <div style={askCard}>

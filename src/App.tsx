@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -16,18 +17,115 @@ import { useTranscription } from "./hooks/useTranscription";
 import { useAnalyzeStream } from "./hooks/useAnalyzeStream";
 import { appRootStyle, settingsCard } from "./styles/styles";
 
+// Conversation state management with useReducer
+type Message = { role: "user" | "assistant"; content: string };
+
+type ConversationState = {
+  history: Message[];
+  assistantAnswerIndices: number[];
+  historyIndex: number | null;
+};
+
+type ConversationAction =
+  | { type: "APPEND_MESSAGE"; userMessage: string; assistantContent: string }
+  | { type: "UPDATE_ASSISTANT"; index: number; content: string }
+  | { type: "SET_HISTORY_INDEX"; index: number | null }
+  | { type: "CLEAR" };
+
+const MAX_HISTORY_LENGTH = 100;
+
+function conversationReducer(
+  state: ConversationState,
+  action: ConversationAction,
+): ConversationState {
+  switch (action.type) {
+    case "APPEND_MESSAGE": {
+      const newHistory: Message[] = [
+        ...state.history,
+        { role: "user", content: action.userMessage },
+        { role: "assistant", content: action.assistantContent },
+      ];
+      const newIndices = [
+        ...state.assistantAnswerIndices,
+        newHistory.length - 1,
+      ];
+
+      // Trim if exceeds max length
+      if (newHistory.length > MAX_HISTORY_LENGTH) {
+        const trimmed = newHistory.slice(-MAX_HISTORY_LENGTH);
+        const trimmedIndices: number[] = [];
+
+        for (let i = 0; i < trimmed.length; i++) {
+          if (trimmed[i]?.role === "assistant") trimmedIndices.push(i);
+        }
+
+        return {
+          history: trimmed,
+          assistantAnswerIndices: trimmedIndices,
+          historyIndex: null,
+        };
+      }
+
+      return {
+        history: newHistory,
+        assistantAnswerIndices: newIndices,
+        historyIndex: null,
+      };
+    }
+    case "UPDATE_ASSISTANT": {
+      const copy = state.history.slice();
+
+      if (action.index >= 0 && action.index < copy.length) {
+        copy[action.index] = { role: "assistant", content: action.content };
+      }
+
+      // Trim if exceeds max length
+      if (copy.length > MAX_HISTORY_LENGTH) {
+        const trimmed = copy.slice(-MAX_HISTORY_LENGTH);
+        const trimmedIndices: number[] = [];
+
+        for (let i = 0; i < trimmed.length; i++) {
+          if (trimmed[i]?.role === "assistant") trimmedIndices.push(i);
+        }
+
+        return {
+          history: trimmed,
+          assistantAnswerIndices: trimmedIndices,
+          historyIndex: null,
+        };
+      }
+
+      return { ...state, history: copy };
+    }
+    case "SET_HISTORY_INDEX":
+      return { ...state, historyIndex: action.index };
+    case "CLEAR":
+      return {
+        history: [],
+        assistantAnswerIndices: [],
+        historyIndex: null,
+      };
+    default:
+      return state;
+  }
+}
+
 export function App() {
   const [visible, setVisible] = useState<boolean>(true);
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
   const [reasoning, setReasoning] = useState("");
-  const [history, setHistory] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >([]);
+
+  // Consolidated conversation state management with useReducer
+  const [conversation, dispatchConversation] = useReducer(conversationReducer, {
+    history: [],
+    assistantAnswerIndices: [],
+    historyIndex: null,
+  });
+
   const [webSearchStatus, setWebSearchStatus] = useState<
     "idle" | "in_progress" | "searching" | "completed"
   >("idle");
-  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const [tab, setTab] = useState<"ask" | "settings" | null>(null);
@@ -46,16 +144,12 @@ export function App() {
   const analyzeStream = useAnalyzeStream({
     sessionId,
     onDeltaText: useCallback((delta: string) => {
-      if (!delta) return;
-      setResult((prev) => prev + delta);
+      if (delta) setResult((prev) => prev + delta);
     }, []),
     onDeltaReasoning: useCallback((delta: string) => {
-      if (!delta) return;
-      setReasoning((prev) => prev + delta);
+      if (delta) setReasoning((prev) => prev + delta);
     }, []),
-    onWebSearchStatusChange: useCallback((status) => {
-      setWebSearchStatus(status);
-    }, []),
+    onWebSearchStatusChange: useCallback(setWebSearchStatus, []),
     onStreamStart: useCallback(() => {
       setBusy(true);
       setStreaming(true);
@@ -70,11 +164,7 @@ export function App() {
   });
 
   // Cleanup analyze stream on unmount
-  useEffect(() => {
-    return () => {
-      analyzeStream.cleanup();
-    };
-  }, [analyzeStream]);
+  useEffect(() => analyzeStream.cleanup, []);
 
   const { timeLabel, transcriptModeRef, transcriptBufferRef } =
     useTranscription({
@@ -85,12 +175,11 @@ export function App() {
       onDelta: (delta) => delta && setResult((prev) => prev + delta),
       onDone: (content) => {
         setResult(content || "");
-        setHistory((prev) => [
-          ...prev,
-          { role: "user", content },
-          { role: "assistant", content },
-        ]);
-        setHistoryIndex(null);
+        dispatchConversation({
+          type: "APPEND_MESSAGE",
+          userMessage: content,
+          assistantContent: content,
+        });
       },
       onError: (error) => console.error("Transcribe error", error),
       setVisible,
@@ -115,50 +204,79 @@ export function App() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  // Compute formatted history text from conversation history
+  const formattedHistoryText = useMemo(() => {
+    let out = "";
+
+    for (let i = 0; i < conversation.history.length - 1; i += 2) {
+      const u = conversation.history[i];
+      const a = conversation.history[i + 1];
+
+      if (u?.role === "user" && a?.role === "assistant") {
+        const q = u.content.trim();
+        const ans = a.content.trim();
+
+        if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
+      }
+    }
+
+    return out;
+  }, [conversation.history]);
+
   // Derived state
-  const assistantAnswerIndices = useMemo(() => {
-    const indices: number[] = [];
-
-    for (let i = 0; i < history.length; i++)
-      if (history[i]?.role === "assistant") indices.push(i);
-
-    return indices;
-  }, [history]);
-
   const displayMarkdown = useMemo(() => {
-    if (historyIndex !== null) {
-      const histIdx = assistantAnswerIndices[historyIndex] ?? null;
+    if (conversation.historyIndex !== null) {
+      const histIdx =
+        conversation.assistantAnswerIndices[conversation.historyIndex] ?? null;
 
       if (histIdx !== null && histIdx >= 0)
-        return history[histIdx]?.content ?? "";
+        return conversation.history[histIdx]?.content ?? "";
     }
 
     return result;
-  }, [historyIndex, assistantAnswerIndices, history, result]);
+  }, [
+    conversation.historyIndex,
+    conversation.assistantAnswerIndices,
+    conversation.history,
+    result,
+  ]);
 
-  const hasPages = assistantAnswerIndices.length > 0;
-  const lastPageIndex = Math.max(0, assistantAnswerIndices.length - 1);
+  const hasPages = conversation.assistantAnswerIndices.length > 0;
+  const lastPageIndex = Math.max(
+    0,
+    conversation.assistantAnswerIndices.length - 1,
+  );
   const currentPageLabel =
-    historyIndex === null
+    conversation.historyIndex === null
       ? "Live"
-      : `${historyIndex + 1}/${assistantAnswerIndices.length}`;
+      : `${conversation.historyIndex + 1}/${conversation.assistantAnswerIndices.length}`;
 
   const gotoPrevPage = useCallback(() => {
     if (!hasPages) return;
-    const targetIndex =
-      historyIndex === null ? lastPageIndex : Math.max(0, historyIndex - 1);
-
-    setHistoryIndex(targetIndex);
-  }, [hasPages, historyIndex, lastPageIndex]);
+    dispatchConversation({
+      type: "SET_HISTORY_INDEX",
+      index:
+        conversation.historyIndex === null
+          ? lastPageIndex
+          : Math.max(0, conversation.historyIndex - 1),
+    });
+  }, [hasPages, lastPageIndex, conversation.historyIndex]);
 
   const gotoNextPage = useCallback(() => {
-    if (!hasPages || historyIndex === null) return;
-    setHistoryIndex(historyIndex < lastPageIndex ? historyIndex + 1 : null);
-  }, [hasPages, historyIndex, lastPageIndex]);
+    if (!hasPages) return;
+    if (conversation.historyIndex === null) return;
+    dispatchConversation({
+      type: "SET_HISTORY_INDEX",
+      index:
+        conversation.historyIndex < lastPageIndex
+          ? conversation.historyIndex + 1
+          : null,
+    });
+  }, [hasPages, lastPageIndex, conversation.historyIndex]);
 
   const canRegenerate = useMemo(
-    () => assistantAnswerIndices.length > 0 && !busy && !streaming,
-    [assistantAnswerIndices.length, busy, streaming],
+    () => conversation.assistantAnswerIndices.length > 0 && !busy && !streaming,
+    [conversation.assistantAnswerIndices.length, busy, streaming],
   );
 
   // Click-through toggle by hover
@@ -182,28 +300,24 @@ export function App() {
     return () => window.removeEventListener("mousemove", onMove, true);
   }, [visible]);
 
-  // Main process events
   // Load user settings on mount
   useEffect(() => {
-    const api: any = (window as any).ghostAI;
+    const api = (window as any).ghostAI;
 
     if (!api) return;
 
-    const loadUserSettings = async () => {
-      try {
-        const userSettings = await api.getUserSettings?.();
-
+    api
+      .getUserSettings?.()
+      .then((userSettings: any) => {
         if (userSettings) {
-          const v = (userSettings as any).attachScreenshot;
+          const v = userSettings.attachScreenshot;
 
           setAttachScreenshot(typeof v === "boolean" ? v : true);
         }
-      } catch (error) {
-        console.warn("Failed to load user settings:", error);
-      }
-    };
-
-    void loadUserSettings();
+      })
+      .catch((error: any) =>
+        console.warn("Failed to load user settings:", error),
+      );
   }, []);
 
   useEffect(() => {
@@ -216,143 +330,109 @@ export function App() {
       setStreaming(false);
       setTimeout(() => askInputRef.current?.focus(), 0);
     });
+
     api?.onTextInputToggle?.(() => {
       setVisible(true);
       setTab((currentTab) => {
         if (currentTab === "ask") {
           return null;
-        } else {
-          setBusy(false);
-          setStreaming(false);
-          setTimeout(() => askInputRef.current?.focus(), 0);
-
-          return "ask";
         }
+        setBusy(false);
+        setStreaming(false);
+        setTimeout(() => askInputRef.current?.focus(), 0);
+
+        return "ask";
       });
     });
+
     api?.onHUDShow?.(() => {
       setVisible(true);
-      setTab((currentTab) => {
-        if (currentTab === "ask") {
-          setBusy(false);
-          setStreaming(false);
-          setTimeout(() => askInputRef.current?.focus(), 0);
-        }
-
-        return currentTab;
-      });
+      if (tab === "ask") {
+        setBusy(false);
+        setStreaming(false);
+        setTimeout(() => askInputRef.current?.focus(), 0);
+      }
     });
-  }, []);
+  }, [tab]);
 
-  // Unified auto-focus logic
+  // Auto-focus logic
   useEffect(() => {
-    // Only focus when ask panel is visible and active
     if (!visible || tab !== "ask") return;
-
-    // Special case: if viewing history, ensure ask tab is active
-    if (historyIndex !== null && tab !== "ask") {
-      setTab("ask");
-    }
-
-    // Reset busy state when ask panel becomes visible
+    if (conversation.historyIndex !== null) setTab("ask");
     if (busy || streaming) {
       setBusy(false);
       setStreaming(false);
     }
+    const id = setTimeout(() => askInputRef.current?.focus(), 0);
 
-    // Focus input after state updates
-    const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
-
-    return () => window.clearTimeout(id);
-  }, [visible, tab, historyIndex, busy, streaming]);
+    return () => clearTimeout(id);
+  }, [visible, tab, conversation.historyIndex, busy, streaming]);
 
   useEffect(() => {
     const api = window.ghostAI;
 
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
+
     const offScroll = api?.onAskScroll?.(
       ({ direction }: { direction: "up" | "down" }) => {
-        try {
-          setVisible(true);
-          const containers = Array.from(
-            document.querySelectorAll<HTMLDivElement>(".bn-markdown-viewer"),
-          );
-          const target = containers.find((el) => {
-            const style = window.getComputedStyle(el);
+        setVisible(true);
+        const area = Array.from(
+          document.querySelectorAll<HTMLDivElement>(".bn-markdown-viewer"),
+        ).find(
+          (el) =>
+            window.getComputedStyle(el).display !== "none" &&
+            el.offsetParent !== null,
+        );
 
-            return style.display !== "none" && el.offsetParent !== null;
-          });
-          const area = target ?? null;
-
-          if (!area) return;
+        if (area) {
           const step = Math.max(80, Math.round(area.clientHeight * 0.25));
-          const delta = direction === "up" ? -step : step;
 
-          area.scrollBy({ top: delta, behavior: "smooth" });
-        } catch (err) {
-          console.error("[App] Scroll failed:", err);
+          area.scrollBy({
+            top: direction === "up" ? -step : step,
+            behavior: "smooth",
+          });
         }
       },
     );
+
     const offPaginate = api?.onAskPaginate?.(
       ({ direction }: { direction: "up" | "down" }) => {
-        try {
-          setVisible(true);
-          if (direction === "up") gotoPrevPage();
-          else gotoNextPage();
-        } catch (err) {
-          console.error("[App] Paginate failed:", err);
-        }
+        setVisible(true);
+        if (direction === "up") gotoPrevPage();
+        else gotoNextPage();
       },
     );
 
-    try {
-      api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
-    } catch (err) {
-      console.error("[App] Failed to get session:", err);
-    }
+    api?.getSession?.().then((sid: string) => sid && setSessionId(sid));
+
+    const clearState = () => {
+      analyzeStream.cleanup();
+      setStreaming(false);
+      dispatchConversation({ type: "CLEAR" });
+      setResult("");
+      setReasoning("");
+      setWebSearchStatus("idle");
+      transcriptBufferRef.current = "";
+      setText("");
+    };
 
     const offSession = api?.onSessionChanged?.(
       ({ sessionId: sid }: { sessionId: string }) => {
         if (sid) setSessionId(sid);
-        // Cleanup active stream
-        analyzeStream.cleanup();
-        setStreaming(false);
-        setHistory([]);
-        setResult("");
-        setReasoning("");
-        setWebSearchStatus("idle");
-        setHistoryIndex(null);
-        transcriptBufferRef.current = "";
+        clearState();
         setRecording(false);
-        setText("");
       },
     );
 
     api?.onAskClear?.(() => {
-      // Cleanup active stream
-      analyzeStream.cleanup();
-      setStreaming(false);
-      setHistory([]);
-      setResult("");
-      setReasoning("");
-      setWebSearchStatus("idle");
-      setHistoryIndex(null);
-      setText("");
+      clearState();
       if (recording) setRecording(false);
-      transcriptBufferRef.current = "";
     });
 
     return () => {
-      try {
-        if (typeof offSession === "function") offSession();
-      } catch {}
-      try {
-        if (typeof offScroll === "function") offScroll();
-      } catch {}
-      try {
-        if (typeof offPaginate === "function") offPaginate();
-      } catch {}
+      offSession?.();
+      offScroll?.();
+      offPaginate?.();
     };
   }, [
     analyzeStream,
@@ -362,63 +442,38 @@ export function App() {
     transcriptBufferRef,
   ]);
 
-  const handleAttachScreenshotChange = useCallback(async (value: boolean) => {
+  const handleAttachScreenshotChange = async (value: boolean) => {
     setAttachScreenshot(value);
-    try {
-      await window.ghostAI.updateUserSettings({ attachScreenshot: value });
-    } catch (error) {
-      console.error("[App] Failed to update attachScreenshot setting:", error);
-    }
-  }, []);
+    window.ghostAI
+      .updateUserSettings({ attachScreenshot: value })
+      .catch((error: any) =>
+        console.error(
+          "[App] Failed to update attachScreenshot setting:",
+          error,
+        ),
+      );
+  };
 
-  const makePlainHistoryText = useCallback(
-    (hist: { role: "user" | "assistant"; content: string }[]) => {
-      let out = "";
-
-      for (let i = 0; i < hist.length - 1; i += 2) {
-        const u = hist[i];
-        const a = hist[i + 1];
-
-        if (u?.role === "user" && a?.role === "assistant") {
-          const q = (u.content || "").trim();
-          const ans = (a.content || "").trim();
-
-          if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
-        }
-      }
-
-      return out;
-    },
-    [],
-  );
-
-  const onSubmit = useCallback(async () => {
+  const onSubmit = async () => {
     if (busy || streaming) return;
 
-    // Require an active prompt selection
-    try {
-      const activePromptName = await window.ghostAI.getActivePromptName();
+    const activePromptName = await window.ghostAI.getActivePromptName();
 
-      if (!activePromptName) {
-        setResult(
-          "Error: No active prompt selected. Open Settings → Prompts to select one.",
-        );
+    if (!activePromptName) {
+      setResult(
+        "Error: No active prompt selected. Open Settings → Prompts to select one.",
+      );
 
-        return;
-      }
-    } catch (err) {
-      console.error("[App] Failed to check active prompt:", err);
+      return;
     }
 
     const transcript = transcriptBufferRef.current || "";
     const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
     const cfg = await window.ghostAI.getOpenAIConfig();
-    const customPrompt = (cfg as any)?.customPrompt ?? "";
+    const customPrompt = cfg?.customPrompt ?? "";
 
-    // Format history for the prompt
-    const historyText = makePlainHistoryText(history);
-    const formattedPrompt = historyText
-      ? `Previous conversation:\n${historyText}\n\nNew question:\n${userMessage}`
+    const formattedPrompt = formattedHistoryText
+      ? `Previous conversation:\n${formattedHistoryText}\n\nNew question:\n${userMessage}`
       : userMessage;
 
     await analyzeStream.execute({
@@ -427,40 +482,53 @@ export function App() {
       formattedPrompt,
       onSuccess: (content) => {
         setResult(content);
-        setHistory((prev) => [
-          ...prev,
-          { role: "user", content: userMessage },
-          { role: "assistant", content },
-        ]);
-        setHistoryIndex(null);
+        dispatchConversation({
+          type: "APPEND_MESSAGE",
+          userMessage,
+          assistantContent: content,
+        });
         setText("");
         transcriptBufferRef.current = "";
       },
-      onError: (error) => {
-        setResult(error);
-      },
+      onError: setResult,
     });
-  }, [text, busy, streaming, analyzeStream, transcriptBufferRef, history, makePlainHistoryText]);
+  };
 
-  const onRegenerate = useCallback(async () => {
+  const onRegenerate = async () => {
     if (!canRegenerate) return;
 
-    const pageIdx = historyIndex === null ? lastPageIndex : historyIndex;
-    const assistantIdx = assistantAnswerIndices[pageIdx] ?? -1;
+    const pageIdx =
+      conversation.historyIndex === null
+        ? lastPageIndex
+        : conversation.historyIndex;
+    const assistantIdx = conversation.assistantAnswerIndices[pageIdx] ?? -1;
     const userIdx = assistantIdx - 1;
 
     if (assistantIdx < 0 || userIdx < 0) return;
 
-    const userMessage = history[userIdx]?.content || "";
-    const priorPairs = history.slice(0, userIdx);
-    const priorPlain = makePlainHistoryText(priorPairs);
+    const userMessage = conversation.history[userIdx]?.content || "";
+    const priorPairs = conversation.history.slice(0, userIdx);
+
+    // Rebuild formatted history for prior pairs
+    let priorPlain = "";
+
+    for (let i = 0; i < priorPairs.length - 1; i += 2) {
+      const u = priorPairs[i];
+      const a = priorPairs[i + 1];
+
+      if (u?.role === "user" && a?.role === "assistant") {
+        const q = u.content.trim();
+        const ans = a.content.trim();
+
+        if (q || ans) priorPlain += `Q: ${q}\nA: ${ans}\n\n`;
+      }
+    }
 
     const cfg = await window.ghostAI.getOpenAIConfig();
-    const customPrompt = (cfg as any)?.customPrompt ?? "";
+    const customPrompt = cfg?.customPrompt ?? "";
 
-    setHistoryIndex(null);
+    dispatchConversation({ type: "SET_HISTORY_INDEX", index: null });
 
-    // Format the complete prompt with history
     const formattedPrompt = priorPlain
       ? `Previous conversation:\n${priorPlain}\n\nNew question:\n${userMessage}`
       : userMessage;
@@ -471,32 +539,15 @@ export function App() {
       formattedPrompt,
       onSuccess: (content) => {
         setResult(content);
-        setHistory((prev) => {
-          const copy = prev.slice();
-
-          if (assistantIdx >= 0 && assistantIdx < copy.length) {
-            copy[assistantIdx] = {
-              role: "assistant",
-              content,
-            };
-          }
-
-          return copy;
+        dispatchConversation({
+          type: "UPDATE_ASSISTANT",
+          index: assistantIdx,
+          content,
         });
       },
-      onError: (error) => {
-        setResult(error);
-      },
+      onError: setResult,
     });
-  }, [
-    canRegenerate,
-    historyIndex,
-    lastPageIndex,
-    assistantAnswerIndices,
-    history,
-    makePlainHistoryText,
-    analyzeStream,
-  ]);
+  };
 
   // Positioning (memoized to avoid recalculating on every render)
   const bubblePosition = useMemo(() => {
@@ -589,7 +640,7 @@ export function App() {
             gotoNextPage={gotoNextPage}
             gotoPrevPage={gotoPrevPage}
             hasPages={hasPages}
-            historyIndex={historyIndex}
+            historyIndex={conversation.historyIndex}
             inputRef={askInputRef as React.RefObject<HTMLInputElement>}
             reasoningMarkdown={reasoning}
             setText={setText}

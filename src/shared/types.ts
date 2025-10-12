@@ -5,6 +5,7 @@ export interface OpenAIConfig {
   timeout: number;
   maxTokens?: number | null;
   temperature?: number;
+  customPrompt?: string;
 }
 
 export interface AnalysisResult {

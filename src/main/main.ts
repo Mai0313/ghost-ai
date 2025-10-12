@@ -28,17 +28,15 @@ import {
   saveUserSettings,
 } from "./modules/settings-manager";
 import {
-  ensureDefaultPrompt,
   listPrompts,
   readPrompt,
-  setDefaultPromptFrom,
-  getDefaultPromptName,
   getActivePromptName,
   setActivePromptName,
 } from "./modules/prompts-manager";
 import { realtimeTranscribeManager } from "./modules/realtime-transcribe";
 import { logManager } from "./modules/log-manager";
 import { sessionStore } from "./modules/session-store";
+import { sessionLifecycle } from "./modules/session-lifecycle";
 
 // __dirname is not defined in ESM; compute it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -48,10 +46,6 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 // Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
 let lastAudioToggleAt = 0;
-// Top-level session identifier (resets on app start and when user clears)
-let currentSessionId: string = crypto.randomUUID();
-// Track active analyze stream AbortControllers per renderer
-const activeAnalyzeControllers = new Map<number, AbortController>();
 
 // Detect dev/prod based on Electron packaging state to avoid relying on NODE_ENV
 const isDev = !app.isPackaged;
@@ -66,16 +60,7 @@ function resolveAssetPath(assetRelativePath: string) {
   return path.join(__dirname, "..", assetRelativePath);
 }
 
-// Helper to initialize session logs (creates empty session JSON)
-async function initializeSessionLogs(sessionId: string): Promise<void> {
-  try {
-    const json = sessionStore.toJSON();
-
-    await logManager.writeSessionJson(sessionId, json[sessionId] ?? {});
-  } catch (err) {
-    console.error("[Session] Failed to initialize session logs:", err);
-  }
-}
+// Note: Session initialization now handled by sessionLifecycle module
 
 function createWindow() {
   const primary = screen.getPrimaryDisplay();
@@ -120,15 +105,10 @@ function createWindow() {
   // Hide menu bar to keep the window minimal and overlay-like
   mainWindow.setMenuBarVisibility(false);
   // Prevent most screen-capture APIs from capturing this window
-  try {
-    mainWindow.setContentProtection(true);
-  } catch {}
-
+  mainWindow.setContentProtection(true);
   // Make overlay click-through by default; renderer will temporarily disable
   // passthrough when the cursor is over interactive UI.
-  try {
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
-  } catch {}
+  mainWindow.setIgnoreMouseEvents(true, { forward: true });
 }
 
 function createTray() {
@@ -171,24 +151,14 @@ async function initializeOpenAI() {
 
 app.whenReady().then(async () => {
   await initializeOpenAI();
-  // Ensure prompts directory and a default active prompt exist
-  try {
-    ensureDefaultPrompt();
-  } catch (err) {
-    console.error("[Init] Failed to ensure default prompt:", err);
-  }
   createWindow();
   createTray();
-  try {
-    console.log(
-      "[Global Session]",
-      new Date().toISOString(),
-      "sessionId created at app start:",
-      currentSessionId,
-    );
-  } catch (err) {
-    console.error("[Init] Failed to log session ID:", err);
-  }
+  console.log(
+    "[Global Session]",
+    new Date().toISOString(),
+    "sessionId created at app start:",
+    sessionLifecycle.getCurrentSessionId(),
+  );
   // Application menu
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -255,47 +225,16 @@ app.whenReady().then(async () => {
       if (!mainWindow) return;
       mainWindow.show();
 
-      // Abort any active analyze stream for this renderer
       const wcId = mainWindow.webContents.id;
-      const ctrl = activeAnalyzeControllers.get(wcId);
 
-      if (ctrl) {
-        try {
-          ctrl.abort();
-        } catch (err) {
-          console.error("[Hotkey] Failed to abort controller:", err);
-        }
-        activeAnalyzeControllers.delete(wcId);
-      }
-
+      // Send clear signal before resetting session
       mainWindow.webContents.send("ask:clear");
 
-      // Clear session store
-      sessionStore.clearAll();
-
-      // Generate new session ID
-      currentSessionId = crypto.randomUUID();
-      console.log(
-        "[Session]",
-        new Date().toISOString(),
-        "sessionId reset (clear):",
-        currentSessionId,
-      );
-
-      // Initialize new session logs
-      await initializeSessionLogs(currentSessionId);
-
-      // Broadcast session change
-      mainWindow.webContents.send("session:changed", {
-        sessionId: currentSessionId,
-      });
+      // Reset session (aborts controllers, clears store, generates new ID, broadcasts)
+      await sessionLifecycle.resetSession(mainWindow, wcId, "hotkey-clear");
 
       // Stop active transcription
-      try {
-        realtimeTranscribeManager.stop(mainWindow.webContents);
-      } catch (err) {
-        console.error("[Hotkey] Failed to stop transcription:", err);
-      }
+      realtimeTranscribeManager.stop(mainWindow.webContents);
     },
     onAudioToggle: async () => {
       lastAudioToggleAt = Date.now();
@@ -318,15 +257,11 @@ app.whenReady().then(async () => {
   });
 
   // If no OpenAI config yet, guide user by showing the overlay
-  try {
-    const cfg = loadOpenAIConfig();
+  const cfg = loadOpenAIConfig();
 
-    if (!cfg) {
-      mainWindow?.show();
-      mainWindow?.webContents.send("text-input:show");
-    }
-  } catch (err) {
-    console.error("[Init] Failed to check OpenAI config:", err);
+  if (!cfg) {
+    mainWindow?.show();
+    mainWindow?.webContents.send("text-input:show");
   }
 
   // Dynamic hotkey updates are disabled by design (fixed hotkeys)
@@ -341,10 +276,10 @@ app.whenReady().then(async () => {
   ipcMain.handle("prompts:list", () => listPrompts());
   ipcMain.handle("prompts:read", (_evt, name?: string) => readPrompt(name));
   ipcMain.handle("prompts:set-default", (_evt, name: string) =>
-    setDefaultPromptFrom(name),
+    setActivePromptName(name),
   );
-  ipcMain.handle("prompts:get-default", () => getDefaultPromptName());
-  // New: active prompt name persisted in settings
+  ipcMain.handle("prompts:get-default", () => getActivePromptName());
+  // Active prompt name persisted in settings
   ipcMain.handle("prompts:get-active", () => getActivePromptName());
   ipcMain.handle("prompts:set-active", (_evt, name: string) =>
     setActivePromptName(name),
@@ -359,54 +294,29 @@ app.whenReady().then(async () => {
 
   // App lifecycle IPC
   ipcMain.handle("app:quit", () => {
-    try {
-      app.quit();
-    } catch {}
+    app.quit();
 
     return true;
   });
 
   // Allow renderer to toggle click-through dynamically
   ipcMain.handle("hud:set-mouse-ignore", (_evt, ignore: boolean) => {
-    try {
-      mainWindow?.setIgnoreMouseEvents(!!ignore, { forward: true });
-    } catch {}
+    mainWindow?.setIgnoreMouseEvents(!!ignore, { forward: true });
 
     return true;
   });
   // Session IPC
-  ipcMain.handle("session:get", () => ({ sessionId: currentSessionId }));
+  ipcMain.handle("session:get", () => ({
+    sessionId: sessionLifecycle.getCurrentSessionId(),
+  }));
   ipcMain.handle("session:new", async () => {
-    // Clear session store
-    try {
-      sessionStore.clearAll();
-    } catch (err) {
-      console.error("[Session] Failed to clear session store:", err);
-    }
-    currentSessionId = crypto.randomUUID();
-    try {
-      console.log(
-        "[Global Session]",
-        new Date().toISOString(),
-        "sessionId reset (manual):",
-        currentSessionId,
-      );
-    } catch {}
-    try {
-      mainWindow?.webContents.send("session:changed", {
-        sessionId: currentSessionId,
-      });
-    } catch (err) {
-      console.error(
-        "[Session] Failed to notify renderer of session change:",
-        err,
-      );
-    }
+    const sessionId = await sessionLifecycle.resetSession(
+      mainWindow,
+      undefined,
+      "ipc-manual",
+    );
 
-    // Initialize new session with empty log file and session JSON
-    await initializeSessionLogs(currentSessionId);
-
-    return { sessionId: currentSessionId };
+    return { sessionId };
   });
   ipcMain.handle("session:dump", () => sessionStore.getSessionsData());
 });
@@ -417,11 +327,82 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   unregisterAllHotkeys();
+  sessionLifecycle.cleanup();
 });
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// Helper to notify all windows of config update
+function notifyConfigUpdate(): void {
+  for (const bw of BrowserWindow.getAllWindows()) {
+    bw.webContents.send("openai:config-updated");
+  }
+}
+
+/**
+ * Batches delta updates to reduce IPC overhead
+ */
+class DeltaBatcher {
+  private buffer: any[] = [];
+  private timer: NodeJS.Timeout | null = null;
+  private readonly maxSize: number;
+  private readonly flushInterval: number;
+  private readonly sender: Electron.WebContents;
+  private readonly requestId: string;
+  private readonly sessionId: string;
+
+  constructor(
+    sender: Electron.WebContents,
+    requestId: string,
+    sessionId: string,
+    maxSize = 20,
+    flushInterval = 50,
+  ) {
+    this.sender = sender;
+    this.requestId = requestId;
+    this.sessionId = sessionId;
+    this.maxSize = maxSize;
+    this.flushInterval = flushInterval;
+  }
+
+  add(update: any, forceFlush = false): void {
+    this.buffer.push(update);
+
+    if (forceFlush || this.buffer.length >= this.maxSize) {
+      this.flush();
+    } else if (!this.timer) {
+      this.timer = setTimeout(() => this.flush(), this.flushInterval);
+    }
+  }
+
+  flush(): void {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+
+    if (this.buffer.length === 0) return;
+
+    // Send all buffered deltas in one IPC message
+    this.sender.send("capture:analyze-stream:deltas", {
+      requestId: this.requestId,
+      sessionId: this.sessionId,
+      updates: this.buffer,
+    });
+
+    this.buffer = [];
+  }
+
+  dispose(): void {
+    this.flush();
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+}
 
 // IPC Handlers
 ipcMain.handle(
@@ -429,22 +410,10 @@ ipcMain.handle(
   async (_, config: Partial<OpenAIConfig>) => {
     openAIClient.updateConfig(config);
     // persist merged config
-    const merged = (openAIClient as any).config as OpenAIConfig; // access internal for persistence
+    const merged = (openAIClient as any).config as OpenAIConfig;
 
     saveOpenAIConfig(merged);
-
-    try {
-      // Notify renderers that OpenAI config has changed so they can refresh models
-      for (const bw of BrowserWindow.getAllWindows()) {
-        try {
-          bw.webContents.send("openai:config-updated");
-        } catch (err) {
-          console.error("[IPC] Failed to send config update to renderer:", err);
-        }
-      }
-    } catch (err) {
-      console.error("[IPC] Failed to notify renderers of config change:", err);
-    }
+    notifyConfigUpdate();
 
     return true;
   },
@@ -454,40 +423,16 @@ ipcMain.handle(
 ipcMain.handle(
   "openai:update-config-volatile",
   async (_evt, config: Partial<OpenAIConfig>) => {
-    try {
-      openAIClient.updateConfig(config);
-      try {
-        // Notify renderers that OpenAI config has changed in-memory
-        for (const bw of BrowserWindow.getAllWindows()) {
-          try {
-            bw.webContents.send("openai:config-updated");
-          } catch (err) {
-            console.error("[IPC] Failed to send volatile config update:", err);
-          }
-        }
-      } catch (err) {
-        console.error(
-          "[IPC] Failed to notify renderers of volatile config:",
-          err,
-        );
-      }
+    openAIClient.updateConfig(config);
+    notifyConfigUpdate();
 
-      return true;
-    } catch {
-      return false;
-    }
+    return true;
   },
 );
 
 ipcMain.handle("openai:get-config", () => loadOpenAIConfig());
 
-ipcMain.handle("openai:list-models", async () => {
-  try {
-    return await openAIClient.listModels();
-  } catch {
-    return [];
-  }
-});
+ipcMain.handle("openai:list-models", async () => openAIClient.listModels());
 
 // Non-streaming analyze IPC removed; use 'capture:analyze-stream' instead
 
@@ -500,67 +445,47 @@ ipcMain.on(
     payload: {
       textPrompt: string;
       customPrompt: string;
-      formattedPrompt: string; // Complete prompt with history, formatted by Renderer
+      formattedPrompt: string;
     },
   ) => {
-    // Snapshot the sessionId at the start of this request to prevent races with Ctrl+R
-    const requestSessionId = currentSessionId;
+    const requestSessionId = sessionLifecycle.getCurrentSessionId();
+    const requestId = crypto.randomUUID();
+    const wcId = evt.sender.id;
 
     try {
-      const settings = loadUserSettings();
-      const attach =
-        typeof (settings as any)?.attachScreenshot === "boolean"
-          ? !!(settings as any).attachScreenshot
-          : true;
-      let image: Buffer | undefined = undefined;
+      // Check for active prompt
+      const activeName = getActivePromptName();
 
-      if (attach) {
-        image = await hideAllWindowsDuring(async () => captureScreen());
+      if (!activeName) {
+        evt.sender.send("capture:analyze-stream:error", {
+          error:
+            "No active prompt selected. Open Settings → Prompts to select one.",
+          sessionId: requestSessionId,
+        });
+
+        return;
       }
-      const requestId = crypto.randomUUID();
+
+      // Capture screenshot if enabled
+      const settings = loadUserSettings();
+      const attach = (settings as any)?.attachScreenshot !== false;
+      const image = attach
+        ? await hideAllWindowsDuring(captureScreen)
+        : undefined;
 
       evt.sender.send("capture:analyze-stream:start", {
         requestId,
         sessionId: requestSessionId,
       });
 
-      // Use the formatted prompt provided by Renderer (includes history if any)
-      const combinedTextPrompt = (payload.formattedPrompt ?? "").trim();
+      // Get or create controller (aborts previous automatically)
+      const controller = sessionLifecycle.getOrCreateController(wcId);
 
-      // Load active prompt for system context (always required)
-      let systemPrompt = "";
-      try {
-        const activeName = getActivePromptName();
+      const systemPrompt = readPrompt(activeName) || "";
+      const combinedTextPrompt = payload.formattedPrompt.trim();
 
-        if (!activeName) {
-          evt.sender.send("capture:analyze-stream:error", {
-            error:
-              "No active prompt selected. Open Settings → Prompts to select one.",
-            sessionId: requestSessionId,
-          });
-
-          return;
-        }
-        systemPrompt = readPrompt(activeName) || "";
-      } catch (err) {
-        console.error("[Analyze] Failed to load active prompt:", err);
-      }
-
-      // Create AbortController for this renderer and abort any prior one
-      const wcId = evt.sender.id;
-
-      try {
-        const prev = activeAnalyzeControllers.get(wcId);
-
-        if (prev) {
-          try {
-            prev.abort();
-          } catch {}
-        }
-      } catch {}
-      const controller = new AbortController();
-
-      activeAnalyzeControllers.set(wcId, controller);
+      // Batch delta messages using DeltaBatcher class
+      const batcher = new DeltaBatcher(evt.sender, requestId, requestSessionId);
 
       const result = await openAIClient.responseStream(
         image,
@@ -568,20 +493,19 @@ ipcMain.on(
         systemPrompt,
         requestId,
         (update) => {
-          try {
-            evt.sender.send("capture:analyze-stream:delta", {
-              requestId,
-              sessionId: requestSessionId,
-              channel: update.channel,
-              eventType: update.eventType,
-              delta: update.delta,
-              text: update.text,
-            });
-          } catch {}
+          // Flush immediately for important events
+          const forceFlush =
+            update.eventType?.includes("done") ||
+            update.eventType?.includes("completed");
+
+          batcher.add(update, forceFlush);
         },
         requestSessionId,
         controller.signal,
       );
+
+      // Dispose batcher (flushes remaining deltas and cleans up timer)
+      batcher.dispose();
 
       evt.sender.send("capture:analyze-stream:done", {
         ...result,
@@ -589,54 +513,39 @@ ipcMain.on(
       });
 
       // Clear controller on successful completion
-      try {
-        const cur = activeAnalyzeControllers.get(wcId);
-
-        if (cur === controller) activeAnalyzeControllers.delete(wcId);
-      } catch {}
+      sessionLifecycle.removeController(wcId, controller);
 
       // Write logs if not aborted and session hasn't changed
-      if (!controller.signal.aborted && requestSessionId === currentSessionId) {
-        const question = (payload.textPrompt ?? "").trim();
-        const answer = (result?.content ?? "").trim();
+      if (
+        !controller.signal.aborted &&
+        requestSessionId === sessionLifecycle.getCurrentSessionId()
+      ) {
+        sessionStore.appendEntry(requestSessionId, {
+          requestId,
+          text_input: payload.textPrompt.trim(),
+          ai_output: result.content.trim(),
+        });
 
-        try {
-          // Track session entry
-          sessionStore.appendEntry(requestSessionId, {
-            requestId,
-            text_input: question,
-            ai_output: answer,
-          });
+        const json = sessionStore.toJSON();
+        const logPath = await logManager.writeSessionJson(
+          requestSessionId,
+          json[requestSessionId] ?? {},
+        );
 
-          // Write session JSON (simplified: single log format)
-          const json = sessionStore.toJSON();
-          const logPath = await logManager.writeSessionJson(
-            requestSessionId,
-            json[requestSessionId] ?? {},
-          );
-          sessionStore.updateSessionLogPath(requestSessionId, logPath);
-        } catch (err) {
-          console.error("[Analyze] Failed to write session log:", err);
-        }
+        sessionStore.updateSessionLogPath(requestSessionId, logPath);
       }
     } catch (err) {
-      const error = String(err ?? "analyze-stream failed");
-      // If aborted, suppress noisy error; listeners will be cleaned up via ask:clear
+      sessionLifecycle.removeController(wcId);
+
+      // Suppress abort errors (cleaned up via ask:clear)
       const isAbort =
+        err &&
         typeof err === "object" &&
-        err !== null &&
-        String((err as any).name || "")
-          .toLowerCase()
-          .includes("abort");
+        (err as any).name?.toLowerCase().includes("abort");
 
-      try {
-        const wcId = evt.sender.id;
-
-        activeAnalyzeControllers.delete(wcId);
-      } catch {}
       if (!isAbort) {
         evt.sender.send("capture:analyze-stream:error", {
-          error,
+          error: String(err || "analyze-stream failed"),
           sessionId: requestSessionId,
         });
       }
@@ -657,7 +566,7 @@ ipcMain.handle("transcribe:start", async (evt, options: { model?: string }) => {
   realtimeTranscribeManager.start(evt.sender, {
     apiKey: cfg.apiKey,
     model: options?.model,
-    sessionId: currentSessionId,
+    sessionId: sessionLifecycle.getCurrentSessionId(),
     language: (user as any)?.transcribeLanguage === "zh" ? "zh" : "en",
   });
 

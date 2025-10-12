@@ -1,17 +1,14 @@
 import type { AnalysisResult, OpenAIConfig } from "./types";
 import type {
-  ChatCompletionChunk,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionUserMessageParam,
 } from "openai/resources/chat/completions";
 import type {
   ResponseCreateParams,
-  ResponseStreamEvent,
   ResponseInput,
   ResponseInputMessageContentList,
 } from "openai/resources/responses/responses";
-import type { Stream } from "openai/streaming";
 
 import OpenAI from "openai";
 import { ChatCompletionCreateParamsStreaming } from "openai/resources.js";
@@ -20,7 +17,7 @@ import { ResponseCreateParamsStreaming } from "openai/resources/responses/respon
 export class OpenAIClient {
   private client: OpenAI | null = null;
   private config: OpenAIConfig | null = null;
-  private allowedModels: string[] = [
+  private readonly allowedModels: readonly string[] = [
     "chatgpt-4o-latest",
     "gpt-4o",
     "gpt-4.1",
@@ -31,31 +28,62 @@ export class OpenAIClient {
 
   initialize(config: OpenAIConfig): void {
     this.config = config;
-    this.client = new OpenAI({
-      apiKey: config.apiKey,
-      baseURL: config.baseURL,
-    });
+    this.recreateClient();
+  }
+
+  /**
+   * Build effective text prompt with standard suffix
+   */
+  private buildEffectiveText(textPrompt: string): string {
+    return `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
+  }
+
+  /**
+   * Encode image buffer to base64 data URL
+   */
+  private encodeImage(imageBuffer: Buffer): string {
+    const base64 = imageBuffer.toString("base64");
+
+    return `data:image/png;base64,${base64}`;
+  }
+
+  /**
+   * Build analysis result object
+   */
+  private buildResult(
+    requestId: string,
+    content: string,
+    sessionId: string,
+  ): AnalysisResult {
+    return {
+      requestId,
+      content,
+      model: this.config!.model,
+      timestamp: new Date().toISOString(),
+      sessionId,
+    };
   }
 
   updateConfig(config: Partial<OpenAIConfig>): void {
     if (!this.config) throw new Error("OpenAIClient not initialized");
 
-    const prevApiKey = this.config.apiKey;
-    const prevBaseURL = this.config.baseURL;
+    const needsRecreate =
+      (config.apiKey !== undefined && config.apiKey !== this.config.apiKey) ||
+      (config.baseURL !== undefined && config.baseURL !== this.config.baseURL);
 
     this.config = { ...this.config, ...config } as OpenAIConfig;
 
-    // Only recreate client if connection parameters changed
-    const needsRecreate =
-      (config.apiKey !== undefined && config.apiKey !== prevApiKey) ||
-      (config.baseURL !== undefined && config.baseURL !== prevBaseURL);
-
     if (needsRecreate) {
-      this.client = new OpenAI({
-        apiKey: this.config.apiKey,
-        baseURL: this.config.baseURL,
-      });
+      this.recreateClient();
     }
+  }
+
+  private recreateClient(): void {
+    if (!this.config) return;
+    this.client = new OpenAI({
+      apiKey: this.config.apiKey,
+      baseURL: this.config.baseURL,
+    });
   }
 
   async validateConfig(config: OpenAIConfig): Promise<boolean> {
@@ -66,7 +94,7 @@ export class OpenAIClient {
       });
       const list = await client.models.list();
 
-      return Array.isArray(list.data) && list.data.length >= 0;
+      return Array.isArray(list.data);
     } catch {
       return false;
     }
@@ -77,31 +105,107 @@ export class OpenAIClient {
       throw new Error("OpenAIClient not initialized");
   }
 
-  private prepareImageData(
-    imageBuffer: Buffer | undefined,
-  ): string | undefined {
-    return imageBuffer?.toString("base64");
-  }
-
-  private prepareEffectiveText(textPrompt: string): string {
-    return `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
-  }
-
   async listModels(): Promise<string[]> {
     this.ensureClient();
-    const client = this.client!;
-
     try {
-      const model_list = await client.models.list();
-      const model_ids = (model_list.data ?? []).map((m: any) => m.id as string);
-      const filtered = this.allowedModels.filter((id) =>
-        model_ids.includes(id),
-      );
+      const modelList = await this.client!.models.list();
+      const modelIds = modelList.data.map((m) => m.id);
+      const filtered = this.allowedModels.filter((id) => modelIds.includes(id));
 
-      return filtered.length ? filtered : this.allowedModels;
+      return filtered.length ? filtered : [...this.allowedModels];
     } catch {
-      return this.allowedModels;
+      return [...this.allowedModels];
     }
+  }
+
+  /**
+   * Build user content with text and optional image (shared logic)
+   */
+  private buildUserContentBase(
+    textPrompt: string,
+    imageBuffer?: Buffer,
+  ): { effectiveText: string; imageUrl?: string } {
+    const effectiveText = this.buildEffectiveText(textPrompt);
+    const imageUrl = imageBuffer ? this.encodeImage(imageBuffer) : undefined;
+
+    return { effectiveText, imageUrl };
+  }
+
+  /**
+   * Build messages for Chat Completions API
+   */
+  private buildChatMessages(
+    textPrompt: string,
+    customPrompt: string,
+    imageBuffer?: Buffer,
+  ): ChatCompletionMessageParam[] {
+    const { effectiveText, imageUrl } = this.buildUserContentBase(
+      textPrompt,
+      imageBuffer,
+    );
+
+    const userContent: ChatCompletionUserMessageParam["content"] = [
+      { type: "text", text: effectiveText },
+    ];
+
+    if (imageUrl) {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: imageUrl, detail: "auto" },
+      });
+    }
+
+    return [
+      {
+        name: "message",
+        role: "system",
+        content: [{ type: "text", text: customPrompt.trim() }],
+      },
+      {
+        name: "message",
+        role: "user",
+        content: userContent,
+      },
+    ];
+  }
+
+  /**
+   * Build input for Responses API
+   */
+  private buildResponseInput(
+    textPrompt: string,
+    customPrompt: string,
+    imageBuffer?: Buffer,
+  ): ResponseInput {
+    const { effectiveText, imageUrl } = this.buildUserContentBase(
+      textPrompt,
+      imageBuffer,
+    );
+
+    const userContent: ResponseInputMessageContentList = [
+      { type: "input_text", text: effectiveText },
+    ];
+
+    if (imageUrl) {
+      userContent.push({
+        type: "input_image",
+        image_url: imageUrl,
+        detail: "auto",
+      });
+    }
+
+    return [
+      {
+        type: "message",
+        role: "system",
+        content: [{ type: "input_text", text: customPrompt.trim() }],
+      },
+      {
+        type: "message",
+        role: "user",
+        content: userContent,
+      },
+    ];
   }
 
   async completionStream(
@@ -120,36 +224,16 @@ export class OpenAIClient {
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
-    const client = this.client!;
-    const base64 = this.prepareImageData(imageBuffer);
-    const effectiveText = this.prepareEffectiveText(textPrompt);
-    const messages: ChatCompletionMessageParam[] = [];
 
-    messages.push({
-      name: "message",
-      role: "system",
-      content: [{ type: "text", text: customPrompt.trim() }],
-    });
-
-    const userContent: ChatCompletionUserMessageParam["content"] = [
-      { type: "text", text: effectiveText },
-    ];
-
-    if (base64) {
-      userContent.push({
-        type: "image_url",
-        image_url: { url: `data:image/png;base64,${base64}`, detail: "auto" },
-      });
-    }
-    messages.push({
-      name: "message",
-      role: "user",
-      content: userContent,
-    });
+    const messages = this.buildChatMessages(
+      textPrompt,
+      customPrompt,
+      imageBuffer,
+    );
 
     const request: ChatCompletionCreateParams & { stream: true } = {
       model: config.model,
-      messages: messages,
+      messages,
       stream: true,
     } as ChatCompletionCreateParamsStreaming;
 
@@ -157,11 +241,10 @@ export class OpenAIClient {
       request.reasoning_effort = "high";
       request.service_tier = "priority";
     }
-    const stream: Stream<ChatCompletionChunk> =
-      await client.chat.completions.create(request, {
-        signal,
-      });
 
+    const stream = await this.client!.chat.completions.create(request, {
+      signal,
+    });
     let finalContent = "";
 
     for await (const chunk of stream) {
@@ -176,20 +259,14 @@ export class OpenAIClient {
         });
       }
     }
-    // Emit a final done event for completeness (not required by current UI)
+
     onDelta({
       channel: "answer",
       text: finalContent,
       eventType: "chat.output_text.done",
     });
 
-    return {
-      requestId,
-      content: finalContent,
-      model: config.model,
-      timestamp: new Date().toISOString(),
-      sessionId: sessionId,
-    };
+    return this.buildResult(requestId, finalContent, sessionId);
   }
 
   async responseStream(
@@ -208,37 +285,16 @@ export class OpenAIClient {
   ): Promise<AnalysisResult> {
     this.ensureClient();
     const config = this.config!;
-    const client = this.client!;
-    const base64 = this.prepareImageData(imageBuffer);
-    const effectiveText = this.prepareEffectiveText(textPrompt);
-    const input: ResponseInput = [];
 
-    input.push({
-      type: "message",
-      role: "system",
-      content: [{ type: "input_text", text: customPrompt.trim() }],
-    });
-
-    const userContent: ResponseInputMessageContentList = [
-      { type: "input_text", text: effectiveText },
-    ];
-
-    if (base64) {
-      userContent.push({
-        type: "input_image",
-        image_url: `data:image/png;base64,${base64}`,
-        detail: "auto",
-      });
-    }
-    input.push({
-      type: "message",
-      role: "user",
-      content: userContent,
-    });
+    const input = this.buildResponseInput(
+      textPrompt,
+      customPrompt,
+      imageBuffer,
+    );
 
     const request: ResponseCreateParams & { stream: true } = {
       model: config.model,
-      input: input,
+      input,
       tools: [{ type: "web_search_preview" }],
       stream: true,
     } as ResponseCreateParamsStreaming;
@@ -247,79 +303,55 @@ export class OpenAIClient {
       request.reasoning = { effort: "high", summary: "auto" };
       request.service_tier = "priority";
     }
-    const stream: Stream<ResponseStreamEvent> = await client.responses.create(
-      request,
-      { signal },
-    );
 
+    const stream = await this.client!.responses.create(request, { signal });
     let finalContent = "";
 
     for await (const event of stream) {
-      // Reasoning stream (models with reasoning support)
-      if (event.type === "response.reasoning_summary_text.delta") {
-        onDelta({
-          channel: "reasoning",
-          delta: event.delta,
-          eventType: event.type,
-        });
-        continue;
-      }
-
-      // Final reasoning text (models with reasoning support)
-      if (event.type === "response.reasoning_summary_text.done") {
-        onDelta({
-          channel: "reasoning",
-          text: event.text,
-          eventType: event.type,
-        });
-        continue;
-      }
-
-      // Reasoning lifecycle events (no full content available)
-      if (
-        event.type === "response.reasoning_summary_part.added" ||
-        event.type === "response.reasoning_summary_part.done"
-      ) {
-        onDelta({ channel: "reasoning", eventType: event.type });
-        continue;
-      }
-
-      // Web search lifecycle events (no full content available)
-      if (
-        event.type === "response.web_search_call.in_progress" ||
-        event.type === "response.web_search_call.searching" ||
-        event.type === "response.web_search_call.completed"
-      ) {
-        onDelta({ channel: "web_search", eventType: event.type });
-        continue;
-      }
-
-      // Prefer granular answer delta events
-      if (event.type === "response.output_text.delta") {
-        onDelta({
-          channel: "answer",
-          delta: event.delta,
-          eventType: event.type,
-        });
-        finalContent += event.delta;
-        continue;
-      }
-
-      // Ensure we get the final answer text
-      if (event.type === "response.output_text.done") {
-        onDelta({ channel: "answer", text: event.text, eventType: event.type });
-        finalContent = event.text;
-        continue;
+      switch (event.type) {
+        case "response.reasoning_summary_text.delta":
+          onDelta({
+            channel: "reasoning",
+            delta: event.delta,
+            eventType: event.type,
+          });
+          break;
+        case "response.reasoning_summary_text.done":
+          onDelta({
+            channel: "reasoning",
+            text: event.text,
+            eventType: event.type,
+          });
+          break;
+        case "response.reasoning_summary_part.added":
+        case "response.reasoning_summary_part.done":
+          onDelta({ channel: "reasoning", eventType: event.type });
+          break;
+        case "response.web_search_call.in_progress":
+        case "response.web_search_call.searching":
+        case "response.web_search_call.completed":
+          onDelta({ channel: "web_search", eventType: event.type });
+          break;
+        case "response.output_text.delta":
+          finalContent += event.delta;
+          onDelta({
+            channel: "answer",
+            delta: event.delta,
+            eventType: event.type,
+          });
+          break;
+        case "response.output_text.done":
+          finalContent = event.text;
+          onDelta({
+            channel: "answer",
+            text: event.text,
+            eventType: event.type,
+          });
+          break;
       }
     }
 
-    return {
-      requestId,
-      content: finalContent,
-      model: config.model,
-      timestamp: new Date().toISOString(),
-      sessionId,
-    };
+    return this.buildResult(requestId, finalContent, sessionId);
   }
 }
 

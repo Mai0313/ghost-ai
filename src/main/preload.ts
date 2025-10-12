@@ -51,6 +51,7 @@ const api = {
     const unsubscribe = () => {
       ipcRenderer.off("capture:analyze-stream:start", startHandler);
       ipcRenderer.off("capture:analyze-stream:delta", deltaHandler);
+      ipcRenderer.off("capture:analyze-stream:deltas", deltasHandler);
       ipcRenderer.off("capture:analyze-stream:done", doneHandler);
       ipcRenderer.off("capture:analyze-stream:error", errorHandler);
     };
@@ -85,6 +86,37 @@ const api = {
 
       handlers.onDelta?.(payload);
     };
+
+    // Batch delta handler (optimized IPC)
+    const deltasHandler = (
+      _: any,
+      data: {
+        requestId: string;
+        sessionId: string;
+        updates: Array<{
+          channel?: "answer" | "reasoning" | "web_search";
+          eventType?: string;
+          delta?: string;
+          text?: string;
+        }>;
+      },
+    ) => {
+      if (activeRequestId && data.requestId !== activeRequestId) return;
+
+      // Process all updates in the batch
+      for (const update of data.updates) {
+        const payload: any = {
+          requestId: data.requestId,
+          sessionId: data.sessionId,
+          channel: update.channel ?? "answer",
+          eventType: update.eventType ?? "response.output_text.delta",
+          delta: update.delta,
+          text: update.text,
+        };
+
+        handlers.onDelta?.(payload);
+      }
+    };
     const doneHandler = (
       _: any,
       data: AnalysisResult & { sessionId: string },
@@ -116,6 +148,7 @@ const api = {
 
     ipcRenderer.on("capture:analyze-stream:start", startHandler);
     ipcRenderer.on("capture:analyze-stream:delta", deltaHandler);
+    ipcRenderer.on("capture:analyze-stream:deltas", deltasHandler);
     ipcRenderer.on("capture:analyze-stream:done", doneHandler);
     ipcRenderer.on("capture:analyze-stream:error", errorHandler);
 

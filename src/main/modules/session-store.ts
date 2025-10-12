@@ -13,18 +13,36 @@ interface SessionState {
 
 class SessionStore {
   private sessions = new Map<string, SessionState>();
+  private readonly maxSessions = 50; // LRU limit to prevent memory leak
 
   clearAll(): void {
     this.sessions.clear();
+  }
+
+  /**
+   * Evict oldest session if map exceeds max size (simple FIFO)
+   */
+  private evictOldestIfNeeded(): void {
+    if (this.sessions.size >= this.maxSessions) {
+      const oldestKey = this.sessions.keys().next().value;
+
+      if (oldestKey !== undefined) {
+        this.sessions.delete(oldestKey);
+        console.log(`[SessionStore] Evicted oldest session: ${oldestKey}`);
+      }
+    }
   }
 
   private ensure(sessionId: string): SessionState {
     let st = this.sessions.get(sessionId);
 
     if (!st) {
+      // Evict oldest session before adding new one if at capacity
+      this.evictOldestIfNeeded();
       st = { entries: [], nextIndex: 0, logPath: null } as SessionState;
       this.sessions.set(sessionId, st);
     }
+    // No need to refresh access order - simpler FIFO approach
 
     return st;
   }
@@ -61,13 +79,7 @@ class SessionStore {
 
   // For debugging/inspection
   getSessionsData(): Array<Record<string, SessionEntry[]>> {
-    const list: Array<Record<string, SessionEntry[]>> = [];
-
-    for (const [sid, st] of this.sessions) {
-      list.push({ [sid]: [...st.entries] });
-    }
-
-    return list;
+    return Array.from(this.sessions, ([sid, st]) => ({ [sid]: st.entries }));
   }
 
   // Return a plain object { sessionId: { entries, nextIndex } } for persistence
@@ -82,9 +94,9 @@ class SessionStore {
 
     for (const [sid, st] of this.sessions) {
       out[sid] = {
-        entries: [...st.entries],
+        entries: st.entries,
         nextIndex: st.nextIndex,
-        log_path: st.logPath ?? null,
+        log_path: st.logPath,
       };
     }
 
