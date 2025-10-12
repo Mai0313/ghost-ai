@@ -225,6 +225,7 @@ export function App() {
           setBusy(false);
           setStreaming(false);
           setTimeout(() => askInputRef.current?.focus(), 0);
+
           return "ask";
         }
       });
@@ -237,6 +238,7 @@ export function App() {
           setStreaming(false);
           setTimeout(() => askInputRef.current?.focus(), 0);
         }
+
         return currentTab;
       });
     });

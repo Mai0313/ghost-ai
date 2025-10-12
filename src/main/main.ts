@@ -114,6 +114,7 @@ async function initializeSessionLogs(sessionId: string): Promise<void> {
   try {
     await logManager.writeConversationLog(sessionId, "");
     const json = sessionStore.toJSON();
+
     await logManager.writeSessionJson(sessionId, json[sessionId] ?? {});
   } catch (err) {
     console.error("[Session] Failed to initialize session logs:", err);
