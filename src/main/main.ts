@@ -44,51 +44,8 @@ import { sessionStore } from "./modules/session-store";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Optimized LRU Map implementation with max size limit
-// Uses a hybrid approach: tracks access order only on writes to minimize overhead
-class LRUMap<K, V> extends Map<K, V> {
-  private maxSize: number;
-
-  constructor(maxSize: number) {
-    super();
-    this.maxSize = maxSize;
-  }
-
-  set(key: K, value: V): this {
-    // Remove key if it exists (will be re-added at end to maintain insertion order)
-    if (this.has(key)) {
-      this.delete(key);
-    }
-    super.set(key, value);
-
-    // Evict oldest entries if over limit (FIFO eviction on overflow)
-    if (this.size > this.maxSize) {
-      const firstKey = this.keys().next().value;
-
-      if (firstKey !== undefined) {
-        this.delete(firstKey);
-        console.log(`[LRU] Evicted session: ${firstKey}`);
-      }
-    }
-
-    return this;
-  }
-
-  // Optimized get: no reordering to avoid delete+insert overhead
-  // This is acceptable for session storage where writes determine recency
-  get(key: K): V | undefined {
-    return super.get(key);
-  }
-}
-
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-// Simple in-memory Q/A history per session as plain text. Format:
-// Q: <question>\nA: <answer>\n\n ...
-// Keep max 50 recent sessions to prevent unbounded memory growth
-const conversationHistoryBySession = new LRUMap<string, string>(50);
-// Store the initial (default) prompt actually used for the session's first turn
-const initialPromptBySession = new LRUMap<string, string>(50);
 // Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
 let lastAudioToggleAt = 0;
 // Top-level session identifier (resets on app start and when user clears)
@@ -109,10 +66,9 @@ function resolveAssetPath(assetRelativePath: string) {
   return path.join(__dirname, "..", assetRelativePath);
 }
 
-// Helper to initialize session logs (creates empty log files and session JSON)
+// Helper to initialize session logs (creates empty session JSON)
 async function initializeSessionLogs(sessionId: string): Promise<void> {
   try {
-    await logManager.writeConversationLog(sessionId, "");
     const json = sessionStore.toJSON();
 
     await logManager.writeSessionJson(sessionId, json[sessionId] ?? {});
@@ -314,9 +270,7 @@ app.whenReady().then(async () => {
 
       mainWindow.webContents.send("ask:clear");
 
-      // Clear main-process conversation history
-      conversationHistoryBySession.clear();
-      initialPromptBySession.clear();
+      // Clear session store
       sessionStore.clearAll();
 
       // Generate new session ID
@@ -423,9 +377,7 @@ app.whenReady().then(async () => {
   // Session IPC
   ipcMain.handle("session:get", () => ({ sessionId: currentSessionId }));
   ipcMain.handle("session:new", async () => {
-    // Clear any in-memory conversation history and initial prompt cache
-    conversationHistoryBySession.clear();
-    initialPromptBySession.clear();
+    // Clear session store
     try {
       sessionStore.clearAll();
     } catch (err) {
@@ -540,6 +492,7 @@ ipcMain.handle("openai:list-models", async () => {
 // Non-streaming analyze IPC removed; use 'capture:analyze-stream' instead
 
 // Streaming analyze (sends start/delta/done/error events)
+// Simplified: Renderer sends formatted history, Main Process doesn't maintain conversation state
 ipcMain.on(
   "capture:analyze-stream",
   async (
@@ -547,7 +500,7 @@ ipcMain.on(
     payload: {
       textPrompt: string;
       customPrompt: string;
-      history?: string | null;
+      formattedPrompt: string; // Complete prompt with history, formatted by Renderer
     },
   ) => {
     // Snapshot the sessionId at the start of this request to prevent races with Ctrl+R
@@ -571,51 +524,26 @@ ipcMain.on(
         sessionId: requestSessionId,
       });
 
-      // Inject prior plain-text history into the text prompt for simple continuity.
-      // If payload.history is provided (regeneration), use it as the prior history override;
-      // otherwise use the current session's accumulated history.
-      const priorPlain =
-        (typeof payload.history === "string" ? payload.history : null) ??
-        conversationHistoryBySession.get(requestSessionId) ??
-        "";
-      // Ensure the initial prompt (first-turn-only) is preserved in prior context when overriding history
-      const initialPromptPrefix =
-        initialPromptBySession.get(requestSessionId) ?? "";
-      const priorWithInitial =
-        typeof payload.history === "string"
-          ? `${initialPromptPrefix}${priorPlain || ""}`
-          : priorPlain;
-      const combinedTextPrompt = priorWithInitial
-        ? `Previous conversation (plain text):\n${priorWithInitial}\n\nNew question:\n${(payload.textPrompt ?? "").trim()}`
-        : (payload.textPrompt ?? "").trim();
+      // Use the formatted prompt provided by Renderer (includes history if any)
+      const combinedTextPrompt = (payload.formattedPrompt ?? "").trim();
 
-      // Load active prompt content only for the first turn of the current session.
-      // Required: user must select an active prompt; do not fallback to default.txt or write files.
-      const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
-      let defaultPrompt = "";
+      // Load active prompt for system context (always required)
+      let systemPrompt = "";
+      try {
+        const activeName = getActivePromptName();
 
-      if (isFirstTurn) {
-        try {
-          const activeName = getActivePromptName();
+        if (!activeName) {
+          evt.sender.send("capture:analyze-stream:error", {
+            error:
+              "No active prompt selected. Open Settings → Prompts to select one.",
+            sessionId: requestSessionId,
+          });
 
-          if (!activeName) {
-            evt.sender.send("capture:analyze-stream:error", {
-              error:
-                "No active prompt selected. Open Settings → Prompts to select one.",
-              sessionId: requestSessionId,
-            });
-
-            return;
-          }
-          defaultPrompt = readPrompt(activeName) || "";
-        } catch {
-          defaultPrompt = "";
+          return;
         }
-      }
-
-      if (defaultPrompt) {
-        // Cache the initial prompt used for this session so we can reuse it during regen
-        initialPromptBySession.set(requestSessionId, defaultPrompt);
+        systemPrompt = readPrompt(activeName) || "";
+      } catch (err) {
+        console.error("[Analyze] Failed to load active prompt:", err);
       }
 
       // Create AbortController for this renderer and abort any prior one
@@ -637,7 +565,7 @@ ipcMain.on(
       const result = await openAIClient.responseStream(
         image,
         combinedTextPrompt,
-        defaultPrompt,
+        systemPrompt,
         requestId,
         (update) => {
           try {
@@ -667,64 +595,29 @@ ipcMain.on(
         if (cur === controller) activeAnalyzeControllers.delete(wcId);
       } catch {}
 
-      // Check if this request was aborted (e.g., by Ctrl+R). If so, don't write to log
-      // to prevent interrupted conversations from being written to the wrong session
+      // Write logs if not aborted and session hasn't changed
       if (!controller.signal.aborted && requestSessionId === currentSessionId) {
-        // Only write to log if not aborted AND the session hasn't changed during analysis
-        // Append to plain-text conversation history.
-        // If this was a regeneration (payload.history provided), rebuild from that base
-        // to avoid duplicating the previous answer.
         const question = (payload.textPrompt ?? "").trim();
         const answer = (result?.content ?? "").trim();
 
-        if (typeof payload.history === "string") {
-          // payload.history already excludes the current page's Q/A
-          const base = payload.history || "";
-          const rebuilt = `${initialPromptPrefix}${base}`;
-          const appended =
-            question || answer ? `Q: ${question}\nA: ${answer}\n\n` : "";
-          const updated = rebuilt + appended;
-
-          conversationHistoryBySession.set(requestSessionId, updated);
-        } else {
-          if (question || answer) {
-            const existing =
-              conversationHistoryBySession.get(requestSessionId) ?? "";
-            const prefix = existing
-              ? ""
-              : defaultPrompt
-                ? `${defaultPrompt}\n`
-                : "";
-            const updated =
-              existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
-
-            conversationHistoryBySession.set(requestSessionId, updated);
-          }
-        }
-        // Persist current conversation history for this request for debugging/inspection
         try {
-          const logPath = await logManager.writeConversationLog(
-            requestSessionId,
-            conversationHistoryBySession.get(requestSessionId) ?? "",
-          );
-
           // Track session entry
           sessionStore.appendEntry(requestSessionId, {
             requestId,
-            text_input: (payload.textPrompt ?? "").trim(),
+            text_input: question,
             ai_output: answer,
           });
-          sessionStore.updateSessionLogPath(requestSessionId, logPath);
-          // Persist session store to JSON for debugging/inspection
-          try {
-            const json = sessionStore.toJSON();
 
-            await logManager.writeSessionJson(
-              requestSessionId,
-              json[requestSessionId] ?? {},
-            );
-          } catch {}
-        } catch {}
+          // Write session JSON (simplified: single log format)
+          const json = sessionStore.toJSON();
+          const logPath = await logManager.writeSessionJson(
+            requestSessionId,
+            json[requestSessionId] ?? {},
+          );
+          sessionStore.updateSessionLogPath(requestSessionId, logPath);
+        } catch (err) {
+          console.error("[Analyze] Failed to write session log:", err);
+        }
       }
     } catch (err) {
       const error = String(err ?? "analyze-stream failed");
@@ -742,8 +635,6 @@ ipcMain.on(
         activeAnalyzeControllers.delete(wcId);
       } catch {}
       if (!isAbort) {
-        // Best-effort request routing – if requestId isn't known yet, send without
-        // Use the original analysis sessionId, not the current one (which might have changed due to Ctrl+R)
         evt.sender.send("capture:analyze-stream:error", {
           error,
           sessionId: requestSessionId,

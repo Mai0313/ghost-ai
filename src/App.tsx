@@ -371,6 +371,27 @@ export function App() {
     }
   }, []);
 
+  const makePlainHistoryText = useCallback(
+    (hist: { role: "user" | "assistant"; content: string }[]) => {
+      let out = "";
+
+      for (let i = 0; i < hist.length - 1; i += 2) {
+        const u = hist[i];
+        const a = hist[i + 1];
+
+        if (u?.role === "user" && a?.role === "assistant") {
+          const q = (u.content || "").trim();
+          const ans = (a.content || "").trim();
+
+          if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
+        }
+      }
+
+      return out;
+    },
+    [],
+  );
+
   const onSubmit = useCallback(async () => {
     if (busy || streaming) return;
 
@@ -394,10 +415,16 @@ export function App() {
     const cfg = await window.ghostAI.getOpenAIConfig();
     const customPrompt = (cfg as any)?.customPrompt ?? "";
 
+    // Format history for the prompt
+    const historyText = makePlainHistoryText(history);
+    const formattedPrompt = historyText
+      ? `Previous conversation:\n${historyText}\n\nNew question:\n${userMessage}`
+      : userMessage;
+
     await analyzeStream.execute({
       userMessage,
       customPrompt,
-      history: null,
+      formattedPrompt,
       onSuccess: (content) => {
         setResult(content);
         setHistory((prev) => [
@@ -413,28 +440,7 @@ export function App() {
         setResult(error);
       },
     });
-  }, [text, busy, streaming, analyzeStream, transcriptBufferRef]);
-
-  const makePlainHistoryText = useCallback(
-    (hist: { role: "user" | "assistant"; content: string }[]) => {
-      let out = "";
-
-      for (let i = 0; i < hist.length - 1; i += 2) {
-        const u = hist[i];
-        const a = hist[i + 1];
-
-        if (u?.role === "user" && a?.role === "assistant") {
-          const q = (u.content || "").trim();
-          const ans = (a.content || "").trim();
-
-          if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
-        }
-      }
-
-      return out;
-    },
-    [],
-  );
+  }, [text, busy, streaming, analyzeStream, transcriptBufferRef, history, makePlainHistoryText]);
 
   const onRegenerate = useCallback(async () => {
     if (!canRegenerate) return;
@@ -454,10 +460,15 @@ export function App() {
 
     setHistoryIndex(null);
 
+    // Format the complete prompt with history
+    const formattedPrompt = priorPlain
+      ? `Previous conversation:\n${priorPlain}\n\nNew question:\n${userMessage}`
+      : userMessage;
+
     await analyzeStream.execute({
       userMessage,
       customPrompt,
-      history: priorPlain,
+      formattedPrompt,
       onSuccess: (content) => {
         setResult(content);
         setHistory((prev) => {

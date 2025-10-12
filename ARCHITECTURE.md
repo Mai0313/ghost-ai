@@ -24,7 +24,7 @@
 
 ## System Overview
 
-Ghost AI is built on Electron with a multi-process architecture:
+Ghost AI is built on Electron with a **simplified multi-process architecture**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -35,19 +35,15 @@ Ghost AI is built on Electron with a multi-process architecture:
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │   Log Mgr    │  │ Prompts Mgr  │  │  Settings    │      │
+│  │  (JSON only) │  │              │  │              │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
-│  ┌──────────────────────────────────────────────────┐      │
-│  │      Conversation History (LRU Maps)             │      │
-│  │  • conversationHistoryBySession (50 max)         │      │
-│  │  • initialPromptBySession (50 max)               │      │
-│  └──────────────────────────────────────────────────┘      │
 └─────────────────────────────────────────────────────────────┘
-                              ↕ IPC
+                              ↕ IPC (formatted prompt)
 ┌─────────────────────────────────────────────────────────────┐
 │                  Renderer Process (React)                    │
 │  ┌──────────────────────────────────────────────────┐      │
-│  │           UI State (React State)                 │      │
-│  │  • history: Message[]                            │      │
+│  │  UI State (React State) - Single Source of Truth │      │
+│  │  • history: Message[] ← Conversation state       │      │
 │  │  • result: string                                │      │
 │  │  • reasoning: string                             │      │
 │  │  • historyIndex: number | null                   │      │
@@ -69,8 +65,8 @@ Ghost AI is built on Electron with a multi-process architecture:
 │  ┌─────────────────┐  ┌─────────────────┐                  │
 │  │    prompts/     │  │     logs/       │                  │
 │  │  • default.txt  │  │  • <sessionId>/ │                  │
-│  │  • custom.txt   │  │    • .log       │                  │
-│  │  • ...          │  │    • .json      │                  │
+│  │  • custom.txt   │  │    • .json      │                  │
+│  │  • ...          │  │                 │                  │
 │  └─────────────────┘  └─────────────────┘                  │
 │  ┌─────────────────┐                                        │
 │  │   config.json   │  (electron-store)                     │
@@ -78,38 +74,38 @@ Ghost AI is built on Electron with a multi-process architecture:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**Key Simplification:** Renderer maintains conversation history as single source of truth. Main Process receives formatted prompts and only logs completed Q&A pairs.
+
 ---
 
 ## Process Model
 
 ### Main Process (`src/main/main.ts`)
 
-**Responsibilities:**
+**Responsibilities (Simplified):**
 
 - Window and tray management
 - Global hotkey registration
 - IPC handler registration
-- Session lifecycle management
-- Conversation history coordination
+- Session lifecycle management (session ID only)
 - Screenshot capture orchestration
-- OpenAI API streaming
-- Log persistence
+- OpenAI API streaming coordination
+- Log persistence (JSON only)
 
-**Key Global State:**
+**Key Global State (Simplified):**
 
 ```typescript
 // Global session identifier (reset on app start and Ctrl+R)
 let currentSessionId: string = crypto.randomUUID();
 
-// Plain text Q/A history per session (max 50 sessions)
-const conversationHistoryBySession = new LRUMap<string, string>(50);
-
-// Initial prompt used for each session's first turn
-const initialPromptBySession = new LRUMap<string, string>(50);
-
 // Active streaming AbortControllers per renderer
 const activeAnalyzeControllers = new Map<number, AbortController>();
 ```
+
+**Removed Complexity:**
+- ❌ No conversation history Maps (moved to Renderer)
+- ❌ No LRU eviction logic
+- ❌ No initial prompt caching
 
 **Lifecycle:**
 
@@ -119,17 +115,19 @@ const activeAnalyzeControllers = new Map<number, AbortController>();
 
 ### Renderer Process (`src/App.tsx`)
 
-**Responsibilities:**
+**Responsibilities (Enhanced):**
 
 - UI rendering and user interaction
+- **Conversation history management (Single Source of Truth)**
+- **History formatting for API calls**
 - Streaming delta accumulation
 - History pagination
-- State synchronization with main process
+- Session synchronization
 
 **Key State:**
 
 ```typescript
-// Conversation history for UI (message objects)
+// Conversation history - SINGLE SOURCE OF TRUTH
 const [history, setHistory] = useState<
   { role: "user" | "assistant"; content: string }[]
 >([]);
@@ -148,6 +146,8 @@ const [sessionId, setSessionId] = useState<string>("");
 const [streaming, setStreaming] = useState(false);
 const [busy, setBusy] = useState(false);
 ```
+
+**New Responsibility:** Renderer formats conversation history into plain text and passes it to Main Process in each API call. No history synchronization needed.
 
 ### Preload Script (`src/main/preload.ts`)
 
@@ -268,121 +268,74 @@ Disk: Persist as .log (plain text) and .json (structured)
 
 ---
 
-## Context Management System
+## Context Management System (Simplified)
 
-Ghost AI uses a **four-layer context management system** to maintain conversation continuity while optimizing for performance and flexibility.
+Ghost AI uses a **two-layer context management system** with Renderer as the single source of truth.
 
-### Layer 1: conversationHistoryBySession (Main Process)
+### Layer 1: history Array (Renderer Process) - **Primary**
 
-**Type:** `LRUMap<string, string>`  
-**Max Capacity:** 50 sessions  
-**Location:** `src/main/main.ts:89`
+**Type:** `Array<{role: 'user' | 'assistant', content: string}>`  
+**Location:** `src/App.tsx`
 
 **Purpose:**
 
-- Store plain-text conversation history for each session
-- Inject into subsequent prompts for continuity
-- Source of truth for conversation state in main process
-
-**Format:**
-
-```
-Q: First user question
-A: First AI answer
-
-Q: Second user question
-A: Second AI answer
-
-```
+- **Single source of truth for conversation state**
+- Drive UI display and pagination
+- Format history for API calls
 
 **Update Logic:**
 
 ```typescript
-// main.ts:674-703
-const question = payload.textPrompt.trim();
-const answer = result.content.trim();
-
-if (typeof payload.history === "string") {
-  // Regeneration mode: rebuild from provided history
-  const base = payload.history || "";
-  const rebuilt = `${initialPromptPrefix}${base}`;
-  const appended = question || answer ? `Q: ${question}\nA: ${answer}\n\n` : "";
-  const updated = rebuilt + appended;
-  conversationHistoryBySession.set(requestSessionId, updated);
-} else {
-  // Normal mode: append to existing history
-  const existing = conversationHistoryBySession.get(requestSessionId) ?? "";
-  const prefix = existing ? "" : defaultPrompt ? `${defaultPrompt}\n` : "";
-  const updated = existing + `${prefix}Q: ${question}\nA: ${answer}\n\n`;
-  conversationHistoryBySession.set(requestSessionId, updated);
-}
+// App.tsx: On successful API response
+setHistory((prev) => [
+  ...prev,
+  { role: "user", content: userMessage },
+  { role: "assistant", content: apiResponse },
+]);
 ```
 
-**Injection into Prompt:**
+**Format for API (Plain Text Conversion):**
 
 ```typescript
-// main.ts:574-590
-const priorPlain = conversationHistoryBySession.get(requestSessionId) ?? "";
-const combinedTextPrompt = priorPlain
-  ? `Previous conversation (plain text):\n${priorPlain}\n\nNew question:\n${textPrompt.trim()}`
-  : textPrompt.trim();
-```
-
-### Layer 2: initialPromptBySession (Main Process)
-
-**Type:** `LRUMap<string, string>`  
-**Max Capacity:** 50 sessions  
-**Location:** `src/main/main.ts:91`
-
-**Purpose:**
-
-- Cache the initial (system) prompt used for each session's first turn
-- Ensure regeneration uses the same prompt as original conversation
-- Prevent prompt changes from affecting historical conversations
-
-**Update Logic:**
-
-```typescript
-// main.ts:594-619
-const isFirstTurn = !sessionStore.hasEntries(requestSessionId);
-let defaultPrompt = "";
-
-if (isFirstTurn) {
-  const activeName = getActivePromptName();
-  if (!activeName) {
-    // Error: no active prompt selected
-    return;
+// App.tsx: makePlainHistoryText()
+const makePlainHistoryText = (hist) => {
+  let out = "";
+  for (let i = 0; i < hist.length - 1; i += 2) {
+    const u = hist[i];
+    const a = hist[i + 1];
+    if (u?.role === "user" && a?.role === "assistant") {
+      const q = (u.content || "").trim();
+      const ans = (a.content || "").trim();
+      if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
+    }
   }
-  defaultPrompt = readPrompt(activeName) || "";
-}
-
-if (defaultPrompt) {
-  // Cache for this session's future regenerations
-  initialPromptBySession.set(requestSessionId, defaultPrompt);
-}
+  return out;
+};
 ```
 
-**Usage in Regeneration:**
+**Injection into Prompt (Renderer):**
 
 ```typescript
-// main.ts:582-587
-const initialPromptPrefix = initialPromptBySession.get(requestSessionId) ?? "";
-const priorWithInitial =
-  typeof payload.history === "string"
-    ? `${initialPromptPrefix}${priorPlain || ""}`
-    : priorPlain;
+// App.tsx: onSubmit()
+const historyText = makePlainHistoryText(history);
+const formattedPrompt = historyText
+  ? `Previous conversation:\n${historyText}\n\nNew question:\n${userMessage}`
+  : userMessage;
+
+// Pass to Main Process
+await analyzeStream.execute({ userMessage, customPrompt, formattedPrompt, ... });
 ```
 
-### Layer 3: sessionStore (Main Process)
+### Layer 2: sessionStore (Main Process) - **Secondary**
 
 **Type:** `Map<string, SessionState>`  
 **Location:** `src/main/modules/session-store.ts`
 
-**Purpose:**
+**Purpose (Logging Only):**
 
-- Structured tracking of all Q&A entries per session
-- Serialization to JSON for persistence
-- Check if session has any entries (for first-turn detection)
+- Track completed Q&A entries for logging
+- Serialize to JSON for persistence
+- **No longer used for history management or first-turn detection**
 
 **Data Structure:**
 
@@ -401,33 +354,16 @@ interface SessionState {
 }
 ```
 
-**Key Methods:**
+**Key Methods (Simplified):**
 
 ```typescript
 class SessionStore {
-  // Add a new Q&A entry
-  appendEntry(
-    sessionId: string,
-    data: {
-      requestId: string;
-      text_input: string;
-      ai_output: string;
-    },
-  ): SessionEntry;
-
-  // Check if session has any entries (first turn detection)
-  hasEntries(sessionId: string): boolean;
-
+  // Add a new Q&A entry for logging
+  appendEntry(sessionId: string, data: {...}): SessionEntry;
+  
   // Serialize to JSON for persistence
-  toJSON(): Record<
-    string,
-    {
-      entries: SessionEntry[];
-      nextIndex: number;
-      log_path: string | null;
-    }
-  >;
-
+  toJSON(): Record<string, {...}>;
+  
   // Clear all sessions
   clearAll(): void;
 }
@@ -436,88 +372,19 @@ class SessionStore {
 **Update Logic:**
 
 ```typescript
-// main.ts:712-716
+// main.ts: On successful API response
 sessionStore.appendEntry(requestSessionId, {
   requestId,
-  text_input: payload.textPrompt.trim(),
+  text_input: question,
   ai_output: answer,
 });
-sessionStore.updateSessionLogPath(requestSessionId, logPath);
+
+// Write to disk
+const json = sessionStore.toJSON();
+await logManager.writeSessionJson(requestSessionId, json[requestSessionId]);
 ```
 
-### Layer 4: history Array (Renderer Process)
-
-**Type:** `Array<{role: 'user' | 'assistant', content: string}>`  
-**Location:** `src/App.tsx:24-26`
-
-**Purpose:**
-
-- Drive UI display of conversation history
-- Support pagination (Prev/Next navigation)
-- Convert to plain text for regeneration
-
-**Update Logic:**
-
-```typescript
-// App.tsx:403-407 (onSubmit success)
-setHistory((prev) => [
-  ...prev,
-  { role: "user", content: userMessage },
-  { role: "assistant", content },
-]);
-setHistoryIndex(null); // Show "Live" page
-```
-
-**Pagination Logic:**
-
-```typescript
-// App.tsx:119-126
-const assistantAnswerIndices = useMemo(() => {
-  const indices: number[] = [];
-  for (let i = 0; i < history.length; i++)
-    if (history[i]?.role === "assistant") indices.push(i);
-  return indices;
-}, [history]);
-
-// App.tsx:129-137
-const displayMarkdown = useMemo(() => {
-  if (historyIndex !== null) {
-    const histIdx = assistantAnswerIndices[historyIndex] ?? null;
-    if (histIdx !== null && histIdx >= 0)
-      return history[histIdx]?.content ?? "";
-  }
-  return result; // "Live" page shows streaming result
-}, [historyIndex, assistantAnswerIndices, history, result]);
-```
-
-**Conversion to Plain Text (for Regeneration):**
-
-```typescript
-// App.tsx:418-437
-const makePlainHistoryText = useCallback(
-  (
-    hist: {
-      role: "user" | "assistant";
-      content: string;
-    }[],
-  ) => {
-    let out = "";
-    for (let i = 0; i < hist.length - 1; i += 2) {
-      const u = hist[i];
-      const a = hist[i + 1];
-      if (u?.role === "user" && a?.role === "assistant") {
-        const q = (u.content || "").trim();
-        const ans = (a.content || "").trim();
-        if (q || ans) out += `Q: ${q}\nA: ${ans}\n\n`;
-      }
-    }
-    return out;
-  },
-  [],
-);
-```
-
-### Context Flow Summary
+### Context Flow Summary (Simplified)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -525,18 +392,19 @@ const makePlainHistoryText = useCallback(
 └────────────────────────┬────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Renderer: history array → makePlainHistoryText() (if regen) │
+│  Renderer: Format history → makePlainHistoryText()           │
+│            Build complete prompt with history                │
 └────────────────────────┬────────────────────────────────────┘
-                         ↓ IPC
+                         ↓ IPC (formatted prompt)
 ┌─────────────────────────────────────────────────────────────┐
-│  Main: conversationHistoryBySession.get(sessionId)           │
-│        + initialPromptBySession.get(sessionId) (if regen)    │
+│  Main: Load system prompt from active selection              │
+│        (No history lookup needed)                            │
 └────────────────────────┬────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Inject into OpenAI prompt:                                  │
-│  "Previous conversation (plain text):\n<history>\n\n         │
-│   New question:\n<current question>"                         │
+│  OpenAI API call with:                                       │
+│  • System prompt (from active selection)                     │
+│  • User prompt (formatted with history from Renderer)        │
 └────────────────────────┬────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -548,15 +416,20 @@ const makePlainHistoryText = useCallback(
 └────────────────────────┬────────────────────────────────────┘
                          ↓ Complete
 ┌─────────────────────────────────────────────────────────────┐
-│  Main: Update conversationHistoryBySession                   │
-│        Update sessionStore                                   │
-│        Renderer: Update history array                        │
+│  Renderer: Update history array (single source of truth)     │
+│  Main: Log to sessionStore                                   │
 └────────────────────────┬────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
-│  Persist to disk (.log + .json)                              │
+│  Persist to disk (JSON only)                                 │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Key Simplifications:**
+- ✅ Single history source (Renderer)
+- ✅ No history sync between Main and Renderer
+- ✅ Renderer formats and passes complete prompt
+- ✅ Main Process only logs completed Q&A
 
 ---
 
@@ -706,64 +579,19 @@ async function initializeSessionLogs(sessionId: string): Promise<void> {
 
 ---
 
-## Logging System
+## Logging System (Simplified)
 
 ### Log File Structure
 
 ```
 ~/.ghost-ai/logs/
 └── <sessionId>/
-    ├── <sessionId>.log    (plain text conversation)
-    └── <sessionId>.json   (structured session data)
+    └── <sessionId>.json   (structured session data - ONLY format)
 ```
 
-### Plain Text Log (.log)
+**Simplification:** Removed dual-format logging. JSON provides complete structured data including conversation history.
 
-**Path:** `~/.ghost-ai/logs/<sessionId>/<sessionId>.log`
-
-**Content Format:**
-
-```
-Q: User's first question here
-A: AI's first answer here
-
-Q: User's second question here
-A: AI's second answer here
-
-```
-
-**Write Logic:**
-
-```typescript
-// log-manager.ts:11-25
-export async function writeConversationLog(
-  sessionId: string,
-  content: string,
-): Promise<string> {
-  const logsDir = resolveLogsDir(); // ~/.ghost-ai/logs
-  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9-_]/g, "");
-  const sessionDir = path.join(logsDir, safeSessionId);
-
-  await fs.mkdir(sessionDir, { recursive: true });
-  const filePath = path.join(sessionDir, `${safeSessionId}.log`);
-
-  await fs.writeFile(filePath, content ?? "", { encoding: "utf8" });
-
-  return filePath;
-}
-```
-
-**Invoked from:**
-
-```typescript
-// main.ts:706-709
-const logPath = await logManager.writeConversationLog(
-  requestSessionId,
-  conversationHistoryBySession.get(requestSessionId) ?? "",
-);
-```
-
-### Structured JSON Log (.json)
+### Session JSON Log (.json)
 
 **Path:** `~/.ghost-ai/logs/<sessionId>/<sessionId>.json`
 
@@ -786,19 +614,19 @@ const logPath = await logManager.writeConversationLog(
     }
   ],
   "nextIndex": 2,
-  "log_path": "/home/user/.ghost-ai/logs/<sessionId>/<sessionId>.log"
+  "log_path": "/path/to/logs/<sessionId>/<sessionId>.json"
 }
 ```
 
-**Write Logic:**
+**Write Logic (Simplified):**
 
 ```typescript
-// log-manager.ts:27-43
+// log-manager.ts
 export async function writeSessionJson(
   sessionId: string,
   payload: any,
 ): Promise<string> {
-  const logsDir = resolveLogsDir();
+  const logsDir = resolveLogsDir(); // ~/.ghost-ai/logs
   const safeSessionId = sessionId.replace(/[^a-zA-Z0-9-_]/g, "");
   const sessionDir = path.join(logsDir, safeSessionId);
 
@@ -806,7 +634,6 @@ export async function writeSessionJson(
   const filePath = path.join(sessionDir, `${safeSessionId}.json`);
 
   const body = JSON.stringify(payload ?? {}, null, 2);
-
   await fs.writeFile(filePath, body, { encoding: "utf8" });
 
   return filePath;
@@ -816,12 +643,11 @@ export async function writeSessionJson(
 **Invoked from:**
 
 ```typescript
-// main.ts:719-726
+// main.ts: After successful API response
+sessionStore.appendEntry(requestSessionId, { requestId, text_input, ai_output });
 const json = sessionStore.toJSON();
-await logManager.writeSessionJson(
-  requestSessionId,
-  json[requestSessionId] ?? {},
-);
+const logPath = await logManager.writeSessionJson(requestSessionId, json[requestSessionId]);
+sessionStore.updateSessionLogPath(requestSessionId, logPath);
 ```
 
 ### Log Write Conditions
@@ -1157,89 +983,58 @@ if (!isAbort) {
 
 ## Key Design Decisions
 
-### 1. Plain Text History vs OpenAI Message Array
+### 1. Renderer as Single Source of Truth (**New**)
 
-**Decision:** Use plain text format `Q: ...\nA: ...\n\n` instead of OpenAI's message array format.
+**Decision:** Renderer maintains conversation history; Main Process receives formatted prompts.
 
 **Rationale:**
 
-- **Simplicity:** Easy to inject into prompts without complex formatting
-- **Flexibility:** Not tied to OpenAI's specific message structure
-- **Readability:** Users can directly read `.log` files
-- **Performance:** Avoids JSON serialization overhead for every update
-- **API Compatibility:** Works with both Chat Completions and Responses API
+- **Simplicity:** Single data flow direction (Renderer → Main)
+- **No Sync Needed:** Eliminates complex history synchronization
+- **Clear Ownership:** React state naturally manages UI history
+- **Flexibility:** Easy to add features like edit history, branching conversations
+
+**Benefits:**
+
+- ✅ Simpler architecture (2 layers vs 4 layers)
+- ✅ No LRU eviction logic needed
+- ✅ No history sync bugs
+- ✅ Renderer has complete control over conversation state
 
 **Trade-offs:**
 
-- ❌ Cannot leverage OpenAI's native conversation tracking
-- ❌ Loses metadata (timestamps, token counts, model info per message)
-- ✅ Complete control over prompt formatting
-- ✅ Simple to understand and debug
+- Main Process loses ability to query history independently (acceptable: only logs completed turns)
 
-### 2. LRU Map for Session History
+### 2. JSON-Only Logging (**Simplified**)
 
-**Decision:** Use `LRUMap<string, string>` with max capacity 50 for session history.
+**Decision:** Removed dual-format logging (.log + .json), kept JSON only.
 
 **Rationale:**
 
-- **Memory Safety:** Prevents unbounded memory growth
-- **Automatic Cleanup:** Oldest sessions evicted automatically
-- **Sufficient Capacity:** 50 concurrent sessions far exceeds normal usage
-- **Performance:** O(1) get/set operations
+- **Simplicity:** Single format reduces complexity
+- **Structured Data:** JSON provides complete queryable data
+- **Sufficient:** JSON can be converted to any format if needed
+- **Performance:** Halves disk I/O operations
 
-**Implementation:**
+**Benefits:**
 
-```typescript
-// main.ts:47-82
-class LRUMap<K, V> extends Map<K, V> {
-  private maxSize: number;
+- ✅ Simpler log-manager module
+- ✅ Less disk I/O
+- ✅ Single source of truth for logs
+- ✅ Easy to parse programmatically
 
-  constructor(maxSize: number) {
-    super();
-    this.maxSize = maxSize;
-  }
+### 3. No Initial Prompt Caching (**Removed**)
 
-  set(key: K, value: V): this {
-    // Remove and re-add to maintain insertion order
-    if (this.has(key)) this.delete(key);
-    super.set(key, value);
-
-    // Evict oldest if over capacity
-    if (this.size > this.maxSize) {
-      const firstKey = this.keys().next().value;
-      if (firstKey !== undefined) {
-        this.delete(firstKey);
-        console.log(`[LRU] Evicted session: ${firstKey}`);
-      }
-    }
-    return this;
-  }
-
-  // Optimized: no reordering on get
-  get(key: K): V | undefined {
-    return super.get(key);
-  }
-}
-```
-
-### 3. Initial Prompt Caching
-
-**Decision:** Cache the first-turn prompt in `initialPromptBySession` Map.
+**Decision:** Remove `initialPromptBySession` Map. Load active prompt fresh on each request.
 
 **Rationale:**
 
-- **Consistency:** Regeneration must use the same system prompt as original
-- **User Experience:** Changing active prompt shouldn't affect existing conversations
-- **Correctness:** Prevents confusing behavior where regenerated answers differ due to prompt changes
+- **Simplicity:** One less Map to manage
+- **Acceptable Cost:** Reading prompt from disk is fast (<1ms)
+- **Consistency:** User always sees what's currently selected
+- **Less State:** Fewer things to keep in sync
 
-**Example Scenario:**
-
-1. User starts session with prompt "You are a helpful assistant"
-2. User has 5-turn conversation
-3. User changes active prompt to "You are a coding expert"
-4. User regenerates turn 3
-5. ✅ With cache: Uses original "helpful assistant" prompt
-6. ❌ Without cache: Would use "coding expert" prompt → inconsistent results
+**Previous Concern Addressed:** For regeneration, Renderer can explicitly track which prompt was used if needed (future feature).
 
 ### 4. Request Session ID Snapshot
 

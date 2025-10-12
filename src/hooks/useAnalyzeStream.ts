@@ -14,7 +14,7 @@ export interface UseAnalyzeStreamOptions {
 export interface AnalyzeStreamRequest {
   userMessage: string;
   customPrompt: string;
-  history?: string | null;
+  formattedPrompt: string; // Complete prompt with history, formatted by caller
   onSuccess: (content: string) => void;
   onError: (error: string) => void;
 }
@@ -49,7 +49,7 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
 
   const execute = useCallback(
     async (request: AnalyzeStreamRequest): Promise<void> => {
-      const { userMessage, customPrompt, history, onSuccess, onError } =
+      const { userMessage, customPrompt, formattedPrompt, onSuccess, onError } =
         request;
 
       // Cleanup any previous stream
@@ -63,6 +63,7 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
         unsubscribe = window.ghostAI.analyzeCurrentScreenStream(
           userMessage,
           customPrompt,
+          formattedPrompt,
           {
             onStart: ({
               sessionId: sid,
@@ -205,7 +206,6 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
               }
             },
           },
-          history ?? undefined,
         );
 
         if (typeof unsubscribe !== "function") {

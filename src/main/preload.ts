@@ -26,10 +26,11 @@ const api = {
     ipcRenderer.invoke("openai:get-config"),
   validateOpenAIConfig: (cfg: OpenAIConfig): Promise<boolean> =>
     ipcRenderer.invoke("openai:validate-config", cfg),
-  // Non-streaming analyze endpoint removed; use analyzeCurrentScreenStream instead
+  // Simplified: Renderer provides formatted prompt with history
   analyzeCurrentScreenStream: (
     textPrompt: string,
     customPrompt: string,
+    formattedPrompt: string,
     handlers: {
       onStart?: (payload: { requestId: string; sessionId: string }) => void;
       onDelta?: (payload: {
@@ -44,7 +45,6 @@ const api = {
         sessionId: string;
       }) => void;
     },
-    history?: string | null,
   ) => {
     // Register one-time listeners per call; return unsubscribe function
     let activeRequestId: string | null = null;
@@ -122,7 +122,7 @@ const api = {
     ipcRenderer.send("capture:analyze-stream", {
       textPrompt,
       customPrompt,
-      history,
+      formattedPrompt,
     });
 
     return unsubscribe;

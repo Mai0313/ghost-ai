@@ -15,10 +15,11 @@ declare global {
       ) => Promise<boolean>;
       onOpenAIConfigUpdated: (handler: () => void) => () => void;
 
-      // Analyze Stream
+      // Analyze Stream (Simplified: Renderer provides formatted prompt)
       analyzeCurrentScreenStream: (
         textPrompt: string,
         customPrompt: string,
+        formattedPrompt: string,
         handlers: {
           onStart?: (payload: { requestId: string; sessionId: string }) => void;
           onDelta?: (payload: {
@@ -40,7 +41,6 @@ declare global {
             sessionId: string;
           }) => void;
         },
-        history?: string | null,
       ) => () => void;
 
       // Prompts Management
