@@ -12,12 +12,6 @@ updates:
     schedule:
       interval: daily
 
-  # Devcontainers
-  - package-ecosystem: devcontainers
-    directory: /.devcontainer
-    schedule:
-      interval: daily
-
   # GitHub Actions
   - package-ecosystem: github-actions
     directory: /.github/workflows
