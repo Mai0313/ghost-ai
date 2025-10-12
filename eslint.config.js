@@ -5,7 +5,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
 import react from "eslint-plugin-react";
 import unusedImports from "eslint-plugin-unused-imports";
-import importPlugin from "eslint-plugin-import";
+import _import from "eslint-plugin-import";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import jsxA11Y from "eslint-plugin-jsx-a11y";
 import prettier from "eslint-plugin-prettier";
@@ -30,7 +30,6 @@ export default defineConfig([
     "**/.DS_Store",
     "**/.next",
     "**/build",
-    "**/release",
   ]),
   {
     extends: fixupConfigRules(
@@ -44,7 +43,7 @@ export default defineConfig([
     plugins: {
       "react": fixupPluginRules(react),
       "unused-imports": unusedImports,
-      "import": fixupPluginRules(importPlugin),
+      "import": fixupPluginRules(_import),
       "@typescript-eslint": typescriptEslint,
       "jsx-a11y": fixupPluginRules(jsxA11Y),
       "prettier": fixupPluginRules(prettier),
@@ -60,11 +59,15 @@ export default defineConfig([
       ecmaVersion: 12,
       sourceType: "module",
       parserOptions: {
-        ecmaFeatures: { jsx: true },
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
     },
     settings: {
-      react: { version: "detect" },
+      react: {
+        version: "detect",
+      },
     },
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     rules: {
@@ -101,7 +104,11 @@ export default defineConfig([
             "index",
           ],
           "pathGroups": [
-            { pattern: "~/**", group: "external", position: "after" },
+            {
+              pattern: "~/**",
+              group: "external",
+              position: "after",
+            },
           ],
           "newlines-between": "always",
         },
@@ -118,8 +125,16 @@ export default defineConfig([
       ],
       "padding-line-between-statements": [
         "warn",
-        { blankLine: "always", prev: "*", next: "return" },
-        { blankLine: "always", prev: ["const", "let", "var"], next: "*" },
+        {
+          blankLine: "always",
+          prev: "*",
+          next: "return",
+        },
+        {
+          blankLine: "always",
+          prev: ["const", "let", "var"],
+          next: "*",
+        },
         {
           blankLine: "any",
           prev: ["const", "let", "var"],

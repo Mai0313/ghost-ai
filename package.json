@@ -20,6 +20,7 @@
     "dist:linux:portable": "npm run build && electron-builder --linux AppImage --publish never",
     "lint": "eslint . --fix",
     "format": "prettier -w .",
+    "check": "tsc --noEmit && prettier --write . && eslint --fix",
     "test": "echo 'No tests yet'"
   },
   "keywords": [
