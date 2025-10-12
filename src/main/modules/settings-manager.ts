@@ -92,12 +92,3 @@ export function loadUserSettings(): Partial<UserSettings> {
     return { transcribeLanguage: "en", attachScreenshot: true } as any;
   }
 }
-
-export function saveHiddenState(_hidden: boolean) {
-  // No-op: hidden state is not persisted
-}
-
-export function loadHiddenState(): boolean {
-  // Not persisted; default to false each run
-  return false;
-}

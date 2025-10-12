@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   askCard,
@@ -110,9 +116,26 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     () => (displayMarkdown ? "block" : "none"),
     [displayMarkdown],
   );
+
   const isWebSearching = useMemo(
     () => webSearchStatus === "in_progress" || webSearchStatus === "searching",
     [webSearchStatus],
+  );
+
+  const handleModelChange = useCallback(
+    async (val: string) => {
+      if (val === model) return;
+      setModel(val);
+      try {
+        await Promise.all([
+          window.ghostAI.updateOpenAIConfigVolatile({ model: val }),
+          window.ghostAI.updateOpenAIConfig({ model: val }),
+        ]);
+      } catch (err) {
+        console.error("[AskPanel] Failed to update model:", err);
+      }
+    },
+    [model],
   );
 
   return (
@@ -267,17 +290,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             maxWidth: 220,
           }}
           value={model}
-          onChange={async (e) => {
-            const val = (e.target as HTMLSelectElement).value;
-
-            setModel(val);
-            try {
-              const api: any = (window as any).ghostAI;
-
-              await api?.updateOpenAIConfigVolatile?.({ model: val });
-              await api?.updateOpenAIConfig?.({ model: val });
-            } catch {}
-          }}
+          onChange={(e) => void handleModelChange(e.target.value)}
         >
           {(!models.length || !model) && (
             <option disabled value="">

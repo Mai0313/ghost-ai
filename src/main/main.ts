@@ -20,11 +20,7 @@ import {
   unregisterAllHotkeys,
 } from "./modules/hotkey-manager";
 import { captureScreen } from "./modules/screenshot-manager";
-import {
-  toggleHidden,
-  ensureHiddenOnCapture,
-  hideAllWindowsDuring,
-} from "./modules/hide-manager";
+import { toggleHidden, hideAllWindowsDuring } from "./modules/hide-manager";
 import {
   loadOpenAIConfig,
   saveOpenAIConfig,
@@ -48,13 +44,55 @@ import { sessionStore } from "./modules/session-store";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Simple LRU Map implementation with max size limit
+class LRUMap<K, V> extends Map<K, V> {
+  private maxSize: number;
+
+  constructor(maxSize: number) {
+    super();
+    this.maxSize = maxSize;
+  }
+
+  set(key: K, value: V): this {
+    // Remove key if it exists (will be re-added at end)
+    if (this.has(key)) {
+      this.delete(key);
+    }
+    super.set(key, value);
+    // Evict oldest entries if over limit
+    if (this.size > this.maxSize) {
+      const firstKey = this.keys().next().value;
+
+      if (firstKey !== undefined) {
+        this.delete(firstKey);
+        console.log(`[LRU] Evicted session: ${firstKey}`);
+      }
+    }
+
+    return this;
+  }
+
+  get(key: K): V | undefined {
+    const value = super.get(key);
+
+    // Move to end (most recently used)
+    if (value !== undefined) {
+      this.delete(key);
+      super.set(key, value);
+    }
+
+    return value;
+  }
+}
+
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 // Simple in-memory Q/A history per session as plain text. Format:
 // Q: <question>\nA: <answer>\n\n ...
-const conversationHistoryBySession = new Map<string, string>();
+// Keep max 50 recent sessions to prevent unbounded memory growth
+const conversationHistoryBySession = new LRUMap<string, string>(50);
 // Store the initial (default) prompt actually used for the session's first turn
-const initialPromptBySession = new Map<string, string>();
+const initialPromptBySession = new LRUMap<string, string>(50);
 // Guard to prevent Ctrl/Cmd+Shift+Enter from also triggering Ctrl/Cmd+Enter handler
 let lastAudioToggleAt = 0;
 // Top-level session identifier (resets on app start and when user clears)
@@ -218,6 +256,17 @@ app.whenReady().then(async () => {
   const appMenu = Menu.buildFromTemplate(template);
 
   Menu.setApplicationMenu(appMenu);
+  // Helper: ensure window is visible and send IPC event
+  const withWindow = (
+    handler: (win: BrowserWindow) => void | Promise<void>,
+  ) => {
+    return async () => {
+      if (!mainWindow) return;
+      mainWindow.show();
+      await handler(mainWindow);
+    };
+  };
+
   // Fixed hotkeys only: Ask and Hide
   registerFixedHotkeys({
     onTextInput: async () => {
@@ -236,39 +285,38 @@ app.whenReady().then(async () => {
     },
     onClearAsk: async () => {
       if (!mainWindow) return;
-      // Ensure window is visible so user sees the clear effect
       mainWindow.show();
-      // Abort any active analyze stream for this renderer
-      try {
-        const wcId = mainWindow.webContents.id;
-        const ctrl = activeAnalyzeControllers.get(wcId);
 
-        if (ctrl) {
-          try {
-            ctrl.abort();
-          } catch {}
-          activeAnalyzeControllers.delete(wcId);
+      // Abort any active analyze stream for this renderer
+      const wcId = mainWindow.webContents.id;
+      const ctrl = activeAnalyzeControllers.get(wcId);
+
+      if (ctrl) {
+        try {
+          ctrl.abort();
+        } catch (err) {
+          console.error("[Hotkey] Failed to abort controller:", err);
         }
-      } catch {}
+        activeAnalyzeControllers.delete(wcId);
+      }
+
       mainWindow.webContents.send("ask:clear");
-      // Also clear main-process conversation history for all sessions
+
+      // Clear main-process conversation history
       conversationHistoryBySession.clear();
       initialPromptBySession.clear();
-      // Clear global session entries
-      try {
-        sessionStore.clearAll();
-      } catch {}
-      // Generate a new top-level session ID and broadcast
+      sessionStore.clearAll();
+
+      // Generate new session ID
       currentSessionId = crypto.randomUUID();
-      try {
-        console.log(
-          "[Session]",
-          new Date().toISOString(),
-          "sessionId reset (clear):",
-          currentSessionId,
-        );
-      } catch {}
-      // Initialize new session with empty log file to ensure correct path structure
+      console.log(
+        "[Session]",
+        new Date().toISOString(),
+        "sessionId reset (clear):",
+        currentSessionId,
+      );
+
+      // Initialize new session logs
       try {
         await logManager.writeConversationLog(currentSessionId, "");
         const json = sessionStore.toJSON();
@@ -277,16 +325,21 @@ app.whenReady().then(async () => {
           currentSessionId,
           json[currentSessionId] ?? {},
         );
-      } catch {}
-      try {
-        mainWindow.webContents.send("session:changed", {
-          sessionId: currentSessionId,
-        });
-      } catch {}
-      // Best-effort: stop any active transcription session for this window
+      } catch (err) {
+        console.error("[Hotkey] Failed to initialize session logs:", err);
+      }
+
+      // Broadcast session change
+      mainWindow.webContents.send("session:changed", {
+        sessionId: currentSessionId,
+      });
+
+      // Stop active transcription
       try {
         realtimeTranscribeManager.stop(mainWindow.webContents);
-      } catch {}
+      } catch (err) {
+        console.error("[Hotkey] Failed to stop transcription:", err);
+      }
     },
     onAudioToggle: async () => {
       lastAudioToggleAt = Date.now();
@@ -294,26 +347,18 @@ app.whenReady().then(async () => {
       mainWindow.show();
       mainWindow.webContents.send("audio:toggle");
     },
-    onScrollUp: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send("ask:scroll", { direction: "up" });
-    },
-    onScrollDown: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send("ask:scroll", { direction: "down" });
-    },
-    onPagePrev: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send("ask:paginate", { direction: "up" });
-    },
-    onPageNext: async () => {
-      if (!mainWindow) return;
-      mainWindow.show();
-      mainWindow.webContents.send("ask:paginate", { direction: "down" });
-    },
+    onScrollUp: withWindow((win) => {
+      win.webContents.send("ask:scroll", { direction: "up" });
+    }),
+    onScrollDown: withWindow((win) => {
+      win.webContents.send("ask:scroll", { direction: "down" });
+    }),
+    onPagePrev: withWindow((win) => {
+      win.webContents.send("ask:paginate", { direction: "up" });
+    }),
+    onPageNext: withWindow((win) => {
+      win.webContents.send("ask:paginate", { direction: "down" });
+    }),
   });
 
   // If no OpenAI config yet, guide user by showing the overlay
@@ -502,7 +547,6 @@ ipcMain.on(
       let image: Buffer | undefined = undefined;
 
       if (attach) {
-        ensureHiddenOnCapture();
         image = await hideAllWindowsDuring(async () => captureScreen());
       }
       const requestId = crypto.randomUUID();

@@ -13,6 +13,7 @@ import { HUDBar } from "./components/HUDBar";
 import { AskPanel } from "./components/AskPanel";
 import { TranscriptBubble } from "./components/TranscriptBubble";
 import { useTranscription } from "./hooks/useTranscription";
+import { useAnalyzeStream } from "./hooks/useAnalyzeStream";
 import { appRootStyle, settingsCard } from "./styles/styles";
 
 export function App() {
@@ -42,10 +43,39 @@ export function App() {
     y: 20,
   });
   const askInputRef = useRef<HTMLInputElement | null>(null);
-  const activeUnsubRef = useRef<null | (() => void)>(null);
-  const lastDeltaRef = useRef<string | null>(null);
-  const lastReasoningDeltaRef = useRef<string | null>(null);
-  const activeSessionIdForRequestRef = useRef<string | null>(null);
+
+  const analyzeStream = useAnalyzeStream({
+    sessionId,
+    onDeltaText: useCallback((delta: string) => {
+      if (!delta) return;
+      setResult((prev) => prev + delta);
+    }, []),
+    onDeltaReasoning: useCallback((delta: string) => {
+      if (!delta) return;
+      setReasoning((prev) => prev + delta);
+    }, []),
+    onWebSearchStatusChange: useCallback((status) => {
+      setWebSearchStatus(status);
+    }, []),
+    onStreamStart: useCallback(() => {
+      setBusy(true);
+      setStreaming(true);
+      setResult("");
+      setReasoning("");
+      setWebSearchStatus("idle");
+    }, []),
+    onStreamEnd: useCallback(() => {
+      setStreaming(false);
+      setBusy(false);
+    }, []),
+  });
+
+  // Cleanup analyze stream on unmount
+  useEffect(() => {
+    return () => {
+      analyzeStream.cleanup();
+    };
+  }, [analyzeStream]);
 
   const { timeLabel, transcriptModeRef, transcriptBufferRef } =
     useTranscription({
@@ -116,23 +146,15 @@ export function App() {
 
   const gotoPrevPage = useCallback(() => {
     if (!hasPages) return;
-    if (historyIndex === null) {
-      setHistoryIndex(lastPageIndex);
+    const targetIndex =
+      historyIndex === null ? lastPageIndex : Math.max(0, historyIndex - 1);
 
-      return;
-    }
-    if (historyIndex > 0) setHistoryIndex(historyIndex - 1);
+    setHistoryIndex(targetIndex);
   }, [hasPages, historyIndex, lastPageIndex]);
 
   const gotoNextPage = useCallback(() => {
-    if (!hasPages) return;
-    if (historyIndex === null) return;
-    if (historyIndex < lastPageIndex) {
-      setHistoryIndex(historyIndex + 1);
-
-      return;
-    }
-    setHistoryIndex(null);
+    if (!hasPages || historyIndex === null) return;
+    setHistoryIndex(historyIndex < lastPageIndex ? historyIndex + 1 : null);
   }, [hasPages, historyIndex, lastPageIndex]);
 
   const canRegenerate = useMemo(
@@ -219,36 +241,30 @@ export function App() {
     });
   }, []);
 
-  // Auto-focus behaviors
+  // Unified auto-focus logic
   useEffect(() => {
-    if (visible && tab === "ask") {
+    // Only focus when ask panel is visible and active
+    if (!visible || tab !== "ask") return;
+
+    // Special case: if viewing history, ensure ask tab is active
+    if (historyIndex !== null && tab !== "ask") {
+      setTab("ask");
+    }
+
+    // Reset busy state when ask panel becomes visible
+    if (busy || streaming) {
       setBusy(false);
       setStreaming(false);
-      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
-
-      return () => window.clearTimeout(id);
     }
-  }, [visible, tab]);
+
+    // Focus input after state updates
+    const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
+
+    return () => window.clearTimeout(id);
+  }, [visible, tab, historyIndex, busy, streaming]);
 
   useEffect(() => {
-    if (historyIndex !== null && visible) {
-      if (tab !== "ask") setTab("ask");
-      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
-
-      return () => window.clearTimeout(id);
-    }
-  }, [historyIndex, visible, tab]);
-
-  useEffect(() => {
-    if (visible && tab === "ask" && !busy && !streaming) {
-      const id = window.setTimeout(() => askInputRef.current?.focus(), 0);
-
-      return () => window.clearTimeout(id);
-    }
-  }, [visible, tab, busy, streaming]);
-
-  useEffect(() => {
-    const api = (window as any).ghostAI;
+    const api = window.ghostAI;
 
     api?.onAudioToggle?.(() => setRecording((prev) => !prev));
     const offScroll = api?.onAskScroll?.(
@@ -270,7 +286,9 @@ export function App() {
           const delta = direction === "up" ? -step : step;
 
           area.scrollBy({ top: delta, behavior: "smooth" });
-        } catch {}
+        } catch (err) {
+          console.error("[App] Scroll failed:", err);
+        }
       },
     );
     const offPaginate = api?.onAskPaginate?.(
@@ -279,20 +297,23 @@ export function App() {
           setVisible(true);
           if (direction === "up") gotoPrevPage();
           else gotoNextPage();
-        } catch {}
+        } catch (err) {
+          console.error("[App] Paginate failed:", err);
+        }
       },
     );
 
     try {
       api?.getSession?.()?.then((sid: string) => sid && setSessionId(sid));
-    } catch {}
+    } catch (err) {
+      console.error("[App] Failed to get session:", err);
+    }
+
     const offSession = api?.onSessionChanged?.(
       ({ sessionId: sid }: { sessionId: string }) => {
         if (sid) setSessionId(sid);
-        try {
-          if (activeUnsubRef.current) activeUnsubRef.current();
-        } catch {}
-        activeUnsubRef.current = null;
+        // Cleanup active stream
+        analyzeStream.cleanup();
         setStreaming(false);
         setHistory([]);
         setResult("");
@@ -306,10 +327,8 @@ export function App() {
     );
 
     api?.onAskClear?.(() => {
-      try {
-        if (activeUnsubRef.current) activeUnsubRef.current();
-      } catch {}
-      activeUnsubRef.current = null;
+      // Cleanup active stream
+      analyzeStream.cleanup();
       setStreaming(false);
       setHistory([]);
       setResult("");
@@ -332,251 +351,66 @@ export function App() {
         if (typeof offPaginate === "function") offPaginate();
       } catch {}
     };
-  }, []);
-
-  const appendLive = useCallback((delta: string) => {
-    if (!delta) return;
-    setResult((prev) => prev + delta);
-  }, []);
-
-  const appendReasoning = useCallback((delta: string) => {
-    if (!delta) return;
-    setReasoning((prev) => prev + delta);
-  }, []);
+  }, [
+    analyzeStream,
+    gotoPrevPage,
+    gotoNextPage,
+    recording,
+    transcriptBufferRef,
+  ]);
 
   const handleAttachScreenshotChange = useCallback(async (value: boolean) => {
     setAttachScreenshot(value);
     try {
-      const api: any = (window as any).ghostAI;
-
-      await api?.updateUserSettings?.({ attachScreenshot: value });
+      await window.ghostAI.updateUserSettings({ attachScreenshot: value });
     } catch (error) {
-      console.warn("Failed to update attachScreenshot setting:", error);
+      console.error("[App] Failed to update attachScreenshot setting:", error);
     }
   }, []);
 
-  const finalizeLive = useCallback(
-    (opts?: { content?: string; appendNewline?: boolean }) => {
-      const contentProvided = typeof opts?.content === "string";
-
-      if (contentProvided) setResult(opts!.content || "");
-      if (opts?.appendNewline)
-        setResult((prev) => (prev.endsWith("\n") ? prev : prev + "\n"));
-    },
-    [],
-  );
-
   const onSubmit = useCallback(async () => {
     if (busy || streaming) return;
-    if (activeUnsubRef.current) {
-      try {
-        activeUnsubRef.current();
-      } catch {}
-      activeUnsubRef.current = null;
-    }
-    lastDeltaRef.current = null;
-    lastReasoningDeltaRef.current = null;
-    activeSessionIdForRequestRef.current = null;
-    setBusy(true);
-    setStreaming(true);
-    // Require an active prompt selection; avoid relying on any default file
+
+    // Require an active prompt selection
     try {
-      const activePromptName = await (
-        window as any
-      ).ghostAI?.getActivePromptName?.();
+      const activePromptName = await window.ghostAI.getActivePromptName();
 
       if (!activePromptName) {
-        setStreaming(false);
-        setBusy(false);
         setResult(
           "Error: No active prompt selected. Open Settings → Prompts to select one.",
         );
 
         return;
       }
-    } catch {}
-    const transcript = transcriptBufferRef.current || "";
-    const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
-    const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
-    const basePrompt = (cfg as any)?.customPrompt ?? "";
-    const effectiveCustomPrompt = basePrompt;
-
-    setResult("");
-    setReasoning("");
-    setWebSearchStatus("idle");
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
-        userMessage,
-        effectiveCustomPrompt,
-        {
-          onStart: ({
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-          }) => {
-            if (sid) {
-              activeSessionIdForRequestRef.current = sid;
-              setSessionId(sid);
-            }
-            setReasoning("");
-          },
-          onDelta: ({
-            channel,
-            eventType,
-            delta,
-            text: fullText,
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-            channel?: "answer" | "reasoning" | "web_search";
-            eventType?: string;
-            delta?: string;
-            text?: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            // Web search indicator
-            if ((channel ?? "answer") === "web_search") {
-              const type = String(eventType || "");
-
-              if (type.endsWith("in_progress"))
-                setWebSearchStatus("in_progress");
-              else if (type.endsWith("searching"))
-                setWebSearchStatus("searching");
-              else if (type.endsWith("completed"))
-                setWebSearchStatus("completed");
-
-              return;
-            }
-            // Reasoning channel
-            if ((channel ?? "answer") === "reasoning") {
-              const piece =
-                (typeof fullText === "string" && fullText) ||
-                (typeof delta === "string" && delta) ||
-                "";
-
-              if (!piece) return;
-              if (eventType === "response.reasoning_summary_text.done") {
-                setReasoning(piece);
-                lastReasoningDeltaRef.current = null;
-              } else {
-                if (lastReasoningDeltaRef.current === piece) return;
-                lastReasoningDeltaRef.current = piece;
-                appendReasoning(piece);
-              }
-
-              return;
-            }
-            const piece =
-              (typeof fullText === "string" && fullText) ||
-              (typeof delta === "string" && delta) ||
-              "";
-
-            if (!piece) return;
-            if (lastDeltaRef.current === piece) return;
-            lastDeltaRef.current = piece;
-            appendLive(piece);
-          },
-          onDone: ({
-            content,
-            sessionId: sid,
-          }: {
-            requestId: string;
-            content: string;
-            sessionId: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            finalizeLive({ content: content ?? "" });
-            setStreaming(false);
-            lastDeltaRef.current = null;
-            lastReasoningDeltaRef.current = null;
-            setWebSearchStatus("idle");
-            activeSessionIdForRequestRef.current = null;
-            setHistory((prev) => [
-              ...prev,
-              { role: "user", content: userMessage },
-              { role: "assistant", content: content ?? "" },
-            ]);
-            setHistoryIndex(null);
-            if (activeUnsubRef.current) {
-              try {
-                activeUnsubRef.current();
-              } catch {}
-              activeUnsubRef.current = null;
-            }
-          },
-          onError: ({
-            error,
-            sessionId: sid,
-          }: {
-            requestId?: string;
-            error: string;
-            sessionId: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            setStreaming(false);
-            setResult(`Error: ${error || "Unknown error"}`);
-            lastDeltaRef.current = null;
-            lastReasoningDeltaRef.current = null;
-            setWebSearchStatus("idle");
-            activeSessionIdForRequestRef.current = null;
-            if (activeUnsubRef.current) {
-              try {
-                activeUnsubRef.current();
-              } catch {}
-              activeUnsubRef.current = null;
-            }
-          },
-        },
-        undefined,
-      );
-      if (typeof unsubscribe !== "function")
-        throw new Error("Streaming unavailable");
-      activeUnsubRef.current = unsubscribe;
-      setText("");
-      transcriptBufferRef.current = "";
-    } catch (e) {
-      setStreaming(false);
-      setResult(
-        `Error: ${String((e as any)?.message ?? e ?? "analyze failed")}`,
-      );
-    } finally {
-      setBusy(false);
+    } catch (err) {
+      console.error("[App] Failed to check active prompt:", err);
     }
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [text, busy, streaming]);
+    const transcript = transcriptBufferRef.current || "";
+    const userMessage = transcript ? `${transcript}\n${text}`.trim() : text;
+    const cfg = await window.ghostAI.getOpenAIConfig();
+    const customPrompt = (cfg as any)?.customPrompt ?? "";
 
-  useEffect(() => {
-    return () => {
-      if (activeUnsubRef.current) {
-        try {
-          activeUnsubRef.current();
-        } catch {}
-        activeUnsubRef.current = null;
-      }
-    };
-  }, []);
+    await analyzeStream.execute({
+      userMessage,
+      customPrompt,
+      history: null,
+      onSuccess: (content) => {
+        setResult(content);
+        setHistory((prev) => [
+          ...prev,
+          { role: "user", content: userMessage },
+          { role: "assistant", content },
+        ]);
+        setHistoryIndex(null);
+        setText("");
+        transcriptBufferRef.current = "";
+      },
+      onError: (error) => {
+        setResult(error);
+      },
+    });
+  }, [text, busy, streaming, analyzeStream, transcriptBufferRef]);
 
   const makePlainHistoryText = useCallback(
     (hist: { role: "user" | "assistant"; content: string }[]) => {
@@ -601,192 +435,45 @@ export function App() {
 
   const onRegenerate = useCallback(async () => {
     if (!canRegenerate) return;
+
     const pageIdx = historyIndex === null ? lastPageIndex : historyIndex;
     const assistantIdx = assistantAnswerIndices[pageIdx] ?? -1;
     const userIdx = assistantIdx - 1;
 
     if (assistantIdx < 0 || userIdx < 0) return;
+
     const userMessage = history[userIdx]?.content || "";
     const priorPairs = history.slice(0, userIdx);
     const priorPlain = makePlainHistoryText(priorPairs);
 
-    if (activeUnsubRef.current) {
-      try {
-        activeUnsubRef.current();
-      } catch {}
-      activeUnsubRef.current = null;
-    }
-    lastDeltaRef.current = null;
-    activeSessionIdForRequestRef.current = null;
-    setBusy(true);
-    setStreaming(true);
+    const cfg = await window.ghostAI.getOpenAIConfig();
+    const customPrompt = (cfg as any)?.customPrompt ?? "";
+
     setHistoryIndex(null);
-    setResult("");
-    setReasoning("");
-    setWebSearchStatus("idle");
-    let unsubscribe: (() => void) | null = null;
 
-    try {
-      const cfg = await (window as any).ghostAI?.getOpenAIConfig?.();
-      const basePrompt = (cfg as any)?.customPrompt ?? "";
-      const effectiveCustomPrompt = basePrompt;
+    await analyzeStream.execute({
+      userMessage,
+      customPrompt,
+      history: priorPlain,
+      onSuccess: (content) => {
+        setResult(content);
+        setHistory((prev) => {
+          const copy = prev.slice();
 
-      unsubscribe = (window as any).ghostAI?.analyzeCurrentScreenStream?.(
-        userMessage,
-        effectiveCustomPrompt,
-        {
-          onStart: ({
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-          }) => {
-            if (sid) {
-              activeSessionIdForRequestRef.current = sid;
-              setSessionId(sid);
-            }
-          },
-          onDelta: ({
-            channel,
-            eventType,
-            delta,
-            text: fullText,
-            sessionId: sid,
-          }: {
-            requestId: string;
-            sessionId: string;
-            channel?: "answer" | "reasoning" | "web_search";
-            eventType?: string;
-            delta?: string;
-            text?: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            if ((channel ?? "answer") === "web_search") {
-              const type = String(eventType || "");
+          if (assistantIdx >= 0 && assistantIdx < copy.length) {
+            copy[assistantIdx] = {
+              role: "assistant",
+              content,
+            };
+          }
 
-              if (type.endsWith("in_progress"))
-                setWebSearchStatus("in_progress");
-              else if (type.endsWith("searching"))
-                setWebSearchStatus("searching");
-              else if (type.endsWith("completed"))
-                setWebSearchStatus("completed");
-
-              return;
-            }
-            if ((channel ?? "answer") === "reasoning") {
-              const piece =
-                (typeof fullText === "string" && fullText) ||
-                (typeof delta === "string" && delta) ||
-                "";
-
-              if (!piece) return;
-              if (eventType === "response.reasoning_summary_text.done") {
-                setReasoning(piece);
-                lastReasoningDeltaRef.current = null;
-              } else {
-                if (lastReasoningDeltaRef.current === piece) return;
-                lastReasoningDeltaRef.current = piece;
-                appendReasoning(piece);
-              }
-
-              return;
-            }
-            const piece =
-              (typeof fullText === "string" && fullText) ||
-              (typeof delta === "string" && delta) ||
-              "";
-
-            if (!piece) return;
-            if (lastDeltaRef.current === piece) return;
-            lastDeltaRef.current = piece;
-            appendLive(piece);
-          },
-          onDone: ({
-            content,
-            sessionId: sid,
-          }: {
-            requestId: string;
-            content: string;
-            sessionId: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            finalizeLive({ content: content ?? "" });
-            setStreaming(false);
-            lastDeltaRef.current = null;
-            lastReasoningDeltaRef.current = null;
-            setWebSearchStatus("idle");
-            activeSessionIdForRequestRef.current = null;
-            setHistory((prev) => {
-              const copy = prev.slice();
-
-              if (assistantIdx >= 0 && assistantIdx < copy.length)
-                copy[assistantIdx] = {
-                  role: "assistant",
-                  content: content ?? "",
-                } as any;
-
-              return copy;
-            });
-            if (activeUnsubRef.current) {
-              try {
-                activeUnsubRef.current();
-              } catch {}
-              activeUnsubRef.current = null;
-            }
-          },
-          onError: ({
-            error,
-            sessionId: sid,
-          }: {
-            requestId?: string;
-            error: string;
-            sessionId: string;
-          }) => {
-            if (
-              sid &&
-              activeSessionIdForRequestRef.current &&
-              sid !== activeSessionIdForRequestRef.current
-            )
-              return;
-            setStreaming(false);
-            setResult(`Error: ${error || "Unknown error"}`);
-            lastDeltaRef.current = null;
-            activeSessionIdForRequestRef.current = null;
-            if (activeUnsubRef.current) {
-              try {
-                activeUnsubRef.current();
-              } catch {}
-              activeUnsubRef.current = null;
-            }
-          },
-        },
-        priorPlain,
-      );
-      if (typeof unsubscribe !== "function")
-        throw new Error("Streaming unavailable");
-      activeUnsubRef.current = unsubscribe;
-    } catch (e) {
-      setStreaming(false);
-      setResult(
-        `Error: ${String((e as any)?.message ?? e ?? "regenerate failed")}`,
-      );
-    } finally {
-      setBusy(false);
-    }
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+          return copy;
+        });
+      },
+      onError: (error) => {
+        setResult(error);
+      },
+    });
   }, [
     canRegenerate,
     historyIndex,
@@ -794,19 +481,24 @@ export function App() {
     assistantAnswerIndices,
     history,
     makePlainHistoryText,
+    analyzeStream,
   ]);
 
-  // Positioning
-  const bubbleWidth = 760;
-  const barWidth = barRef.current?.offsetWidth ?? 320;
-  const bubbleTop =
-    barPos.y + ((barRef.current && barRef.current.offsetHeight) || 50) + 10;
-  const barCenterX = barPos.x + barWidth / 2;
-  const unclampedLeft = Math.round(barCenterX - bubbleWidth / 2);
-  const bubbleLeft = Math.max(
-    10,
-    Math.min(unclampedLeft, window.innerWidth - bubbleWidth - 10),
-  );
+  // Positioning (memoized to avoid recalculating on every render)
+  const bubblePosition = useMemo(() => {
+    const bubbleWidth = 760;
+    const barWidth = barRef.current?.offsetWidth ?? 320;
+    const bubbleTop =
+      barPos.y + ((barRef.current && barRef.current.offsetHeight) || 50) + 10;
+    const barCenterX = barPos.x + barWidth / 2;
+    const unclampedLeft = Math.round(barCenterX - bubbleWidth / 2);
+    const bubbleLeft = Math.max(
+      10,
+      Math.min(unclampedLeft, window.innerWidth - bubbleWidth - 10),
+    );
+
+    return { bubbleWidth, bubbleTop, bubbleLeft };
+  }, [barPos]);
 
   return (
     <div style={{ ...appRootStyle, display: visible ? "block" : "none" }}>
@@ -833,9 +525,9 @@ export function App() {
         ref={bubbleRef}
         style={{
           position: "absolute",
-          top: bubbleTop,
-          left: bubbleLeft,
-          width: bubbleWidth,
+          top: bubblePosition.bubbleTop,
+          left: bubblePosition.bubbleLeft,
+          width: bubblePosition.bubbleWidth,
           pointerEvents: "auto",
         }}
       >

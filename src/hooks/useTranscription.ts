@@ -302,45 +302,94 @@ export function useTranscription({
         window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
+
+      // End transcription session
       try {
-        (window as any).ghostAI?.endTranscription?.();
-      } catch {}
+        window.ghostAI?.endTranscription?.();
+      } catch (err) {
+        console.error("[Transcription] Failed to end transcription:", err);
+      }
       try {
-        (window as any).ghostAI?.stopTranscription?.();
-      } catch {}
+        window.ghostAI?.stopTranscription?.();
+      } catch (err) {
+        console.error("[Transcription] Failed to stop transcription:", err);
+      }
+
+      // Unsubscribe from all IPC listeners
       try {
         const unsubs = transcribeUnsubsRef.current.splice(0);
 
         unsubs.forEach((fn) => {
           try {
             fn();
-          } catch {}
+          } catch (err) {
+            console.error("[Transcription] Failed to unsubscribe:", err);
+          }
         });
-      } catch {}
+      } catch (err) {
+        console.error("[Transcription] Failed to cleanup subscriptions:", err);
+      }
+
+      // Disconnect audio nodes
       try {
-        processorRef.current && (processorRef.current as any).disconnect();
-      } catch {}
+        if (processorRef.current) {
+          (processorRef.current as any).disconnect();
+          processorRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to disconnect processor:", err);
+      }
+
       try {
-        mixGainRef.current && mixGainRef.current.disconnect();
-      } catch {}
+        if (mixGainRef.current) {
+          mixGainRef.current.disconnect();
+          mixGainRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to disconnect mixGain:", err);
+      }
+
       try {
-        muteGainRef.current && muteGainRef.current.disconnect();
-      } catch {}
+        if (muteGainRef.current) {
+          muteGainRef.current.disconnect();
+          muteGainRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to disconnect muteGain:", err);
+      }
+
+      // Close audio context
       try {
-        audioCtxRef.current && audioCtxRef.current.close();
-      } catch {}
-      audioCtxRef.current = null;
-      processorRef.current = null as any;
-      mixGainRef.current = null;
-      muteGainRef.current = null;
+        if (audioCtxRef.current) {
+          audioCtxRef.current.close();
+          audioCtxRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to close audio context:", err);
+      }
+
+      // Stop all media tracks
+      try {
+        if (micStreamRef.current) {
+          micStreamRef.current.getTracks().forEach((t) => t.stop());
+          micStreamRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to stop mic tracks:", err);
+      }
+
+      try {
+        if (systemStreamRef.current) {
+          systemStreamRef.current.getTracks().forEach((t) => t.stop());
+          systemStreamRef.current = null;
+        }
+      } catch (err) {
+        console.error("[Transcription] Failed to stop system tracks:", err);
+      }
+
+      // Clear audio buffers
       chunkFloatRef.current = null;
       chunkFloatLenRef.current = 0;
-      try {
-        micStreamRef.current?.getTracks().forEach((t) => t.stop());
-        systemStreamRef.current?.getTracks().forEach((t) => t.stop());
-      } catch {}
-      micStreamRef.current = null;
-      systemStreamRef.current = null;
     }
 
     if (recording) {
