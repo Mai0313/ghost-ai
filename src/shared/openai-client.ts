@@ -39,11 +39,23 @@ export class OpenAIClient {
 
   updateConfig(config: Partial<OpenAIConfig>): void {
     if (!this.config) throw new Error("OpenAIClient not initialized");
+
+    const prevApiKey = this.config.apiKey;
+    const prevBaseURL = this.config.baseURL;
+
     this.config = { ...this.config, ...config } as OpenAIConfig;
-    this.client = new OpenAI({
-      apiKey: this.config.apiKey,
-      baseURL: this.config.baseURL,
-    });
+
+    // Only recreate client if connection parameters changed
+    const needsRecreate =
+      config.apiKey !== undefined && config.apiKey !== prevApiKey ||
+      config.baseURL !== undefined && config.baseURL !== prevBaseURL;
+
+    if (needsRecreate) {
+      this.client = new OpenAI({
+        apiKey: this.config.apiKey,
+        baseURL: this.config.baseURL,
+      });
+    }
   }
 
   async validateConfig(config: OpenAIConfig): Promise<boolean> {
@@ -63,6 +75,14 @@ export class OpenAIClient {
   private ensureClient(): void {
     if (!this.client || !this.config)
       throw new Error("OpenAIClient not initialized");
+  }
+
+  private prepareImageData(imageBuffer: Buffer | undefined): string | undefined {
+    return imageBuffer?.toString("base64");
+  }
+
+  private prepareEffectiveText(textPrompt: string): string {
+    return `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
   }
 
   async listModels(): Promise<string[]> {
@@ -99,7 +119,8 @@ export class OpenAIClient {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer?.toString("base64");
+    const base64 = this.prepareImageData(imageBuffer);
+    const effectiveText = this.prepareEffectiveText(textPrompt);
     const messages: ChatCompletionMessageParam[] = [];
 
     messages.push({
@@ -107,13 +128,12 @@ export class OpenAIClient {
       role: "system",
       content: [{ type: "text", text: customPrompt.trim() }],
     });
-    const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
 
     const userContent: ChatCompletionUserMessageParam["content"] = [
       { type: "text", text: effectiveText },
     ];
 
-    if (imageBuffer && base64) {
+    if (base64) {
       userContent.push({
         type: "image_url",
         image_url: { url: `data:image/png;base64,${base64}`, detail: "auto" },
@@ -187,7 +207,8 @@ export class OpenAIClient {
     this.ensureClient();
     const config = this.config!;
     const client = this.client!;
-    const base64 = imageBuffer?.toString("base64");
+    const base64 = this.prepareImageData(imageBuffer);
+    const effectiveText = this.prepareEffectiveText(textPrompt);
     const input: ResponseInput = [];
 
     input.push({
@@ -195,13 +216,12 @@ export class OpenAIClient {
       role: "system",
       content: [{ type: "input_text", text: customPrompt.trim() }],
     });
-    const effectiveText = `${textPrompt.trim()}\nResponse to the question based on the info or image you have.`;
 
     const userContent: ResponseInputMessageContentList = [
       { type: "input_text", text: effectiveText },
     ];
 
-    if (imageBuffer && base64) {
+    if (base64) {
       userContent.push({
         type: "input_image",
         image_url: `data:image/png;base64,${base64}`,

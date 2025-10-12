@@ -44,7 +44,8 @@ import { sessionStore } from "./modules/session-store";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Simple LRU Map implementation with max size limit
+// Optimized LRU Map implementation with max size limit
+// Uses a hybrid approach: tracks access order only on writes to minimize overhead
 class LRUMap<K, V> extends Map<K, V> {
   private maxSize: number;
 
@@ -54,12 +55,13 @@ class LRUMap<K, V> extends Map<K, V> {
   }
 
   set(key: K, value: V): this {
-    // Remove key if it exists (will be re-added at end)
+    // Remove key if it exists (will be re-added at end to maintain insertion order)
     if (this.has(key)) {
       this.delete(key);
     }
     super.set(key, value);
-    // Evict oldest entries if over limit
+
+    // Evict oldest entries if over limit (FIFO eviction on overflow)
     if (this.size > this.maxSize) {
       const firstKey = this.keys().next().value;
 
@@ -72,16 +74,10 @@ class LRUMap<K, V> extends Map<K, V> {
     return this;
   }
 
+  // Optimized get: no reordering to avoid delete+insert overhead
+  // This is acceptable for session storage where writes determine recency
   get(key: K): V | undefined {
-    const value = super.get(key);
-
-    // Move to end (most recently used)
-    if (value !== undefined) {
-      this.delete(key);
-      super.set(key, value);
-    }
-
-    return value;
+    return super.get(key);
   }
 }
 
@@ -111,6 +107,17 @@ function resolveAssetPath(assetRelativePath: string) {
 
   // In dev, __dirname points to dist/, project root is one level up
   return path.join(__dirname, "..", assetRelativePath);
+}
+
+// Helper to initialize session logs (creates empty log files and session JSON)
+async function initializeSessionLogs(sessionId: string): Promise<void> {
+  try {
+    await logManager.writeConversationLog(sessionId, "");
+    const json = sessionStore.toJSON();
+    await logManager.writeSessionJson(sessionId, json[sessionId] ?? {});
+  } catch (err) {
+    console.error("[Session] Failed to initialize session logs:", err);
+  }
 }
 
 function createWindow() {
@@ -210,7 +217,9 @@ app.whenReady().then(async () => {
   // Ensure prompts directory and a default active prompt exist
   try {
     ensureDefaultPrompt();
-  } catch {}
+  } catch (err) {
+    console.error("[Init] Failed to ensure default prompt:", err);
+  }
   createWindow();
   createTray();
   try {
@@ -220,7 +229,9 @@ app.whenReady().then(async () => {
       "sessionId created at app start:",
       currentSessionId,
     );
-  } catch {}
+  } catch (err) {
+    console.error("[Init] Failed to log session ID:", err);
+  }
   // Application menu
   const template: Electron.MenuItemConstructorOptions[] = [
     {
@@ -317,17 +328,7 @@ app.whenReady().then(async () => {
       );
 
       // Initialize new session logs
-      try {
-        await logManager.writeConversationLog(currentSessionId, "");
-        const json = sessionStore.toJSON();
-
-        await logManager.writeSessionJson(
-          currentSessionId,
-          json[currentSessionId] ?? {},
-        );
-      } catch (err) {
-        console.error("[Hotkey] Failed to initialize session logs:", err);
-      }
+      await initializeSessionLogs(currentSessionId);
 
       // Broadcast session change
       mainWindow.webContents.send("session:changed", {
@@ -369,7 +370,9 @@ app.whenReady().then(async () => {
       mainWindow?.show();
       mainWindow?.webContents.send("text-input:show");
     }
-  } catch {}
+  } catch (err) {
+    console.error("[Init] Failed to check OpenAI config:", err);
+  }
 
   // Dynamic hotkey updates are disabled by design (fixed hotkeys)
   ipcMain.handle("settings:get", () => loadUserSettings());
@@ -424,7 +427,9 @@ app.whenReady().then(async () => {
     initialPromptBySession.clear();
     try {
       sessionStore.clearAll();
-    } catch {}
+    } catch (err) {
+      console.error("[Session] Failed to clear session store:", err);
+    }
     currentSessionId = crypto.randomUUID();
     try {
       console.log(
@@ -438,17 +443,12 @@ app.whenReady().then(async () => {
       mainWindow?.webContents.send("session:changed", {
         sessionId: currentSessionId,
       });
-    } catch {}
-    // Initialize new session with empty log file and session JSON to ensure correct path structure
-    try {
-      await logManager.writeConversationLog(currentSessionId, "");
-      const json = sessionStore.toJSON();
+    } catch (err) {
+      console.error("[Session] Failed to notify renderer of session change:", err);
+    }
 
-      await logManager.writeSessionJson(
-        currentSessionId,
-        json[currentSessionId] ?? {},
-      );
-    } catch {}
+    // Initialize new session with empty log file and session JSON
+    await initializeSessionLogs(currentSessionId);
 
     return { sessionId: currentSessionId };
   });
@@ -482,9 +482,13 @@ ipcMain.handle(
       for (const bw of BrowserWindow.getAllWindows()) {
         try {
           bw.webContents.send("openai:config-updated");
-        } catch {}
+        } catch (err) {
+          console.error("[IPC] Failed to send config update to renderer:", err);
+        }
       }
-    } catch {}
+    } catch (err) {
+      console.error("[IPC] Failed to notify renderers of config change:", err);
+    }
 
     return true;
   },
@@ -501,9 +505,13 @@ ipcMain.handle(
         for (const bw of BrowserWindow.getAllWindows()) {
           try {
             bw.webContents.send("openai:config-updated");
-          } catch {}
+          } catch (err) {
+            console.error("[IPC] Failed to send volatile config update:", err);
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.error("[IPC] Failed to notify renderers of volatile config:", err);
+      }
 
       return true;
     } catch {

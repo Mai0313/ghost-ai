@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { memo, useEffect } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 
@@ -8,11 +8,8 @@ type MarkdownViewerProps = {
   style?: React.CSSProperties;
 };
 
-export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
-  markdown,
-  className,
-  style,
-}) => {
+export const MarkdownViewer: React.FC<MarkdownViewerProps> = memo(
+  function MarkdownViewer({ markdown, className, style }) {
   const editor = useCreateBlockNote({
     codeBlock: {
       defaultLanguage: "text",
@@ -52,9 +49,14 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     };
   }, [markdown, editor]);
 
-  return (
-    <div className={className} style={style}>
-      <BlockNoteView className="bn-readonly" editable={false} editor={editor} />
-    </div>
-  );
-};
+    return (
+      <div className={className} style={style}>
+        <BlockNoteView
+          className="bn-readonly"
+          editable={false}
+          editor={editor}
+        />
+      </div>
+    );
+  },
+);

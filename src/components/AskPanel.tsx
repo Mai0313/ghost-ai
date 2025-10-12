@@ -1,4 +1,5 @@
 import React, {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -38,7 +39,7 @@ type AskPanelProps = {
   onAttachScreenshotChange: (value: boolean) => void;
 };
 
-export const AskPanel: React.FC<AskPanelProps> = ({
+export const AskPanel: React.FC<AskPanelProps> = memo(function AskPanel({
   displayMarkdown,
   reasoningMarkdown,
   webSearchStatus,
@@ -57,7 +58,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   inputRef,
   attachScreenshot,
   onAttachScreenshotChange,
-}) => {
+}) {
   const [models, setModels] = useState<string[]>([]);
   const [model, setModel] = useState<string>("");
   const [composing, setComposing] = useState(false);
@@ -112,25 +113,18 @@ export const AskPanel: React.FC<AskPanelProps> = ({
     };
   }, []);
 
-  const markdownVisible = useMemo(
-    () => (displayMarkdown ? "block" : "none"),
-    [displayMarkdown],
-  );
-
-  const isWebSearching = useMemo(
-    () => webSearchStatus === "in_progress" || webSearchStatus === "searching",
-    [webSearchStatus],
-  );
+  // Simple derived values don't need useMemo - V8 is very fast at these
+  const markdownVisible = displayMarkdown ? "block" : "none";
+  const isWebSearching =
+    webSearchStatus === "in_progress" || webSearchStatus === "searching";
 
   const handleModelChange = useCallback(
     async (val: string) => {
       if (val === model) return;
       setModel(val);
       try {
-        await Promise.all([
-          window.ghostAI.updateOpenAIConfigVolatile({ model: val }),
-          window.ghostAI.updateOpenAIConfig({ model: val }),
-        ]);
+        // Only persist to disk - volatile update is redundant as config is immediately saved
+        await window.ghostAI.updateOpenAIConfig({ model: val });
       } catch (err) {
         console.error("[AskPanel] Failed to update model:", err);
       }
@@ -306,4 +300,4 @@ export const AskPanel: React.FC<AskPanelProps> = ({
       </div>
     </div>
   );
-};
+});

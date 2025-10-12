@@ -222,7 +222,6 @@ export function useAnalyzeStream(options: UseAnalyzeStreamOptions) {
       }
     },
     [
-      sessionId,
       onDeltaText,
       onDeltaReasoning,
       onWebSearchStatusChange,

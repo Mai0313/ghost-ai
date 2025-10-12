@@ -26,11 +26,14 @@ const store = new Store<{
   fileExtension: "json",
 });
 
+// Cache encryption availability check (doesn't change during runtime)
+const isEncryptionAvailable = safeStorage.isEncryptionAvailable();
+
 // Keep config minimal but explicit: store encrypted full config and also plain baseURL/model
 
 export function saveOpenAIConfig(cfg: OpenAIConfig) {
   const json = JSON.stringify(cfg);
-  const encrypted = safeStorage.isEncryptionAvailable()
+  const encrypted = isEncryptionAvailable
     ? safeStorage.encryptString(json).toString("base64")
     : Buffer.from(json).toString("base64");
 
@@ -48,7 +51,7 @@ export function loadOpenAIConfig(): OpenAIConfig | null {
   if (!encrypted) return null;
   try {
     const buf = Buffer.from(encrypted, "base64");
-    const json = safeStorage.isEncryptionAvailable()
+    const json = isEncryptionAvailable
       ? safeStorage.decryptString(buf)
       : buf.toString("utf8");
     const parsed = JSON.parse(json) as OpenAIConfig;

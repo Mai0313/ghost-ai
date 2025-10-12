@@ -31,7 +31,6 @@ export function App() {
   const [streaming, setStreaming] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const [tab, setTab] = useState<"ask" | "settings" | null>(null);
-  const tabRef = useRef<"ask" | "settings" | null>(null);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -162,10 +161,6 @@ export function App() {
     [assistantAnswerIndices.length, busy, streaming],
   );
 
-  useEffect(() => {
-    tabRef.current = tab;
-  }, [tab]);
-
   // Click-through toggle by hover
   useEffect(() => {
     const onMove = (ev: MouseEvent) => {
@@ -223,21 +218,27 @@ export function App() {
     });
     api?.onTextInputToggle?.(() => {
       setVisible(true);
-      if (tabRef.current === "ask") setTab(null);
-      else {
-        setTab("ask");
-        setBusy(false);
-        setStreaming(false);
-        setTimeout(() => askInputRef.current?.focus(), 0);
-      }
+      setTab((currentTab) => {
+        if (currentTab === "ask") {
+          return null;
+        } else {
+          setBusy(false);
+          setStreaming(false);
+          setTimeout(() => askInputRef.current?.focus(), 0);
+          return "ask";
+        }
+      });
     });
     api?.onHUDShow?.(() => {
       setVisible(true);
-      if (tabRef.current === "ask") {
-        setBusy(false);
-        setStreaming(false);
-        setTimeout(() => askInputRef.current?.focus(), 0);
-      }
+      setTab((currentTab) => {
+        if (currentTab === "ask") {
+          setBusy(false);
+          setStreaming(false);
+          setTimeout(() => askInputRef.current?.focus(), 0);
+        }
+        return currentTab;
+      });
     });
   }, []);
 

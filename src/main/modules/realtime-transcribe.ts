@@ -21,6 +21,19 @@ export class RealtimeTranscribeManager {
     }
   >();
 
+  // Helper to safely send IPC messages with error handling
+  private safeSend(
+    webContents: WebContents,
+    channel: string,
+    data: any,
+  ): void {
+    try {
+      webContents.send(channel, data);
+    } catch (err) {
+      console.error(`[WS] Failed to send ${channel}:`, err);
+    }
+  }
+
   start(webContents: WebContents, opts: RealtimeSessionOptions) {
     const wcId = webContents.id;
 
@@ -72,31 +85,20 @@ export class RealtimeTranscribeManager {
       } catch {}
 
       ws.send(JSON.stringify(cfg));
-      try {
-        webContents.send("transcribe:start", {
-          ok: true,
-          sessionId: entry.sessionId,
-        });
-      } catch {}
+      this.safeSend(webContents, "transcribe:start", {
+        ok: true,
+        sessionId: entry.sessionId,
+      });
     });
 
     ws.on("message", (data) => {
-      // Log compactly to avoid flooding
-      try {
-        const txt = data.toString();
-        const typeHint = (() => {
-          try {
-            return JSON.parse(txt)?.type;
-          } catch {
-            return undefined;
-          }
-        })();
-
-        if (typeHint) console.log("[WS] message", { wcId, type: typeHint });
-      } catch {}
+      // Parse once and use for both logging and processing
       try {
         const ev = JSON.parse(data.toString());
         const typ = ev?.type as string | undefined;
+
+        // Log compactly to avoid flooding
+        if (typ) console.log("[WS] message", { wcId, type: typ });
 
         if (!typ) return;
 
@@ -105,12 +107,10 @@ export class RealtimeTranscribeManager {
 
           if (typeof delta === "string" && delta.length) {
             entry.current.push(delta);
-            try {
-              webContents.send("transcribe:delta", {
-                delta,
-                sessionId: entry.sessionId,
-              });
-            } catch {}
+            this.safeSend(webContents, "transcribe:delta", {
+              delta,
+              sessionId: entry.sessionId,
+            });
           }
         } else if (
           typ === "conversation.item.input_audio_transcription.completed"
@@ -118,20 +118,16 @@ export class RealtimeTranscribeManager {
           const full = entry.current.join("");
 
           entry.current.length = 0;
-          try {
-            webContents.send("transcribe:done", {
-              content: full,
-              sessionId: entry.sessionId,
-            });
-          } catch {}
-        }
-      } catch (err) {
-        try {
-          webContents.send("transcribe:error", {
-            error: String(err),
+          this.safeSend(webContents, "transcribe:done", {
+            content: full,
             sessionId: entry.sessionId,
           });
-        } catch {}
+        }
+      } catch (err) {
+        this.safeSend(webContents, "transcribe:error", {
+          error: String(err),
+          sessionId: entry.sessionId,
+        });
       }
     });
 
@@ -140,25 +136,22 @@ export class RealtimeTranscribeManager {
       const full = entry.current.join("");
 
       entry.current.length = 0;
-      try {
-        if (full)
-          webContents.send("transcribe:done", {
-            content: full,
-            sessionId: entry.sessionId,
-          });
-        webContents.send("transcribe:closed");
-      } catch {}
+      if (full) {
+        this.safeSend(webContents, "transcribe:done", {
+          content: full,
+          sessionId: entry.sessionId,
+        });
+      }
+      this.safeSend(webContents, "transcribe:closed", {});
       this.sessions.delete(wcId);
     });
 
     ws.on("error", (err) => {
       console.error("[WS] error", { wcId, error: String(err?.message || err) });
-      try {
-        webContents.send("transcribe:error", {
-          error: String(err?.message || err),
-          sessionId: entry.sessionId,
-        });
-      } catch {}
+      this.safeSend(webContents, "transcribe:error", {
+        error: String(err?.message || err),
+        sessionId: entry.sessionId,
+      });
     });
   }
 

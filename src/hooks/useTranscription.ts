@@ -35,6 +35,8 @@ export function useTranscription({
   const transcriptModeRef = useRef<boolean>(false);
   const transcriptBufferRef = useRef<string>("");
   const pausedRef = useRef<boolean>(false);
+  // Reusable buffer for mono channel mixing to reduce allocations
+  const monoBufferRef = useRef<Float32Array | null>(null);
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -248,7 +250,15 @@ export function useTranscription({
           const input = ev.inputBuffer;
           const channels = input.numberOfChannels;
           const len = input.length;
-          const mono = new Float32Array(len);
+
+          // Reuse or allocate mono buffer
+          if (!monoBufferRef.current || monoBufferRef.current.length < len) {
+            monoBufferRef.current = new Float32Array(len);
+          }
+          const mono = monoBufferRef.current;
+
+          // Clear buffer for this frame
+          mono.fill(0, 0, len);
 
           for (let c = 0; c < channels; c++) {
             const data = input.getChannelData(c);
@@ -256,7 +266,7 @@ export function useTranscription({
             for (let i = 0; i < len; i++) mono[i] += data[i]! / channels;
           }
           const inRate = input.sampleRate || audioCtx.sampleRate;
-          const resampled = resample(mono, inRate, TARGET_SR);
+          const resampled = resample(mono.subarray(0, len), inRate, TARGET_SR);
 
           const buf = chunkFloatRef.current!;
           let used = chunkFloatLenRef.current;
@@ -390,6 +400,7 @@ export function useTranscription({
       // Clear audio buffers
       chunkFloatRef.current = null;
       chunkFloatLenRef.current = 0;
+      monoBufferRef.current = null;
     }
 
     if (recording) {
