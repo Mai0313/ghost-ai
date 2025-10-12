@@ -9,6 +9,7 @@ Ghost AI is a privacy-first, invisible AI-powered desktop assistant built with E
 ## Build System & Commands
 
 ### Development
+
 ```bash
 npm run dev          # Start all dev servers (Vite + tsup + Electron)
 npm run dev:renderer # Start Vite dev server only (port 5173)
@@ -17,6 +18,7 @@ npm run dev:electron # Start Electron with nodemon watch
 ```
 
 ### Building & Distribution
+
 ```bash
 npm run build            # Production build (Vite + tsup)
 npm run dist             # Build and package for current platform
@@ -27,6 +29,7 @@ npm run dist:linux       # Build Linux AppImage/deb
 ```
 
 ### Code Quality
+
 ```bash
 npm run check      # Run type-check + format + lint (fixes issues)
 npm run type-check # TypeScript type checking (no emit)
@@ -37,6 +40,7 @@ npm run format:nofix # Prettier check only
 ```
 
 ### Testing Single Files
+
 - Type check: `npx tsc --noEmit <file>.ts`
 - Lint: `npx eslint <file>.ts`
 - Format: `npx prettier --write <file>.ts`
@@ -46,17 +50,20 @@ npm run format:nofix # Prettier check only
 ### Process Model (Electron Multi-Process)
 
 **Main Process** (`src/main/main.ts`):
+
 - Owns BrowserWindow, Tray, global hotkeys, and IPC handlers
 - Manages session lifecycle (session IDs, conversation history)
 - Coordinates screenshot capture, AI streaming, and transcription
 - Persists settings and logs via managers
 
 **Renderer Process** (`src/App.tsx`):
+
 - React UI: HUD bar, Ask panel, Settings, voice recording indicators
 - Communicates with main via IPC (`window.ghostAI` preload API)
 - Handles UI state: conversation history, pagination, streaming deltas
 
 **Preload Script** (`src/main/preload.ts`):
+
 - Exposes safe IPC channels as `window.ghostAI` API
 - Built as CommonJS (`.cjs`) for Electron compatibility
 
@@ -89,6 +96,7 @@ Located in `src/main/modules/`:
 ### OpenAI Integration
 
 **src/shared/openai-client.ts**:
+
 - Singleton `OpenAIClient` class wrapping OpenAI SDK
 - Two streaming methods:
   - `completionStream()`: Standard chat completions (gpt-4o, etc.)
@@ -97,6 +105,7 @@ Located in `src/main/modules/`:
 - Supports AbortSignal for Ctrl+R cancellation
 
 **Model Support**:
+
 - Allowed models: `chatgpt-4o-latest`, `gpt-4o`, `gpt-4.1`, `o4-mini-2025-04-16`, `gpt-5`, `gpt-5-mini`
 - gpt-5 enables reasoning (effort: high) and web search
 
@@ -135,6 +144,7 @@ Located in `src/main/modules/`:
 ## Component Structure
 
 **src/components/**:
+
 - `HUDBar.tsx` - Top-center floating control bar with Listen/Ask/Hide/Settings buttons
 - `AskPanel.tsx` - Question input, markdown viewer, pagination controls, regenerate button
 - `Settings.tsx` - OpenAI API config, model selection, prompt management, transcription settings
@@ -157,14 +167,16 @@ Located in `src/main/modules/`:
 ### Adding a New IPC Handler (Main → Renderer)
 
 1. **Main process** (`src/main/main.ts`):
+
    ```typescript
-   ipcMain.handle('my-channel:action', async (evt, payload) => {
+   ipcMain.handle("my-channel:action", async (evt, payload) => {
      // logic
      return result;
    });
    ```
 
 2. **Preload** (`src/main/preload.ts`):
+
    ```typescript
    myAction: (payload: any) => ipcRenderer.invoke('my-channel:action', payload),
    ```
