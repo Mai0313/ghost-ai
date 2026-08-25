@@ -61,7 +61,7 @@
     "prettier": "^3.6.2",
     "rimraf": "*",
     "tsup": "*",
-    "typescript": "*",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.0",
     "vite": "*",
     "wait-on": "^8.0.4"
