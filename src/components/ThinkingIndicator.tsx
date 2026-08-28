@@ -1,8 +1,8 @@
-import React from "react";
+import React, { memo } from "react";
 
 import { theme } from "../styles/theme";
 
-export function ThinkingIndicator({
+export const ThinkingIndicator = memo(function ThinkingIndicator({
   size = 10,
   dots = 3,
 }: {
@@ -24,4 +24,4 @@ export function ThinkingIndicator({
       ))}
     </div>
   );
-}
+});

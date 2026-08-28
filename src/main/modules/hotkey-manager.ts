@@ -21,64 +21,40 @@ const SCROLL_DOWN_HOTKEY = "CommandOrControl+Down";
 const PAGE_PREV_HOTKEY = "CommandOrControl+Shift+Up";
 const PAGE_NEXT_HOTKEY = "CommandOrControl+Shift+Down";
 
+/**
+ * Helper to register a single hotkey with error handling
+ */
+function registerHotkey(
+  key: string,
+  handler: () => void,
+  failures: string[],
+): void {
+  try {
+    globalShortcut.register(key, handler);
+  } catch {
+    failures.push(key);
+  }
+}
+
 export function registerFixedHotkeys(handlers: HotkeyHandlers): {
   ok: boolean;
   failed: string[];
 } {
   const failures: string[] = [];
 
-  try {
-    globalShortcut.register(ASK_HOTKEY, () => void handlers.onTextInput());
-  } catch {
-    failures.push(ASK_HOTKEY);
-  }
+  const hotkeys: Array<{ key: string; handler: () => void }> = [
+    { key: ASK_HOTKEY, handler: () => void handlers.onTextInput() },
+    { key: HIDE_HOTKEY, handler: () => void handlers.onToggleHide() },
+    { key: CLEAR_HOTKEY, handler: () => void handlers.onClearAsk() },
+    { key: AUDIO_TOGGLE_HOTKEY, handler: () => void handlers.onAudioToggle() },
+    { key: SCROLL_UP_HOTKEY, handler: () => void handlers.onScrollUp() },
+    { key: SCROLL_DOWN_HOTKEY, handler: () => void handlers.onScrollDown() },
+    { key: PAGE_PREV_HOTKEY, handler: () => void handlers.onPagePrev() },
+    { key: PAGE_NEXT_HOTKEY, handler: () => void handlers.onPageNext() },
+  ];
 
-  try {
-    globalShortcut.register(HIDE_HOTKEY, () => void handlers.onToggleHide());
-  } catch {
-    failures.push(HIDE_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(CLEAR_HOTKEY, () => void handlers.onClearAsk());
-  } catch {
-    failures.push(CLEAR_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(
-      AUDIO_TOGGLE_HOTKEY,
-      () => void handlers.onAudioToggle(),
-    );
-  } catch {
-    failures.push(AUDIO_TOGGLE_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(SCROLL_UP_HOTKEY, () => void handlers.onScrollUp());
-  } catch {
-    failures.push(SCROLL_UP_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(
-      SCROLL_DOWN_HOTKEY,
-      () => void handlers.onScrollDown(),
-    );
-  } catch {
-    failures.push(SCROLL_DOWN_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(PAGE_PREV_HOTKEY, () => void handlers.onPagePrev());
-  } catch {
-    failures.push(PAGE_PREV_HOTKEY);
-  }
-
-  try {
-    globalShortcut.register(PAGE_NEXT_HOTKEY, () => void handlers.onPageNext());
-  } catch {
-    failures.push(PAGE_NEXT_HOTKEY);
+  for (const { key, handler } of hotkeys) {
+    registerHotkey(key, handler, failures);
   }
 
   return { ok: failures.length === 0, failed: failures };

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 
 import {
   askCard,
@@ -32,7 +32,7 @@ type AskPanelProps = {
   onAttachScreenshotChange: (value: boolean) => void;
 };
 
-export const AskPanel: React.FC<AskPanelProps> = ({
+export const AskPanel: React.FC<AskPanelProps> = memo(function AskPanel({
   displayMarkdown,
   reasoningMarkdown,
   webSearchStatus,
@@ -51,7 +51,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   inputRef,
   attachScreenshot,
   onAttachScreenshotChange,
-}) => {
+}) {
   const [models, setModels] = useState<string[]>([]);
   const [model, setModel] = useState<string>("");
   const [composing, setComposing] = useState(false);
@@ -59,61 +59,44 @@ export const AskPanel: React.FC<AskPanelProps> = ({
   const askInputRef = inputRef ?? localInputRef;
 
   useEffect(() => {
-    (async () => {
-      try {
-        const api: any = (window as any).ghostAI;
+    const api = (window as any).ghostAI;
 
-        if (!api) return;
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
+    if (!api) return;
 
-        if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || "";
+    const loadConfig = async () => {
+      const [cfg, list] = await Promise.all([
+        api.getOpenAIConfig?.(),
+        api.listOpenAIModels?.(),
+      ]);
 
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
-          setModel(cfgModel);
-        else setModel("");
-      } catch {}
-    })();
-  }, []);
+      if (Array.isArray(list) && list.length) setModels(list);
+      const cfgModel = cfg?.model || "";
 
-  useEffect(() => {
-    const api: any = (window as any).ghostAI;
-
-    if (!api?.onOpenAIConfigUpdated) return;
-    const off = api.onOpenAIConfigUpdated(async () => {
-      try {
-        const [cfg, list] = await Promise.all([
-          api.getOpenAIConfig?.(),
-          api.listOpenAIModels?.(),
-        ]);
-
-        if (Array.isArray(list) && list.length) setModels(list);
-        const cfgModel = (cfg && (cfg as any).model) || "";
-
-        if (cfgModel && Array.isArray(list) && list.includes(cfgModel))
-          setModel(cfgModel);
-        else if (Array.isArray(list) && list.length) setModel(list[0] ?? "");
-      } catch {}
-    });
-
-    return () => {
-      try {
-        off && off();
-      } catch {}
+      setModel(
+        cfgModel && list?.includes(cfgModel) ? cfgModel : list?.[0] || "",
+      );
     };
+
+    loadConfig();
+
+    const off = api.onOpenAIConfigUpdated?.(loadConfig);
+
+    return () => off?.();
   }, []);
 
-  const markdownVisible = useMemo(
-    () => (displayMarkdown ? "block" : "none"),
-    [displayMarkdown],
-  );
-  const isWebSearching = useMemo(
-    () => webSearchStatus === "in_progress" || webSearchStatus === "searching",
-    [webSearchStatus],
-  );
+  const markdownVisible = displayMarkdown ? "block" : "none";
+  const isWebSearching =
+    webSearchStatus === "in_progress" || webSearchStatus === "searching";
+
+  const handleModelChange = async (val: string) => {
+    if (val === model) return;
+    setModel(val);
+    window.ghostAI
+      .updateOpenAIConfig({ model: val })
+      .catch((err: any) =>
+        console.error("[AskPanel] Failed to update model:", err),
+      );
+  };
 
   return (
     <div style={askCard}>
@@ -267,17 +250,7 @@ export const AskPanel: React.FC<AskPanelProps> = ({
             maxWidth: 220,
           }}
           value={model}
-          onChange={async (e) => {
-            const val = (e.target as HTMLSelectElement).value;
-
-            setModel(val);
-            try {
-              const api: any = (window as any).ghostAI;
-
-              await api?.updateOpenAIConfigVolatile?.({ model: val });
-              await api?.updateOpenAIConfig?.({ model: val });
-            } catch {}
-          }}
+          onChange={(e) => void handleModelChange(e.target.value)}
         >
           {(!models.length || !model) && (
             <option disabled value="">
@@ -293,4 +266,4 @@ export const AskPanel: React.FC<AskPanelProps> = ({
       </div>
     </div>
   );
-};
+});

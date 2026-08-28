@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { memo } from "react";
 
 import { askCard, askResultArea } from "../styles/styles";
 
@@ -8,26 +8,24 @@ type TranscriptBubbleProps = {
   markdown: string;
 };
 
-export const TranscriptBubble: React.FC<TranscriptBubbleProps> = ({
-  markdown,
-}) => {
-  const markdownVisible = useMemo(
-    () => (markdown ? "block" : "none"),
-    [markdown],
-  );
+export const TranscriptBubble: React.FC<TranscriptBubbleProps> = memo(
+  function TranscriptBubble({ markdown }) {
+    // Simple derived value doesn't need useMemo
+    const markdownVisible = markdown ? "block" : "none";
 
-  return (
-    <div style={askCard}>
-      <div
-        className="bn-markdown-viewer"
-        style={{
-          ...askResultArea,
-          whiteSpace: "normal",
-          display: markdownVisible,
-        }}
-      >
-        <MarkdownViewer markdown={markdown} />
+    return (
+      <div style={askCard}>
+        <div
+          className="bn-markdown-viewer"
+          style={{
+            ...askResultArea,
+            whiteSpace: "normal",
+            display: markdownVisible,
+          }}
+        >
+          <MarkdownViewer markdown={markdown} />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  },
+);

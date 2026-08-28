@@ -8,22 +8,7 @@ function resolveLogsDir(): string {
   return path.join(home, ".ghost-ai", "logs");
 }
 
-export async function writeConversationLog(
-  sessionId: string,
-  content: string,
-): Promise<string> {
-  const logsDir = resolveLogsDir();
-  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9-_]/g, "");
-  const sessionDir = path.join(logsDir, safeSessionId);
-
-  await fs.mkdir(sessionDir, { recursive: true });
-  const filePath = path.join(sessionDir, `${safeSessionId}.log`);
-
-  await fs.writeFile(filePath, content ?? "", { encoding: "utf8" });
-
-  return filePath;
-}
-
+// Simplified: only write session JSON format
 export async function writeSessionJson(
   sessionId: string,
   payload: any,
@@ -43,6 +28,5 @@ export async function writeSessionJson(
 }
 
 export const logManager = {
-  writeConversationLog,
   writeSessionJson,
 };

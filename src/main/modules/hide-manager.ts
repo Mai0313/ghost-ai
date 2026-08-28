@@ -2,9 +2,8 @@ import type { BrowserWindow as BrowserWindowType } from "electron";
 
 import { BrowserWindow } from "electron";
 
-import { loadHiddenState, saveHiddenState } from "./settings-manager";
-
-let isHidden = loadHiddenState();
+// Track hidden state in memory only (not persisted)
+let isHidden = false;
 
 export async function toggleHidden(win: BrowserWindowType | null) {
   if (!win) return;
@@ -12,18 +11,14 @@ export async function toggleHidden(win: BrowserWindowType | null) {
     win.showInactive();
     try {
       win.webContents.send("hud:show");
-    } catch {}
+    } catch (err) {
+      console.error("[Hide] Failed to send hud:show event:", err);
+    }
     isHidden = false;
-    saveHiddenState(false);
   } else {
     win.hide();
     isHidden = true;
-    saveHiddenState(true);
   }
-}
-
-export function ensureHiddenOnCapture() {
-  // Kept for backward compatibility; use hideAllWindowsDuring in new code
 }
 
 export async function hideAllWindowsDuring<T>(

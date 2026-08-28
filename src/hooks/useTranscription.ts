@@ -23,62 +23,55 @@ export function useTranscription({
 }: UseTranscriptionOptions) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef<number | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const systemStreamRef = useRef<MediaStream | null>(null);
-  const mixGainRef = useRef<GainNode | null>(null);
-  const muteGainRef = useRef<GainNode | null>(null);
-  const chunkFloatRef = useRef<Float32Array | null>(null);
-  const chunkFloatLenRef = useRef<number>(0);
+
+  // Audio system refs (grouped for clarity)
+  const audioRefs = useRef({
+    ctx: null as AudioContext | null,
+    workletNode: null as AudioWorkletNode | null,
+    micStream: null as MediaStream | null,
+    systemStream: null as MediaStream | null,
+    mixGain: null as GainNode | null,
+    muteGain: null as GainNode | null,
+  });
+
+  // Batch processing refs (grouped for clarity)
+  const batchRefs = useRef({
+    chunks: [] as Uint8Array[],
+    bytes: 0,
+    timer: null as number | null,
+  });
+
+  // Transcription state refs
   const transcribeUnsubsRef = useRef<(() => void)[]>([]);
   const transcriptModeRef = useRef<boolean>(false);
   const transcriptBufferRef = useRef<string>("");
   const pausedRef = useRef<boolean>(false);
+
+  // Store callback refs to avoid stale closures
+  const onDeltaRef = useRef(onDelta);
+  const onDoneRef = useRef(onDone);
+  const onErrorRef = useRef(onError);
+  const setVisibleRef = useRef(setVisible);
+  const setPausedRef = useRef(setPaused);
+  const sessionIdRef = useRef(sessionId);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onDeltaRef.current = onDelta;
+    onDoneRef.current = onDone;
+    onErrorRef.current = onError;
+    setVisibleRef.current = setVisible;
+    setPausedRef.current = setPaused;
+    sessionIdRef.current = sessionId;
+  });
 
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
 
   useEffect(() => {
-    const TARGET_SR = 24000;
-    const CHUNK_SAMPLES = 3072;
     const BATCH_FLUSH_MS = 220;
     const BATCH_MAX_BYTES = 32 * 1024;
-
-    function floatTo16BitPCM(float32Array: Float32Array): Int16Array {
-      const out = new Int16Array(float32Array.length);
-
-      for (let i = 0; i < float32Array.length; i++) {
-        let s = Math.max(-1, Math.min(1, float32Array[i] as number));
-
-        out[i] = (s < 0 ? s * 0x8000 : s * 0x7fff) | 0;
-      }
-
-      return out;
-    }
-
-    function resample(
-      buffer: Float32Array,
-      inRate: number,
-      outRate: number,
-    ): Float32Array {
-      if (inRate === outRate) return buffer;
-      const ratio = inRate / outRate;
-      const newLen = Math.floor(buffer.length / ratio);
-      const out = new Float32Array(newLen);
-
-      for (let i = 0; i < newLen; i++) {
-        const index = i * ratio;
-        const i0 = Math.floor(index);
-        const i1 = Math.min(buffer.length - 1, i0 + 1);
-        const frac = index - i0;
-
-        out[i] = buffer[i0]! * (1 - frac) + buffer[i1]! * frac;
-      }
-
-      return out;
-    }
 
     async function startPipeline() {
       setElapsedMs(0);
@@ -86,10 +79,10 @@ export function useTranscription({
         if (!pausedRef.current) setElapsedMs((ms) => ms + 1000);
       }, 1000) as unknown as number;
 
-      setVisible(true);
+      setVisibleRef.current(true);
       transcriptModeRef.current = true;
       transcriptBufferRef.current = "";
-      setPaused(false);
+      setPausedRef.current(false);
 
       try {
         await (window as any).ghostAI?.startTranscription?.({
@@ -107,10 +100,11 @@ export function useTranscription({
       try {
         const u1 = (window as any).ghostAI?.onTranscribeDelta?.(
           ({ delta, sessionId: sid }: { delta: string; sessionId: string }) => {
-            if (sid && sessionId && sid !== sessionId) return;
+            if (sid && sessionIdRef.current && sid !== sessionIdRef.current)
+              return;
             if (!delta) return;
             if (pausedRef.current) return;
-            onDelta(delta);
+            onDeltaRef.current(delta);
             transcriptBufferRef.current += delta;
           },
         );
@@ -125,9 +119,10 @@ export function useTranscription({
             content: string;
             sessionId: string;
           }) => {
-            if (sid && sessionId && sid !== sessionId) return;
+            if (sid && sessionIdRef.current && sid !== sessionIdRef.current)
+              return;
             if (!content) return;
-            onDone(content);
+            onDoneRef.current(content);
             try {
               transcriptBufferRef.current = content.endsWith("\n")
                 ? content
@@ -140,28 +135,45 @@ export function useTranscription({
 
         const u3 = (window as any).ghostAI?.onTranscribeError?.(
           ({ error, sessionId: sid }: { error: string; sessionId: string }) => {
-            if (sid && sessionId && sid !== sessionId) return;
+            if (sid && sessionIdRef.current && sid !== sessionIdRef.current)
+              return;
             console.error("Transcribe error", error);
-            onError?.(error);
+            onErrorRef.current?.(error);
           },
         );
 
         if (typeof u3 === "function") transcribeUnsubsRef.current.push(u3);
       } catch {}
 
-      const audioCtx = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      const audioCtx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
 
-      audioCtxRef.current = audioCtx;
+      audioRefs.current.ctx = audioCtx;
+
+      // Load AudioWorklet module (modern replacement for ScriptProcessorNode)
+      try {
+        await audioCtx.audioWorklet.addModule(
+          "/worklets/audio-processor.worklet.js",
+        );
+      } catch (err) {
+        console.error("[Audio] Failed to load AudioWorklet module:", err);
+        alert(
+          "Failed to initialize audio processor. Check console for details.",
+        );
+
+        return;
+      }
+
       const mix = audioCtx.createGain();
 
       mix.gain.value = 1.0;
-      mixGainRef.current = mix;
+      audioRefs.current.mixGain = mix;
 
       const mute = audioCtx.createGain();
 
       mute.gain.value = 0.0;
-      muteGainRef.current = mute;
+      audioRefs.current.muteGain = mute;
 
       try {
         const mic = await navigator.mediaDevices.getUserMedia({
@@ -173,7 +185,7 @@ export function useTranscription({
           video: false as any,
         });
 
-        micStreamRef.current = mic;
+        audioRefs.current.micStream = mic;
         const micSrc = audioCtx.createMediaStreamSource(mic);
 
         micSrc.connect(mix);
@@ -188,7 +200,7 @@ export function useTranscription({
         } as any);
 
         sys.getVideoTracks().forEach((t) => t.stop());
-        systemStreamRef.current = sys;
+        audioRefs.current.systemStream = sys;
         const sysSrc = audioCtx.createMediaStreamSource(sys);
 
         sysSrc.connect(mix);
@@ -196,152 +208,153 @@ export function useTranscription({
         console.warn("[Audio] system audio capture failed", e);
       }
 
-      const bufferSize = 4096;
-      const processor = audioCtx.createScriptProcessor(bufferSize, 2, 2);
+      // Create AudioWorklet node (runs on audio thread, not main thread!)
+      const workletNode = new AudioWorkletNode(
+        audioCtx,
+        "audio-recorder-processor",
+      );
 
-      processorRef.current = processor as any;
-      mix.connect(processor);
-      processor.connect(mute).connect(audioCtx.destination);
-
-      chunkFloatRef.current = new Float32Array(CHUNK_SAMPLES * 4);
-      chunkFloatLenRef.current = 0;
-
-      let batchChunks: Uint8Array[] = [];
-      let batchBytes = 0;
-      let batchTimer: number | null = null;
+      audioRefs.current.workletNode = workletNode;
+      mix.connect(workletNode);
+      workletNode.connect(mute).connect(audioCtx.destination);
 
       const flushBatch = () => {
-        if (!batchBytes) return;
-        if (batchTimer) {
-          window.clearTimeout(batchTimer);
-          batchTimer = null;
+        const batch = batchRefs.current;
+
+        if (!batch.bytes) return;
+
+        if (batch.timer) {
+          window.clearTimeout(batch.timer);
+          batch.timer = null;
         }
-        const merged = new Uint8Array(batchBytes);
+
+        const merged = new Uint8Array(batch.bytes);
         let offset = 0;
 
-        for (const c of batchChunks) {
+        for (const c of batch.chunks) {
           merged.set(c, offset);
           offset += c.byteLength;
         }
-        batchChunks = [];
-        batchBytes = 0;
-        const b64 = btoa(String.fromCharCode(...merged));
 
-        try {
-          (window as any).ghostAI?.appendTranscriptionAudio?.(b64);
-        } catch (e) {
-          console.warn("[Audio] appendTranscriptionAudio failed", e);
+        batch.chunks = [];
+        batch.bytes = 0;
+
+        // More efficient base64 encoding using FileReader (non-blocking)
+        // Fallback to chunked encoding for older browsers
+        if (typeof FileReader !== "undefined") {
+          const blob = new Blob([merged]);
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(",")[1];
+
+            (window as any).ghostAI?.appendTranscriptionAudio?.(base64);
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          // Fallback: chunked encoding to avoid stack overflow
+          const chunkSize = 8192;
+          let binary = "";
+
+          for (let i = 0; i < merged.length; i += chunkSize) {
+            const end = Math.min(i + chunkSize, merged.length);
+            const chunk = merged.subarray(i, end);
+
+            // Use reduce to avoid stack overflow with apply
+            binary += chunk.reduce(
+              (str, byte) => str + String.fromCharCode(byte),
+              "",
+            );
+          }
+          const b64Encoded = btoa(binary);
+
+          (window as any).ghostAI?.appendTranscriptionAudio?.(b64Encoded);
         }
       };
 
       const scheduleFlush = () => {
-        if (batchTimer) return;
-        batchTimer = window.setTimeout(() => {
-          batchTimer = null;
+        const batch = batchRefs.current;
+
+        if (batch.timer) return;
+        batch.timer = window.setTimeout(() => {
+          batch.timer = null;
           flushBatch();
         }, BATCH_FLUSH_MS) as unknown as number;
       };
 
-      (processor as any).onaudioprocess = (ev: AudioProcessingEvent) => {
+      // Handle audio data from AudioWorklet (runs on audio thread)
+      workletNode.port.onmessage = (event) => {
         try {
           if (pausedRef.current) return;
-          const input = ev.inputBuffer;
-          const channels = input.numberOfChannels;
-          const len = input.length;
-          const mono = new Float32Array(len);
 
-          for (let c = 0; c < channels; c++) {
-            const data = input.getChannelData(c);
+          if (event.data.type === "audioData") {
+            const pcm16Buffer = event.data.data as ArrayBuffer;
+            const bytes = new Uint8Array(pcm16Buffer);
+            const batch = batchRefs.current;
 
-            for (let i = 0; i < len; i++) mono[i] += data[i]! / channels;
-          }
-          const inRate = input.sampleRate || audioCtx.sampleRate;
-          const resampled = resample(mono, inRate, TARGET_SR);
+            batch.chunks.push(bytes);
+            batch.bytes += bytes.byteLength;
 
-          const buf = chunkFloatRef.current!;
-          let used = chunkFloatLenRef.current;
-          let offset = 0;
-
-          while (offset < resampled.length) {
-            const space = buf.length - used;
-            const copy = Math.min(space, resampled.length - offset);
-
-            buf.set(resampled.subarray(offset, offset + copy), used);
-            used += copy;
-            offset += copy;
-
-            if (used >= CHUNK_SAMPLES) {
-              const toSend = buf.subarray(0, CHUNK_SAMPLES);
-              const remain = used - CHUNK_SAMPLES;
-
-              if (remain > 0) buf.copyWithin(0, CHUNK_SAMPLES, used);
-              used = remain;
-
-              const pcm16 = floatTo16BitPCM(toSend);
-              const bytes = new Uint8Array(pcm16.buffer);
-
-              batchChunks.push(bytes);
-              batchBytes += bytes.byteLength;
-
-              if (batchBytes >= BATCH_MAX_BYTES) {
-                flushBatch();
-              } else {
-                scheduleFlush();
-              }
+            if (batch.bytes >= BATCH_MAX_BYTES) {
+              flushBatch();
+            } else {
+              scheduleFlush();
             }
           }
-          chunkFloatLenRef.current = used;
         } catch (err) {
-          console.error("[Audio] process error", err);
+          console.error("[Audio] worklet message error", err);
         }
       };
     }
 
-    function stopPipeline() {
+    const stopPipeline = () => {
+      // Clear timer
       if (timerRef.current) {
         window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      try {
-        (window as any).ghostAI?.endTranscription?.();
-      } catch {}
-      try {
-        (window as any).ghostAI?.stopTranscription?.();
-      } catch {}
-      try {
-        const unsubs = transcribeUnsubsRef.current.splice(0);
 
-        unsubs.forEach((fn) => {
-          try {
-            fn();
-          } catch {}
-        });
-      } catch {}
-      try {
-        processorRef.current && (processorRef.current as any).disconnect();
-      } catch {}
-      try {
-        mixGainRef.current && mixGainRef.current.disconnect();
-      } catch {}
-      try {
-        muteGainRef.current && muteGainRef.current.disconnect();
-      } catch {}
-      try {
-        audioCtxRef.current && audioCtxRef.current.close();
-      } catch {}
-      audioCtxRef.current = null;
-      processorRef.current = null as any;
-      mixGainRef.current = null;
-      muteGainRef.current = null;
-      chunkFloatRef.current = null;
-      chunkFloatLenRef.current = 0;
-      try {
-        micStreamRef.current?.getTracks().forEach((t) => t.stop());
-        systemStreamRef.current?.getTracks().forEach((t) => t.stop());
-      } catch {}
-      micStreamRef.current = null;
-      systemStreamRef.current = null;
-    }
+      // Clear batch timer
+      const batch = batchRefs.current;
+
+      if (batch.timer) {
+        window.clearTimeout(batch.timer);
+        batch.timer = null;
+      }
+
+      // End transcription session
+      window.ghostAI?.endTranscription?.();
+      window.ghostAI?.stopTranscription?.();
+
+      // Unsubscribe from all IPC listeners
+      const unsubs = transcribeUnsubsRef.current.splice(0);
+
+      unsubs.forEach((fn) => fn());
+
+      // Disconnect audio nodes
+      const audio = audioRefs.current;
+
+      audio.workletNode?.disconnect();
+      audio.workletNode = null;
+      audio.mixGain?.disconnect();
+      audio.mixGain = null;
+      audio.muteGain?.disconnect();
+      audio.muteGain = null;
+
+      // Close audio context
+      audio.ctx?.close();
+      audio.ctx = null;
+
+      // Stop all media tracks
+      audio.micStream?.getTracks().forEach((t) => t.stop());
+      audio.micStream = null;
+      audio.systemStream?.getTracks().forEach((t) => t.stop());
+      audio.systemStream = null;
+
+      // Clear batch buffers
+      batch.chunks = [];
+      batch.bytes = 0;
+    };
 
     if (recording) {
       startPipeline();
@@ -353,7 +366,7 @@ export function useTranscription({
       if (!recording) return;
       stopPipeline();
     };
-  }, [recording]);
+  }, [recording]); // All other dependencies handled via refs to avoid stale closures
 
   const timeLabel = useMemo(() => {
     const totalSeconds = Math.floor(elapsedMs / 1000);

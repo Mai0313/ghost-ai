@@ -1,14 +1,25 @@
+import type { OpenAIConfig, UserSettings } from "@shared/types";
+
 export {};
 
 declare global {
   interface Window {
     ghostAI: {
-      updateOpenAIConfig: (cfg: Partial<any>) => Promise<boolean>;
-      getOpenAIConfig: () => Promise<any>;
-      validateOpenAIConfig?: (cfg: any) => Promise<boolean>;
+      // OpenAI Configuration
+      updateOpenAIConfig: (cfg: Partial<OpenAIConfig>) => Promise<boolean>;
+      getOpenAIConfig: () => Promise<OpenAIConfig | null>;
+      validateOpenAIConfig: (cfg: OpenAIConfig) => Promise<boolean>;
+      listOpenAIModels: () => Promise<string[]>;
+      updateOpenAIConfigVolatile: (
+        cfg: Partial<OpenAIConfig>,
+      ) => Promise<boolean>;
+      onOpenAIConfigUpdated: (handler: () => void) => () => void;
+
+      // Analyze Stream (Simplified: Renderer provides formatted prompt)
       analyzeCurrentScreenStream: (
         textPrompt: string,
         customPrompt: string,
+        formattedPrompt: string,
         handlers: {
           onStart?: (payload: { requestId: string; sessionId: string }) => void;
           onDelta?: (payload: {
@@ -30,11 +41,9 @@ declare global {
             sessionId: string;
           }) => void;
         },
-        history?: string | null,
-      ) => () => void; // returns unsubscribe
-      listOpenAIModels: () => Promise<string[]>;
-      updateOpenAIConfigVolatile: (cfg: Partial<any>) => Promise<boolean>;
-      // Prompts management
+      ) => () => void;
+
+      // Prompts Management
       listPrompts: () => Promise<{
         prompts: string[];
         defaultPrompt: string | null;
@@ -44,15 +53,18 @@ declare global {
       getDefaultPrompt: () => Promise<string | null>;
       getActivePromptName: () => Promise<string | null>;
       setActivePromptName: (name: string) => Promise<string>;
-      getUserSettings: () => Promise<any>;
-      updateUserSettings: (partial: Partial<any>) => Promise<any>;
+
+      // User Settings
+      getUserSettings: () => Promise<Partial<UserSettings>>;
+      updateUserSettings: (
+        partial: Partial<UserSettings>,
+      ) => Promise<Partial<UserSettings>>;
+
+      // UI Events
       onTextInputShow: (handler: () => void) => void;
       onTextInputToggle: (handler: () => void) => void;
       onHUDShow: (handler: () => void) => void;
-      toggleHide: () => Promise<any>;
-      quitApp: () => Promise<any>;
       onAskClear: (handler: () => void) => void;
-
       onAudioToggle: (handler: () => void) => void;
       onAskScroll: (
         handler: (data: { direction: "up" | "down" }) => void,
@@ -60,7 +72,13 @@ declare global {
       onAskPaginate: (
         handler: (data: { direction: "up" | "down" }) => void,
       ) => () => void;
-      // Session controls
+
+      // Window Controls
+      toggleHide: () => Promise<boolean>;
+      quitApp: () => Promise<boolean>;
+      setMouseIgnore: (ignore: boolean) => Promise<boolean>;
+
+      // Session Controls
       getSession: () => Promise<string>;
       newSession: () => Promise<string>;
       onSessionChanged: (
@@ -80,10 +98,11 @@ declare global {
           >
         >
       >;
-      // Control whether the overlay window ignores mouse events
-      setMouseIgnore: (ignore: boolean) => Promise<true>;
-      // Realtime transcription bridge
-      startTranscription: (options: { model?: string }) => Promise<any>;
+
+      // Realtime Transcription
+      startTranscription: (options: {
+        model?: string;
+      }) => Promise<{ ok: boolean }>;
       appendTranscriptionAudio: (base64Pcm16: string) => void;
       endTranscription: () => void;
       stopTranscription: () => void;
@@ -100,8 +119,6 @@ declare global {
         handler: (data: { error: string; sessionId: string }) => void,
       ) => () => void;
       onTranscribeClosed: (handler: () => void) => () => void;
-      // Notify renderers when OpenAI config changes (persisted or volatile)
-      onOpenAIConfigUpdated?: (handler: () => void) => () => void;
     };
   }
 }
