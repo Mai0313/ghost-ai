@@ -145,8 +145,9 @@ export function useTranscription({
         if (typeof u3 === "function") transcribeUnsubsRef.current.push(u3);
       } catch {}
 
-      const audioCtx = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      const audioCtx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
 
       audioRefs.current.ctx = audioCtx;
 
